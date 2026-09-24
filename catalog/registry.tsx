@@ -17,6 +17,7 @@ import { TimestampsDoc, TimestampsCard } from './elements/Timestamps';
 import { SpeakerIdentityDoc, SpeakerIdentityCard } from './elements/SpeakerIdentity';
 import { RegenerateMenuDoc, RegenerateMenuCard } from './elements/RegenerateMenu';
 import { ConfidenceDoc, ConfidenceCard } from './elements/Confidence';
+import { ToolApprovalDoc, ToolApprovalCard } from './elements/ToolApproval';
 
 export interface ElementEntry {
   slug: string;
@@ -55,6 +56,11 @@ export const SECTIONS: Section[] = [
       { slug: 'speaker-identity', title: 'Speaker identity', description: 'Quién habla, cuando un hilo tiene más voces que la persona y un modelo.', Card: SpeakerIdentityCard, Doc: SpeakerIdentityDoc },
       { slug: 'regenerate-with', title: 'Regenerate with', description: 'Bifurca el mismo turno hacia otro modelo en lugar de volver a tirar los mismos dados.', Card: RegenerateMenuCard, Doc: RegenerateMenuDoc },
       { slug: 'confidence', title: 'Confidence', description: 'Qué afirmaciones vienen de una fuente, cuáles se infirieron y cuáles son suposiciones.', Card: ConfidenceCard, Doc: ConfidenceDoc },
+    ],
+  },
+  {
+    id: 'aui-connected', title: 'AUI connected', elements: [
+      { slug: 'tool-approval', title: 'Tool approval', description: 'Una herramienta que pide la aprobación de la persona antes de cambiar datos y sigue según su respuesta.', Card: ToolApprovalCard, Doc: ToolApprovalDoc },
     ],
   },
 ];
