@@ -143,44 +143,7 @@ function ElementCard({ element: e }: { element: ElementEntry }) {
 function ElementDetail({ section, element: e }: { section: Section; element: ElementEntry }) {
   return (
     <PageHead overline={section.title} title={e.title} description={e.description}>
-      <ElementContext element={e} />
       <e.Doc />
     </PageHead>
-  );
-}
-
-/** Comportamiento y diferencias: el contexto de UX antes de la demo. */
-function ElementContext({ element: e }: { element: ElementEntry }) {
-  return (
-    <Stack spacing={2.5} sx={{ maxWidth: 680, mt: -2, mb: 5 }}>
-      <Box>
-        <Typography variant="subtitle2" sx={{ mb: 0.5 }}>Comportamiento</Typography>
-        <Typography variant="body1" sx={{ lineHeight: 1.6 }}>{e.behavior}</Typography>
-      </Box>
-      {e.differences?.length ? (
-        <Box>
-          <Typography variant="subtitle2" sx={{ mb: 0.75 }}>Diferencias</Typography>
-          <Stack spacing={1}>
-            {e.differences.map((difference) => {
-              const other = findElement(difference.slug)?.element;
-              return (
-                <Stack key={difference.slug} direction={{ xs: 'column', sm: 'row' }} spacing={{ xs: 0, sm: 1.5 }}>
-                  <ButtonBase
-                    onClick={() => go('/elements/' + difference.slug)}
-                    sx={{ flexShrink: 0, width: { sm: 160 }, justifyContent: 'flex-start', typography: 'body2', fontWeight: 'fontWeightMedium', color: 'primary.main', textAlign: 'left', '&:hover': { textDecoration: 'underline' } }}
-                  >
-                    {other?.title ?? difference.slug}
-                  </ButtonBase>
-                  <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5 }}>
-                    {difference.pending ? <Box component="span" sx={{ color: 'warning.main', fontWeight: 'fontWeightMedium' }}>Pendiente · </Box> : null}
-                    {difference.text}
-                  </Typography>
-                </Stack>
-              );
-            })}
-          </Stack>
-        </Box>
-      ) : null}
-    </Stack>
   );
 }
