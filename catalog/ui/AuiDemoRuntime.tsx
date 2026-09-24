@@ -67,16 +67,20 @@ function usageFor(messages: readonly ThreadMessage[], reasoning: boolean) {
   return { inputTokens: add('inputTokens'), cachedInputTokens: add('cachedInputTokens'), outputTokens: add('outputTokens'), reasoningTokens: reasoning ? add('reasoningTokens') : 0 };
 }
 
-function makeModel(reasoning: boolean, script: DemoScript, failTools: boolean): ChatModelAdapter {
+/** Lo que la demo sabe al responder: el modelo y el esfuerzo que registró el selector de modelo. */
+export type DemoAnswerContext = { modelName?: string; reasoningEffort?: string };
+
+function makeModel(reasoning: boolean, script: DemoScript, failTools: boolean, answer?: (ctx: DemoAnswerContext) => string): ChatModelAdapter {
   let turn = 0;
   return {
-    async *run({ abortSignal, messages, unstable_getMessage }) {
+    async *run({ abortSignal, messages, unstable_getMessage, context }) {
       if (script !== 'answer') {
         await wait(FIRST_TOKEN_MS);
         yield* SCRIPTS[script]({ abortSignal, failTools, message: () => unstable_getMessage?.() });
         return;
       }
-      const full = DEMO_ANSWERS[turn++ % DEMO_ANSWERS.length];
+      const config = (context?.config ?? {}) as DemoAnswerContext;
+      const full = answer ? answer({ modelName: config.modelName, reasoningEffort: config.reasoningEffort }) : DEMO_ANSWERS[turn++ % DEMO_ANSWERS.length];
       const start = Date.now();
       let firstTokenTime: number | undefined;
       let chunks = 0;
@@ -240,6 +244,8 @@ export interface AuiDemoRuntimeProps {
   followups?: 'default' | 'sets' | 'none';
   /** Los adjuntos tardan en subir; `failNextUpload()` hace fallar la siguiente subida. */
   slowUploads?: boolean;
+  /** Respuesta propia según el modelo registrado (p. ej. por el selector de modelo). */
+  answer?: (ctx: DemoAnswerContext) => string;
 }
 
 /** Subida de ejemplo: 1,8 s en curso y luego lista (o fallida, si se pidió). */
@@ -287,10 +293,10 @@ export function AuiDemoRuntime(props: AuiDemoRuntimeProps) {
   return ready ? <DemoRuntime {...props} /> : null;
 }
 
-function DemoRuntime({ children, seed = false, voice = false, reasoning = false, mcp = false, threads, startIn, slowUploads = false, script = 'answer', failTools = false, followups = 'default' }: AuiDemoRuntimeProps) {
+function DemoRuntime({ children, seed = false, voice = false, reasoning = false, mcp = false, threads, startIn, slowUploads = false, script = 'answer', failTools = false, followups = 'default', answer }: AuiDemoRuntimeProps) {
   const list = React.useMemo(() => makeThreadList([...(seed ? SEED_THREADS : []), ...(threads ?? [])]), [seed, threads]);
   const uploads = React.useMemo(() => (slowUploads ? slowAttachments(attachments) : attachments), [slowUploads]);
-  const model = React.useMemo(() => makeModel(reasoning, script, failTools), [reasoning, script, failTools]);
+  const model = React.useMemo(() => makeModel(reasoning, script, failTools, answer), [reasoning, script, failTools, answer]);
   const suggestion = React.useMemo(() => (followups === 'sets' ? followupSets() : followups === 'none' ? noFollowups : suggestionAdapter), [followups]);
   if (mcp) installMockMcp();
   const adapter = React.useMemo<RemoteThreadListAdapter>(() => ({

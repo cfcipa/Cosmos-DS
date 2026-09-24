@@ -15,6 +15,12 @@ export interface AuiIconButtonProps extends Omit<IconButtonProps, 'size'> {
   side?: TooltipProps['placement'];
   /** Lado del botón en unidades de espaciado. Default 3 (24px). */
   size?: number;
+  /** Para usarlo como enlace (`component="a"` con `href`, `download`, `target`…). */
+  component?: React.ElementType;
+  href?: string;
+  download?: string;
+  target?: string;
+  rel?: string;
 }
 
 export const AuiIconButton = React.forwardRef<HTMLButtonElement, AuiIconButtonProps>(function AuiIconButton(

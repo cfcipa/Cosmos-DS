@@ -20,6 +20,7 @@ import {
   MessagePrimitive,
   SuggestionPrimitive,
   ThreadPrimitive,
+  type FileMessagePartComponent,
   type ImageMessagePartComponent,
   type ToolCallMessagePartComponent,
   useAuiState,
@@ -34,7 +35,7 @@ import Typography from '@mui/material/Typography';
 import { visuallyHidden } from '@mui/utils';
 import { keyframes, styled } from '@mui/material/styles';
 import {
-  ArrowDown, ArrowUp, Check, ChevronLeft, ChevronRight, Copy, Download, FileText, Mic,
+  ArrowDown, ArrowUp, Check, ChevronLeft, ChevronRight, Copy, Download, Mic,
   MoreHorizontal, Pencil, RefreshCw, Square, ThumbsDown, ThumbsUp,
 } from 'lucide-react';
 import { REDUCED_MOTION } from '../lib/shimmerText';
@@ -53,6 +54,9 @@ import { AuiToolGroupContent, AuiToolGroupRoot, AuiToolGroupTrigger } from './To
 import { AuiComposerQuotePreview, AuiQuoteBlock, AuiSelectionToolbar, AUI_QUOTE_ACTIONS } from './Quote';
 import { AuiSources } from './Sources';
 import { AuiImage } from './Image';
+import { AuiFile } from './File';
+import { AuiModelSelector, type AuiModelSelectorProps } from './ModelSelector';
+import { createAuiDirectiveText, type AuiDirectiveTextOptions } from './DirectiveText';
 
 export type AuiThreadTiming = { design?: 'badge' | 'footer'; side?: 'top' | 'right' | 'bottom' | 'left' };
 
@@ -81,6 +85,12 @@ export interface AuiThreadProps {
   quotes?: boolean | 'actions';
   /** Las sugerencias de seguimiento se envían al tocarlas (default) o solo llenan el composer. */
   followupSend?: boolean;
+  /** Selectores de carácter del composer (`AuiComposerTriggerPopover` para @ y /). */
+  triggers?: React.ReactNode;
+  /** Muestra las menciones de los mensajes del usuario como fichas (`true`, o con íconos por tipo). */
+  directives?: boolean | AuiDirectiveTextOptions;
+  /** El selector de modelo en el composer. */
+  modelSelector?: AuiModelSelectorProps;
 }
 
 /** Medidas de assistant-ui: columna de 44rem, composer con 8px de relleno, botones de 28px, íconos de 16px. */
@@ -96,7 +106,7 @@ const MAP_GUTTER = 6;
 const pulse = keyframes`0%, 100% { opacity: 1; } 50% { opacity: .35; }`;
 
 const ComponentsContext = React.createContext<AuiThreadComponents>({});
-type ThreadOptions = { welcome: string; placeholder: string; timing?: AuiThreadTiming; modelContextWindow?: number };
+type ThreadOptions = { welcome: string; placeholder: string; timing?: AuiThreadTiming; modelContextWindow?: number; triggers?: React.ReactNode; directives?: boolean | AuiDirectiveTextOptions; modelSelector?: AuiModelSelectorProps };
 const LabelsContext = React.createContext<ThreadOptions>({ welcome: '¿En qué te ayudo hoy?', placeholder: 'Escribe un mensaje…' });
 
 // Al arrancar, el hilo de carga cuenta como chat nuevo (composer centrado); cambiar a un hilo que aún trae su
@@ -119,14 +129,14 @@ const ViewportFooter = styled(ThreadPrimitive.ViewportFooter)(({ theme: t }) => 
 }));
 
 export function AuiThread({
-  components = {}, autoFocus = true, welcome = '¿En qué te ayudo hoy?', placeholder = 'Escribe un mensaje…', messageTiming = false, modelContextWindow, conversationMap, quotes = false, followupSend = true,
+  components = {}, autoFocus = true, welcome = '¿En qué te ayudo hoy?', placeholder = 'Escribe un mensaje…', messageTiming = false, modelContextWindow, conversationMap, quotes = false, followupSend = true, triggers, directives, modelSelector,
 }: AuiThreadProps) {
   const isEmpty = useAuiState(isNewChatView);
   const timingDesign = messageTiming === true ? 'badge' : messageTiming ? messageTiming.design ?? 'badge' : undefined;
   const timingSide = typeof messageTiming === 'object' ? messageTiming.side : undefined;
   const labels = React.useMemo(
-    () => ({ welcome, placeholder, timing: timingDesign ? { design: timingDesign, side: timingSide } : undefined, modelContextWindow }),
-    [welcome, placeholder, timingDesign, timingSide, modelContextWindow],
+    () => ({ welcome, placeholder, timing: timingDesign ? { design: timingDesign, side: timingSide } : undefined, modelContextWindow, triggers, directives, modelSelector }),
+    [welcome, placeholder, timingDesign, timingSide, modelContextWindow, triggers, directives, modelSelector],
   );
   const mapSide = conversationMap === true ? 'left' : conversationMap || undefined;
   const Welcome = components.Welcome ?? ThreadWelcome;
@@ -248,48 +258,54 @@ const roundFilled = {
 } as const;
 
 function Composer({ autoFocus }: { autoFocus: boolean }) {
-  const { placeholder, modelContextWindow } = React.useContext(LabelsContext);
+  const { placeholder, modelContextWindow, triggers, modelSelector } = React.useContext(LabelsContext);
   const isSending = useAuiState((s) => s.composer.submission !== undefined && !(s.thread.isRunning && s.thread.capabilities.cancel));
   return (
-    <Box component={ComposerPrimitive.Root} sx={{ position: 'relative', display: 'flex', flexDirection: 'column', width: '100%' }} data-slot="aui-composer">
-      <ComposerPrimitive.AttachmentDropzone asChild>
-        <ComposerShell variant="outlined">
-          <AuiComposerAttachments />
-          <AuiComposerQuotePreview />
-          <ComposerInput placeholder={placeholder} rows={1} autoFocus={autoFocus} enterKeyHint="send" aria-label="Mensaje" />
-          <Stack direction="row" alignItems="center" justifyContent="space-between">
-            <AuiComposerAddAttachment />
-            <Stack direction="row" alignItems="center" spacing={0.75}>
-              {modelContextWindow ? <AuiContextDisplayRing modelContextWindow={modelContextWindow} /> : null}
-              <AuiIf condition={(s) => s.thread.capabilities.dictation}>
-                <AuiIf condition={(s) => s.composer.dictation == null}>
-                  <ComposerPrimitive.Dictate asChild>
-                    <AuiIconButton tooltip="Dictar" size={SEND}><Mic /></AuiIconButton>
-                  </ComposerPrimitive.Dictate>
+    <ComposerPrimitive.Unstable_TriggerPopoverRoot>
+      <Box component={ComposerPrimitive.Root} sx={{ position: 'relative', display: 'flex', flexDirection: 'column', width: '100%' }} data-slot="aui-composer">
+        {triggers}
+        <ComposerPrimitive.AttachmentDropzone asChild>
+          <ComposerShell variant="outlined">
+            <AuiComposerAttachments />
+            <AuiComposerQuotePreview />
+            <ComposerInput placeholder={placeholder} rows={1} autoFocus={autoFocus} enterKeyHint="send" aria-label="Mensaje" />
+            <Stack direction="row" alignItems="center" justifyContent="space-between">
+              <Stack direction="row" alignItems="center" spacing={0.75}>
+                <AuiComposerAddAttachment />
+                {modelSelector ? <AuiModelSelector size="sm" variant="ghost" {...modelSelector} /> : null}
+              </Stack>
+              <Stack direction="row" alignItems="center" spacing={0.75}>
+                {modelContextWindow ? <AuiContextDisplayRing modelContextWindow={modelContextWindow} /> : null}
+                <AuiIf condition={(s) => s.thread.capabilities.dictation}>
+                  <AuiIf condition={(s) => s.composer.dictation == null}>
+                    <ComposerPrimitive.Dictate asChild>
+                      <AuiIconButton tooltip="Dictar" size={SEND}><Mic /></AuiIconButton>
+                    </ComposerPrimitive.Dictate>
+                  </AuiIf>
+                  <AuiIf condition={(s) => s.composer.dictation != null}>
+                    <ComposerPrimitive.StopDictation asChild>
+                      <AuiIconButton tooltip="Detener el dictado" size={SEND} sx={{ color: 'error.main' }}>
+                        <Box component="span" sx={{ display: 'flex', animation: `${pulse} 1.2s infinite`, [REDUCED_MOTION]: { animation: 'none' } }}><Square size={STOP_SIZE} fill="currentColor" /></Box>
+                      </AuiIconButton>
+                    </ComposerPrimitive.StopDictation>
+                  </AuiIf>
                 </AuiIf>
-                <AuiIf condition={(s) => s.composer.dictation != null}>
-                  <ComposerPrimitive.StopDictation asChild>
-                    <AuiIconButton tooltip="Detener el dictado" size={SEND} sx={{ color: 'error.main' }}>
-                      <Box component="span" sx={{ display: 'flex', animation: `${pulse} 1.2s infinite`, [REDUCED_MOTION]: { animation: 'none' } }}><Square size={STOP_SIZE} fill="currentColor" /></Box>
-                    </AuiIconButton>
-                  </ComposerPrimitive.StopDictation>
+                <AuiIf condition={(s) => !s.composer.canCancel || (s.thread.voice !== undefined && s.composer.submission === undefined)}>
+                  <ComposerPrimitive.Send asChild>
+                    <AuiIconButton tooltip="Enviar mensaje" size={SEND} sx={{ ...roundFilled, '& svg': { width: ICON_SIZE, height: ICON_SIZE } }}><ArrowUp /></AuiIconButton>
+                  </ComposerPrimitive.Send>
                 </AuiIf>
-              </AuiIf>
-              <AuiIf condition={(s) => !s.composer.canCancel || (s.thread.voice !== undefined && s.composer.submission === undefined)}>
-                <ComposerPrimitive.Send asChild>
-                  <AuiIconButton tooltip="Enviar mensaje" size={SEND} sx={{ ...roundFilled, '& svg': { width: ICON_SIZE, height: ICON_SIZE } }}><ArrowUp /></AuiIconButton>
-                </ComposerPrimitive.Send>
-              </AuiIf>
-              <AuiIf condition={(s) => s.composer.canCancel && (s.thread.voice === undefined || s.composer.submission !== undefined)}>
-                <ComposerPrimitive.Cancel asChild>
-                  <AuiIconButton tooltip={isSending ? 'Cancelar el envío' : 'Detener la respuesta'} size={SEND} sx={{ ...roundFilled, '& svg': { width: STOP_SIZE, height: STOP_SIZE } }}><Square fill="currentColor" /></AuiIconButton>
-                </ComposerPrimitive.Cancel>
-              </AuiIf>
+                <AuiIf condition={(s) => s.composer.canCancel && (s.thread.voice === undefined || s.composer.submission !== undefined)}>
+                  <ComposerPrimitive.Cancel asChild>
+                    <AuiIconButton tooltip={isSending ? 'Cancelar el envío' : 'Detener la respuesta'} size={SEND} sx={{ ...roundFilled, '& svg': { width: STOP_SIZE, height: STOP_SIZE } }}><Square fill="currentColor" /></AuiIconButton>
+                  </ComposerPrimitive.Cancel>
+                </AuiIf>
+              </Stack>
             </Stack>
-          </Stack>
-        </ComposerShell>
-      </ComposerPrimitive.AttachmentDropzone>
-    </Box>
+          </ComposerShell>
+        </ComposerPrimitive.AttachmentDropzone>
+      </Box>
+    </ComposerPrimitive.Unstable_TriggerPopoverRoot>
   );
 }
 
@@ -369,11 +385,7 @@ function AssistantMessage() {
               case 'source':
                 return <AuiSources {...part} />;
               case 'file':
-                return (
-                  <Stack direction="row" alignItems="center" spacing={1} sx={{ my: 0.5, color: 'text.secondary' }}>
-                    <FileText size={ICON_SIZE} /><Typography variant="body2">{part.filename ?? part.mimeType}</Typography>
-                  </Stack>
-                );
+                return <Box sx={{ py: 0.5 }} data-slot="aui-assistant-file"><AuiFile {...part} /></Box>;
               case 'indicator':
                 return (
                   <Box component="span" role="status" aria-label="El asistente está trabajando" sx={{ color: 'primary.main', animation: `${pulse} 1.2s ease-in-out infinite`, [REDUCED_MOTION]: { animation: 'none' } }}>●</Box>
@@ -442,6 +454,15 @@ function AssistantActionBar() {
 
 const UserImagePart: ImageMessagePartComponent = (part) => <Box sx={{ py: 0.5 }}><AuiImage {...part} /></Box>;
 
+const UserFilePart: FileMessagePartComponent = (part) => <Box sx={{ py: 0.5 }}><AuiFile {...part} /></Box>;
+
+/** Las partes del mensaje del usuario; con `directives`, las menciones como fichas. */
+function UserParts() {
+  const { directives } = React.useContext(LabelsContext);
+  const Text = React.useMemo(() => (directives ? createAuiDirectiveText(undefined, directives === true ? {} : directives) : undefined), [directives]);
+  return <MessagePrimitive.Parts components={{ Image: UserImagePart, File: UserFilePart, ...(Text ? { Text } : {}) }} />;
+}
+
 function UserMessage() {
   return (
     <Box
@@ -454,7 +475,7 @@ function UserMessage() {
       <Box sx={{ position: 'relative', gridColumnStart: 2, minWidth: 0, '&:hover [data-slot="aui-user-actions"], &:focus-within [data-slot="aui-user-actions"]': { opacity: 1 } }}>
         <Typography variant="body1" component="div" sx={{ px: 2, py: 1, borderRadius: 1, bgcolor: 'ai.userBubble', color: 'ai.userBubbleText', overflowWrap: 'anywhere', '&:empty': { display: 'none' } }}>
           <MessagePrimitive.Quote>{(quote) => <AuiQuoteBlock {...quote} />}</MessagePrimitive.Quote>
-          <MessagePrimitive.Parts components={{ Image: UserImagePart }} />
+          <UserParts />
         </Typography>
         <Box sx={{ position: 'absolute', left: 0, top: '50%', transform: 'translate(-100%, -50%)', pr: 1 }}>
           <ActionBarPrimitive.Root hideWhenRunning autohide="not-last" data-slot="aui-user-actions">

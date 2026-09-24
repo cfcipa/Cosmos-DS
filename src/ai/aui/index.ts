@@ -18,3 +18,7 @@ export * from './ToolGroup';
 export * from './Quote';
 export * from './Sources';
 export * from './Image';
+export * from './File';
+export * from './DirectiveText';
+export * from './ModelSelector';
+export * from './TriggerPopover';

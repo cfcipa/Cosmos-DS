@@ -68,6 +68,10 @@ import { AuiToolGroupDoc, AuiToolGroupPreview } from './elements/AuiToolGroup';
 import { AuiQuoteDoc, AuiQuoteCard } from './elements/AuiQuote';
 import { AuiSourcesDoc, AuiSourcesCard } from './elements/AuiSources';
 import { AuiImageDoc, AuiImageCard } from './elements/AuiImage';
+import { AuiFileCard, AuiFileDoc } from './elements/AuiFile';
+import { AuiModelSelectorCard, AuiModelSelectorDoc } from './elements/AuiModelSelector';
+import { AuiTriggerPopoverCard, AuiTriggerPopoverDoc } from './elements/AuiTriggerPopover';
+import { AuiDirectiveTextCard, AuiDirectiveTextDoc } from './elements/AuiDirectiveText';
 import { AuiOrbDoc, AuiOrbCard } from './elements/AuiOrb';
 
 export interface ElementEntry {
@@ -178,6 +182,10 @@ export const SECTIONS: Section[] = [
       { slug: 'aui-quote', title: 'Quote', description: 'Selecciona texto de un mensaje, cítalo desde una barra flotante y llévalo al composer.', Card: AuiQuoteCard, Doc: AuiQuoteDoc },
       { slug: 'aui-sources', title: 'Sources', description: 'Fuentes del runtime: enlaces con favicon e insignias para documentos.', Card: AuiSourcesCard, Doc: AuiSourcesDoc },
       { slug: 'aui-image', title: 'Image', description: 'Partes de imagen del mensaje con vista previa, estados de carga, acciones y vista a pantalla completa.', Card: AuiImageCard, Doc: AuiImageDoc },
+      { slug: 'aui-file', title: 'File', description: 'Partes de archivo del mensaje con ícono según el tipo, nombre, tamaño y descarga.', Card: AuiFileCard, Doc: AuiFileDoc },
+      { slug: 'aui-model-selector', title: 'Model selector', description: 'El modelo y su esfuerzo de razonamiento, elegidos desde el composer.', Card: AuiModelSelectorCard, Doc: AuiModelSelectorDoc },
+      { slug: 'aui-trigger-popover', title: 'Composer trigger popover', description: 'Un selector que se abre con un carácter, para menciones, comandos y acciones anidadas del composer.', Card: AuiTriggerPopoverCard, Doc: AuiTriggerPopoverDoc },
+      { slug: 'aui-directive-text', title: 'Directive text', description: 'Un renderizador de mensajes que convierte las directivas de mención en fichas en línea.', Card: AuiDirectiveTextCard, Doc: AuiDirectiveTextDoc },
       { slug: 'tool-approval', title: 'Tool approval', description: 'Una herramienta que pide la aprobación de la persona antes de cambiar datos y sigue según su respuesta.', Card: ToolApprovalCard, Doc: ToolApprovalDoc },
     ],
   },
