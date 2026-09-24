@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { LoaderDoc, LoaderCard } from './elements/Loader';
+import { ThinkingIndicatorDoc, ThinkingIndicatorCard } from './elements/ThinkingIndicator';
 
 export interface ElementEntry {
   slug: string;
@@ -12,11 +13,12 @@ export interface ElementEntry {
 }
 export interface Section { id: string; title: string; elements: ElementEntry[] }
 
-/** Secciones en el orden del catálogo Elements de assistant-ui. Prueba: solo Loader. */
+/** Secciones en el orden del catálogo Elements de assistant-ui.  */
 export const SECTIONS: Section[] = [
   {
     id: 'reasoning', title: 'Reasoning', elements: [
       { slug: 'loader', title: 'Loader', description: 'El símbolo de Sinco marca el tiempo mientras el modelo todavía no tiene nada que mostrar.', Card: LoaderCard, Doc: LoaderDoc },
+      { slug: 'thinking-indicator', title: 'Thinking indicator', description: 'Una línea viva que nombra lo que el asistente hace ahora mismo, con el tiempo transcurrido.', Card: ThinkingIndicatorCard, Doc: ThinkingIndicatorDoc },
     ],
   },
 ];

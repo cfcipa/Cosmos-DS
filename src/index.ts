@@ -10,5 +10,6 @@ export type { AiPalette } from './ai/theme/aiPalette';
 // Kit IA — en el orden del catálogo de assistant-ui
 // Reasoning
 export * from './ai/loader';
+export * from './ai/thinking-indicator';
 // 3 · Tool use
 export * from './ai/tool-call';
