@@ -2,23 +2,14 @@ import * as React from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
 import { Pause, Play } from 'lucide-react';
 import { Loader } from '../../src/ai/loader';
 import type { LoaderAnimation } from '../../src/ai/loader';
 import { ElementPage, PropRow, PropToggle } from '../ui/Playground';
-import { DocSection, Code, Token, PropsTable } from '../ui/DocParts';
 
 const DEFAULTS = { animation: 'wave' as LoaderAnimation, label: 'Pensando' };
-const ANATOMY = `<div role="status" aria-label={label}>
-  <svg>          {/* isotipo Sinco · primary.main */}
-    <path />     {/* mitad superior */}
-    <path />     {/* mitad inferior */}
-  </svg>
-  <span />       {/* label · text.secondary, con brillo */}
-</div>`;
 
-/** Página del Loader: demo → uso → anatomía → tema → props. */
+/** Página del Loader: demo y propiedades para revisar el diseño. */
 export function LoaderDoc() {
   const [animation, setAnimation] = React.useState<LoaderAnimation>(DEFAULTS.animation);
   const [label, setLabel] = React.useState(DEFAULTS.label);
@@ -29,13 +20,6 @@ export function LoaderDoc() {
     const id = window.setInterval(() => setTick((n) => n + 1), 120);
     return () => clearInterval(id);
   }, [playing]);
-
-  // Solo lo que cambiaste respecto a los valores por defecto: se copia tal cual al producto.
-  const attrs = [
-    animation !== DEFAULTS.animation ? 'animation="' + animation + '"' : '',
-    label !== DEFAULTS.label ? 'label="' + label + '"' : '',
-  ].filter(Boolean);
-  const snippet = "import { Loader } from '@sinco/cosmos-ds';\n\n<Loader" + (attrs.length ? ' ' + attrs.join(' ') : '') + ' />';
 
   return (
     <>
@@ -60,26 +44,6 @@ export function LoaderDoc() {
         />
       </Box>
 
-      <DocSection title="Uso">
-        <Code>{snippet}</Code>
-      </DocSection>
-
-      <DocSection title="Anatomía">
-        <Code>{ANATOMY}</Code>
-      </DocSection>
-
-      <DocSection title="Tema">
-        <Box><Token path="primary.main" /><Token path="text.secondary" /><Token path="text.disabled" /></Box>
-      </DocSection>
-
-      <DocSection title="Props">
-        <PropsTable rows={[
-          { name: 'animation', type: "'wave' | 'pulse'", default: "'wave'", description: 'Cómo se anima el símbolo.' },
-          { name: 'label', type: 'string', default: "'Pensando'", description: 'Texto bajo el símbolo y etiqueta accesible.' },
-          { name: 'size', type: 'number', default: '44', description: 'Tamaño del símbolo en px.' },
-          { name: 'tick', type: 'number', description: 'Controla la animación paso a paso. Solo pruebas.' },
-        ]} />
-      </DocSection>
     </>
   );
 }
