@@ -49,5 +49,11 @@ export * from './ai/scroll-anchor';
 export * from './ai/canvas-split';
 export * from './ai/connection-state';
 export * from './ai/shared-conversation';
+export * from './ai/conversation-search';
+export * from './ai/thread-search';
+export * from './ai/launcher';
+export * from './ai/settings-panel';
+export * from './ai/onboarding';
+export * from './ai/mobile-composer';
 // 3 · Tool use
 export * from './ai/tool-call';

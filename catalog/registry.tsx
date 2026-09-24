@@ -44,6 +44,12 @@ import { ScrollAnchorDoc, ScrollAnchorCard } from './elements/ScrollAnchor';
 import { CanvasSplitDoc, CanvasSplitCard } from './elements/CanvasSplit';
 import { ConnectionStateDoc, ConnectionStateCard } from './elements/ConnectionState';
 import { SharedConversationDoc, SharedConversationCard } from './elements/SharedConversation';
+import { ConversationSearchDoc, ConversationSearchCard } from './elements/ConversationSearch';
+import { ThreadSearchDoc, ThreadSearchCard } from './elements/ThreadSearch';
+import { LauncherDoc, LauncherCard } from './elements/Launcher';
+import { SettingsPanelDoc, SettingsPanelCard } from './elements/SettingsPanel';
+import { OnboardingDoc, OnboardingCard } from './elements/Onboarding';
+import { MobileComposerDoc, MobileComposerCard } from './elements/MobileComposer';
 import { ToolApprovalDoc, ToolApprovalCard } from './elements/ToolApproval';
 
 export interface ElementEntry {
@@ -126,6 +132,12 @@ export const SECTIONS: Section[] = [
       { slug: 'canvas', title: 'Canvas', description: 'El hilo se hace a un lado y el documento ocupa el espacio, todavía escribiéndose mientras lo lees.', Card: CanvasSplitCard, Doc: CanvasSplitDoc },
       { slug: 'connection-state', title: 'Connection state', description: 'Se cae la conexión, la ejecución sigue en el servidor y el stream se retoma.', Card: ConnectionStateCard, Doc: ConnectionStateDoc },
       { slug: 'shared-conversation', title: 'Shared conversation', description: 'Una transcripción de solo lectura que alguien te envió, con una forma de seguirla tú.', Card: SharedConversationCard, Doc: SharedConversationDoc },
+      { slug: 'conversation-search', title: 'Conversation search', description: 'Busca dentro de un hilo largo, con cada coincidencia marcada a lo largo de la barra.', Card: ConversationSearchCard, Doc: ConversationSearchDoc },
+      { slug: 'thread-search', title: 'Thread search', description: 'Un historial al que de verdad puedes volver: fijados primero y luego agrupados por fecha.', Card: ThreadSearchCard, Doc: ThreadSearchDoc },
+      { slug: 'launcher', title: 'Launcher', description: 'La entrada flotante y el panel en el que se abre.', Card: LauncherCard, Doc: LauncherDoc },
+      { slug: 'settings-panel', title: 'Settings panel', description: 'Modelo, instrucciones del sistema, temperatura y lo que el asistente tiene permitido hacer.', Card: SettingsPanelCard, Doc: SettingsPanelDoc },
+      { slug: 'onboarding', title: 'Onboarding', description: 'Primera vez: tres pasos que enseñan para qué sirve de verdad este asistente.', Card: OnboardingCard, Doc: OnboardingDoc },
+      { slug: 'mobile-composer', title: 'Mobile composer', description: 'Una hoja inferior: atenta al teclado, acciones rápidas encima y objetivos del tamaño del pulgar.', Card: MobileComposerCard, Doc: MobileComposerDoc },
     ],
   },
   {
