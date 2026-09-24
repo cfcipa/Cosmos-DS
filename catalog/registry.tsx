@@ -72,6 +72,13 @@ import { AuiFileCard, AuiFileDoc } from './elements/AuiFile';
 import { AuiModelSelectorCard, AuiModelSelectorDoc } from './elements/AuiModelSelector';
 import { AuiTriggerPopoverCard, AuiTriggerPopoverDoc } from './elements/AuiTriggerPopover';
 import { AuiDirectiveTextCard, AuiDirectiveTextDoc } from './elements/AuiDirectiveText';
+import { AuiAssistantPanelCard, AuiAssistantPanelDoc } from './elements/AuiAssistantPanel';
+import { AuiComposerPillCard, AuiComposerPillDoc } from './elements/AuiComposerPill';
+import { AuiStarterSuggestionsCard, AuiStarterSuggestionsDoc } from './elements/AuiStarterSuggestions';
+import { AuiSelectionContextCard, AuiSelectionContextDoc } from './elements/AuiSelectionContext';
+import { AuiAskAiActionCard, AuiAskAiActionDoc } from './elements/AuiAskAiAction';
+import { AuiInlinePromptCard, AuiInlinePromptDoc } from './elements/AuiInlinePrompt';
+import { AuiResponsePreviewCard, AuiResponsePreviewDoc } from './elements/AuiResponsePreview';
 import { AuiOrbDoc, AuiOrbCard } from './elements/AuiOrb';
 
 export interface ElementEntry {
@@ -186,6 +193,13 @@ export const SECTIONS: Section[] = [
       { slug: 'aui-model-selector', title: 'Model selector', description: 'El modelo y su esfuerzo de razonamiento, elegidos desde el composer.', Card: AuiModelSelectorCard, Doc: AuiModelSelectorDoc },
       { slug: 'aui-trigger-popover', title: 'Composer trigger popover', description: 'Un selector que se abre con un carácter, para menciones, comandos y acciones anidadas del composer.', Card: AuiTriggerPopoverCard, Doc: AuiTriggerPopoverDoc },
       { slug: 'aui-directive-text', title: 'Directive text', description: 'Un renderizador de mensajes que convierte las directivas de mención en fichas en línea.', Card: AuiDirectiveTextCard, Doc: AuiDirectiveTextDoc },
+      { slug: 'aui-composer-pill', title: 'Floating composer', description: 'Un composer compacto que flota sobre la pantalla y se abre en el panel del asistente sin perder el chat.', Card: AuiComposerPillCard, Doc: AuiComposerPillDoc },
+      { slug: 'aui-starter-suggestions', title: 'Starter suggestions', description: 'Inicios para el chat vacío que anticipan el prompt completo en el composer antes de enviarlo.', Card: AuiStarterSuggestionsCard, Doc: AuiStarterSuggestionsDoc },
+      { slug: 'aui-selection-context', title: 'Selection as context', description: 'Las filas seleccionadas en la pantalla viajan como contexto del modelo, visibles y removibles en el composer.', Card: AuiSelectionContextCard, Doc: AuiSelectionContextDoc },
+      { slug: 'aui-ask-ai-action', title: 'Ask AI on selection', description: 'Una acción en la barra de selección que abre el asistente con las filas elegidas ya como contexto.', Card: AuiAskAiActionCard, Doc: AuiAskAiActionDoc },
+      { slug: 'aui-inline-prompt', title: 'Inline prompt', description: 'Un disparador de IA sobre el elemento que abre ahí mismo un composer pequeño con acciones sugeridas y responde en el mismo lugar.', Card: AuiInlinePromptCard, Doc: AuiInlinePromptDoc },
+      { slug: 'aui-assistant-panel', title: 'Assistant panel', description: 'El panel del asistente en tres superficies, flotante, lateral y pantalla completa, con cambio de chat y de asistente.', Card: AuiAssistantPanelCard, Doc: AuiAssistantPanelDoc },
+      { slug: 'aui-response-preview', title: 'Response preview', description: 'La última respuesta asoma sobre el composer mientras el chat está cerrado y se recoge sola en una pestaña.', Card: AuiResponsePreviewCard, Doc: AuiResponsePreviewDoc },
       { slug: 'tool-approval', title: 'Tool approval', description: 'Una herramienta que pide la aprobación de la persona antes de cambiar datos y sigue según su respuesta.', Card: ToolApprovalCard, Doc: ToolApprovalDoc },
     ],
   },

@@ -57,6 +57,7 @@ import { AuiImage } from './Image';
 import { AuiFile } from './File';
 import { AuiModelSelector, type AuiModelSelectorProps } from './ModelSelector';
 import { createAuiDirectiveText, type AuiDirectiveTextOptions } from './DirectiveText';
+import { AuiSelectionContextChip, AuiSelectionContextMessageChip } from './SelectionContext';
 
 export type AuiThreadTiming = { design?: 'badge' | 'footer'; side?: 'top' | 'right' | 'bottom' | 'left' };
 
@@ -91,6 +92,18 @@ export interface AuiThreadProps {
   directives?: boolean | AuiDirectiveTextOptions;
   /** El selector de modelo en el composer. */
   modelSelector?: AuiModelSelectorProps;
+  /** Lo que muestra el chat vacío sobre el composer (p. ej. `AuiStarterSuggestions`), en lugar de la bienvenida y sus
+   * sugerencias. El composer queda abajo. */
+  empty?: React.ReactNode;
+  /** Una línea al comienzo del hilo cuando ya hay mensajes (p. ej. que las respuestas se generan con IA). */
+  disclaimer?: string;
+}
+
+type PlaceholderPreview = { preview: string | null; setPreview: (text: string | null) => void };
+const PlaceholderPreviewContext = React.createContext<PlaceholderPreview>({ preview: null, setPreview: () => undefined });
+/** Anticipa un texto en el placeholder del composer (las sugerencias de inicio al pasar por encima). */
+export function useAuiComposerPlaceholderPreview() {
+  return React.useContext(PlaceholderPreviewContext);
 }
 
 /** Medidas de assistant-ui: columna de 44rem, composer con 8px de relleno, botones de 28px, íconos de 16px. */
@@ -130,8 +143,14 @@ const ViewportFooter = styled(ThreadPrimitive.ViewportFooter)(({ theme: t }) => 
 
 export function AuiThread({
   components = {}, autoFocus = true, welcome = '¿En qué te ayudo hoy?', placeholder = 'Escribe un mensaje…', messageTiming = false, modelContextWindow, conversationMap, quotes = false, followupSend = true, triggers, directives, modelSelector,
+  empty, disclaimer,
 }: AuiThreadProps) {
-  const isEmpty = useAuiState(isNewChatView);
+  const isNew = useAuiState(isNewChatView);
+  const hasEmpty = empty !== undefined;
+  // Con `empty`, el chat vacío no centra el composer: lo deja abajo con lo que se muestre encima.
+  const isEmpty = isNew && !hasEmpty;
+  const [preview, setPreview] = React.useState<string | null>(null);
+  const previewValue = React.useMemo(() => ({ preview, setPreview }), [preview]);
   const timingDesign = messageTiming === true ? 'badge' : messageTiming ? messageTiming.design ?? 'badge' : undefined;
   const timingSide = typeof messageTiming === 'object' ? messageTiming.side : undefined;
   const labels = React.useMemo(
@@ -143,25 +162,33 @@ export function AuiThread({
   return (
     <ComponentsContext.Provider value={components}>
       <LabelsContext.Provider value={labels}>
-        <Root data-slot="aui-thread">
-          <Viewport turnAnchor="top" data-slot="aui-thread-viewport">
-            {mapSide ? <AuiConversationMapRail side={mapSide} /> : null}
-            <Box sx={{ mx: 'auto', display: 'flex', flexDirection: 'column', flex: 1, width: '100%', maxWidth: THREAD_MAX_WIDTH, boxSizing: 'border-box', px: 2, pt: 2, ...(mapSide ? { [mapSide === 'left' ? 'pl' : 'pr']: MAP_GUTTER } : null), justifyContent: isEmpty ? 'center' : undefined }}>
-              <AuiIf condition={isNewChatView}><Welcome /></AuiIf>
-              <AuiIf condition={isHistoryLoadingView}><HistorySkeleton /></AuiIf>
-              <Stack spacing={3} data-slot="aui-message-group" sx={{ mb: 7, '&:empty': { display: 'none' } }}>
-                <ThreadPrimitive.Messages>{() => <ThreadMessage />}</ThreadPrimitive.Messages>
-              </Stack>
-              <ViewportFooter data-docked={!isEmpty}>
-                <ScrollToBottom />
-                <AuiFollowupSuggestions send={followupSend} />
-                <Composer autoFocus={autoFocus} />
-                <AuiIf condition={(s) => isNewChatView(s) && s.composer.isEmpty}><WelcomeSuggestions /></AuiIf>
-              </ViewportFooter>
-            </Box>
-            {quotes ? <AuiSelectionToolbar actions={quotes === 'actions' ? AUI_QUOTE_ACTIONS : undefined} /> : null}
-          </Viewport>
-        </Root>
+        <PlaceholderPreviewContext.Provider value={previewValue}>
+          <Root data-slot="aui-thread">
+            <Viewport turnAnchor="top" data-slot="aui-thread-viewport">
+              {mapSide ? <AuiConversationMapRail side={mapSide} /> : null}
+              <Box sx={{ mx: 'auto', display: 'flex', flexDirection: 'column', flex: 1, width: '100%', maxWidth: THREAD_MAX_WIDTH, boxSizing: 'border-box', px: 2, pt: 2, ...(mapSide ? { [mapSide === 'left' ? 'pl' : 'pr']: MAP_GUTTER } : null), justifyContent: isEmpty ? 'center' : undefined }}>
+                {disclaimer ? (
+                  <AuiIf condition={(s) => s.thread.messages.length > 0}>
+                    <Typography variant="caption" component="p" color="text.secondary" align="center" sx={{ m: 0, mb: 2 }}>{disclaimer}</Typography>
+                  </AuiIf>
+                ) : null}
+                {hasEmpty ? null : <AuiIf condition={isNewChatView}><Welcome /></AuiIf>}
+                <AuiIf condition={isHistoryLoadingView}><HistorySkeleton /></AuiIf>
+                <Stack spacing={3} data-slot="aui-message-group" sx={{ mb: 7, '&:empty': { display: 'none' } }}>
+                  <ThreadPrimitive.Messages>{() => <ThreadMessage />}</ThreadPrimitive.Messages>
+                </Stack>
+                <ViewportFooter data-docked={!isEmpty}>
+                  <ScrollToBottom />
+                  <AuiFollowupSuggestions send={followupSend} />
+                  {hasEmpty ? <AuiIf condition={isNewChatView}>{empty}</AuiIf> : null}
+                  <Composer autoFocus={autoFocus} />
+                  {hasEmpty ? null : <AuiIf condition={(s) => isNewChatView(s) && s.composer.isEmpty}><WelcomeSuggestions /></AuiIf>}
+                </ViewportFooter>
+              </Box>
+              {quotes ? <AuiSelectionToolbar actions={quotes === 'actions' ? AUI_QUOTE_ACTIONS : undefined} /> : null}
+            </Viewport>
+          </Root>
+        </PlaceholderPreviewContext.Provider>
       </LabelsContext.Provider>
     </ComponentsContext.Provider>
   );
@@ -248,6 +275,7 @@ const ComposerInput = styled(ComposerPrimitive.Input)(({ theme: t }) => ({
   width: '100%', minHeight: t.spacing(5), maxHeight: t.spacing(24), boxSizing: 'border-box', resize: 'none', border: 0, outline: 'none',
   padding: t.spacing(0.5, 1.25), background: 'transparent', color: t.palette.text.primary, caretColor: t.palette.primary.main,
   '&::placeholder': { color: t.palette.text.secondary, opacity: 1 },
+  '&[data-preview="true"]::placeholder': { color: t.palette.text.disabled },
 }));
 
 const roundFilled = {
@@ -259,6 +287,7 @@ const roundFilled = {
 
 function Composer({ autoFocus }: { autoFocus: boolean }) {
   const { placeholder, modelContextWindow, triggers, modelSelector } = React.useContext(LabelsContext);
+  const { preview } = React.useContext(PlaceholderPreviewContext);
   const isSending = useAuiState((s) => s.composer.submission !== undefined && !(s.thread.isRunning && s.thread.capabilities.cancel));
   return (
     <ComposerPrimitive.Unstable_TriggerPopoverRoot>
@@ -266,9 +295,10 @@ function Composer({ autoFocus }: { autoFocus: boolean }) {
         {triggers}
         <ComposerPrimitive.AttachmentDropzone asChild>
           <ComposerShell variant="outlined">
+            <AuiSelectionContextChip />
             <AuiComposerAttachments />
             <AuiComposerQuotePreview />
-            <ComposerInput placeholder={placeholder} rows={1} autoFocus={autoFocus} enterKeyHint="send" aria-label="Mensaje" />
+            <ComposerInput placeholder={preview ?? placeholder} data-preview={preview !== null} rows={1} autoFocus={autoFocus} enterKeyHint="send" aria-label="Mensaje" />
             <Stack direction="row" alignItems="center" justifyContent="space-between">
               <Stack direction="row" alignItems="center" spacing={0.75}>
                 <AuiComposerAddAttachment />
@@ -472,6 +502,7 @@ function UserMessage() {
       sx={(t) => ({ display: 'grid', gridTemplateColumns: 'minmax(72px, 1fr) auto', alignContent: 'start', rowGap: 1, px: 1, '& > *': { gridColumnStart: 2 }, ...riseSx(t) })}
     >
       <AuiUserMessageAttachments />
+      <Box sx={{ justifySelf: 'end', '&:empty': { display: 'none' } }}><AuiSelectionContextMessageChip /></Box>
       <Box sx={{ position: 'relative', gridColumnStart: 2, minWidth: 0, '&:hover [data-slot="aui-user-actions"], &:focus-within [data-slot="aui-user-actions"]': { opacity: 1 } }}>
         <Typography variant="body1" component="div" sx={{ px: 2, py: 1, borderRadius: 1, bgcolor: 'ai.userBubble', color: 'ai.userBubbleText', overflowWrap: 'anywhere', '&:empty': { display: 'none' } }}>
           <MessagePrimitive.Quote>{(quote) => <AuiQuoteBlock {...quote} />}</MessagePrimitive.Quote>

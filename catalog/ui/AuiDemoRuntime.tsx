@@ -18,6 +18,7 @@ import {
   type SuggestionAdapter,
   type ThreadHistoryAdapter,
   type AttachmentAdapter,
+  type DictationAdapter,
   type PendingAttachment,
   type ThreadMessage,
   type ThreadMessageLike,
@@ -150,7 +151,7 @@ const documentAdapter: AttachmentAdapter = {
   async remove() { /* nada que liberar */ },
   async send(a) { return { ...a, status: { type: 'complete' }, content: [{ type: 'text', text: `[${a.name}]` }] }; },
 };
-const attachments = new CompositeAttachmentAdapter([new SimpleImageAttachmentAdapter(), new SimpleTextAttachmentAdapter(), documentAdapter]);
+export const DEMO_ATTACHMENTS = new CompositeAttachmentAdapter([new SimpleImageAttachmentAdapter(), new SimpleTextAttachmentAdapter(), documentAdapter]);
 
 /** Voz simulada: conecta en 1,2 s, escucha y responde en turnos de 3 s, con volumen vivo. */
 const voiceAdapter: RealtimeVoiceAdapter = {
@@ -246,6 +247,44 @@ export interface AuiDemoRuntimeProps {
   slowUploads?: boolean;
   /** Respuesta propia según el modelo registrado (p. ej. por el selector de modelo). */
   answer?: (ctx: DemoAnswerContext) => string;
+  /** Un modelo propio en lugar del de la demo (debe ser estable). */
+  model?: ChatModelAdapter;
+  /** Seguimientos propios (debe ser estable). */
+  suggestions?: SuggestionAdapter;
+  /** Dictado simulado: escucha 2,2 s y escribe este texto. */
+  dictation?: string;
+}
+
+/** Dictado simulado: arranca, escucha y entrega la transcripción final. */
+const DICTATION_MS = 2200;
+export function demoDictation(transcript: string): DictationAdapter {
+  return {
+    listen() {
+      const starts = new Set<() => void>();
+      const ends = new Set<(r: { transcript: string; isFinal?: boolean }) => void>();
+      const speech = new Set<(r: { transcript: string; isFinal?: boolean }) => void>();
+      let timer = 0;
+      const session: DictationAdapter.Session = {
+        status: { type: 'starting' },
+        async stop() { window.clearTimeout(timer); finish(); },
+        cancel() { window.clearTimeout(timer); session.status = { type: 'ended', reason: 'cancelled' }; },
+        onSpeechStart(cb) { starts.add(cb); return () => starts.delete(cb); },
+        onSpeechEnd(cb) { ends.add(cb); return () => ends.delete(cb); },
+        onSpeech(cb) { speech.add(cb); return () => speech.delete(cb); },
+      };
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        speech.forEach((cb) => cb({ transcript, isFinal: true }));
+        ends.forEach((cb) => cb({ transcript, isFinal: true }));
+        session.status = { type: 'ended', reason: 'stopped' };
+      };
+      window.setTimeout(() => { session.status = { type: 'running' }; starts.forEach((cb) => cb()); }, 0);
+      timer = window.setTimeout(finish, DICTATION_MS);
+      return session;
+    },
+  };
 }
 
 /** Subida de ejemplo: 1,8 s en curso y luego lista (o fallida, si se pidió). */
@@ -293,11 +332,13 @@ export function AuiDemoRuntime(props: AuiDemoRuntimeProps) {
   return ready ? <DemoRuntime {...props} /> : null;
 }
 
-function DemoRuntime({ children, seed = false, voice = false, reasoning = false, mcp = false, threads, startIn, slowUploads = false, script = 'answer', failTools = false, followups = 'default', answer }: AuiDemoRuntimeProps) {
+function DemoRuntime({ children, seed = false, voice = false, reasoning = false, mcp = false, threads, startIn, slowUploads = false, script = 'answer', failTools = false, followups = 'default', answer, model: customModel, suggestions, dictation }: AuiDemoRuntimeProps) {
   const list = React.useMemo(() => makeThreadList([...(seed ? SEED_THREADS : []), ...(threads ?? [])]), [seed, threads]);
-  const uploads = React.useMemo(() => (slowUploads ? slowAttachments(attachments) : attachments), [slowUploads]);
-  const model = React.useMemo(() => makeModel(reasoning, script, failTools, answer), [reasoning, script, failTools, answer]);
-  const suggestion = React.useMemo(() => (followups === 'sets' ? followupSets() : followups === 'none' ? noFollowups : suggestionAdapter), [followups]);
+  const uploads = React.useMemo(() => (slowUploads ? slowAttachments(DEMO_ATTACHMENTS) : DEMO_ATTACHMENTS), [slowUploads]);
+  const demoModel = React.useMemo(() => makeModel(reasoning, script, failTools, answer), [reasoning, script, failTools, answer]);
+  const model = customModel ?? demoModel;
+  const dictationAdapter = React.useMemo(() => (dictation ? demoDictation(dictation) : undefined), [dictation]);
+  const suggestion = React.useMemo(() => suggestions ?? (followups === 'sets' ? followupSets() : followups === 'none' ? noFollowups : suggestionAdapter), [followups, suggestions]);
   if (mcp) installMockMcp();
   const adapter = React.useMemo<RemoteThreadListAdapter>(() => ({
     ...list,
@@ -308,7 +349,7 @@ function DemoRuntime({ children, seed = false, voice = false, reasoning = false,
   }), [list, uploads]);
   const runtime = useRemoteThreadListRuntime({
     runtimeHook: function useDemoThreadRuntime() {
-      return useLocalRuntime(model, { adapters: { suggestion, attachments: uploads, ...(voice ? { voice: voiceAdapter } : {}) } });
+      return useLocalRuntime(model, { adapters: { suggestion, attachments: uploads, ...(voice ? { voice: voiceAdapter } : {}), ...(dictationAdapter ? { dictation: dictationAdapter } : {}) } });
     },
     adapter,
   });
