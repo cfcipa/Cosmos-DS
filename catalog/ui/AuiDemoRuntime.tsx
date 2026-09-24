@@ -9,6 +9,7 @@ import {
   Suggestions,
   createVoiceSession,
   useAui,
+  useAuiState,
   useLocalRuntime,
   useRemoteThreadListRuntime,
   type ChatModelAdapter,
@@ -16,13 +17,18 @@ import {
   type RemoteThreadListAdapter,
   type SuggestionAdapter,
   type ThreadHistoryAdapter,
+  type AttachmentAdapter,
+  type PendingAttachment,
+  type ThreadMessage,
+  type ThreadMessageLike,
 } from '@assistant-ui/react';
+import { demoMcpManager, installMockMcp } from './mcpDemo';
 
 // Runtime de las demos AUI connected: el mismo @assistant-ui/react de producción, con un modelo de ejemplo, una lista
 // de hilos en memoria (sembrada con los hilos del tablero) y una sesión de voz simulada.
 export const DEMO_ANSWERS = [
   'Hay 3 anticipos pendientes por $3.930.000. El próximo en vencer es CE-4492, el 30 de septiembre.',
-  'Quedan 3 anticipos sin legalizar, por $3.930.000 en total. CE-4492 vence primero, el 30 de septiembre.',
+  'Quedan **3 anticipos** sin legalizar, por $3.930.000 en total:\n\n| Anticipo | Responsable | Vence |\n| --- | --- | --- |\n| CE-4492 | Nubia Rojas | 30 sep |\n| CE-4480 | Andrés Gil | 8 oct |\n| CE-4471 | Nicolás Pardo | 15 oct |\n\nPara recordarle a Nubia, usa `recordar_anticipo`.',
 ];
 export const DEMO_SUGGESTIONS = [
   { title: 'Resume', label: 'los anticipos pendientes', prompt: 'Resume los anticipos pendientes' },
@@ -40,27 +46,84 @@ const SEED: Array<{ id: string; title: string; ago: number; q: string; a: string
   { id: 't3', title: 'Retención en la fuente', ago: 1, q: '¿Cómo se calcula la retención?', a: 'Base gravable antes de IVA por la tarifa del concepto.' },
   { id: 't4', title: 'Conciliación de agosto', ago: 9, q: 'Concilia el extracto de agosto', a: 'Concilié 42 movimientos; quedan 2 sin pareja.' },
 ];
-/** Streaming del tablero: 4 caracteres cada 30 ms. */
+/** El razonamiento del tablero «Reasoning». */
+export const DEMO_REASONING = 'La pregunta es cuál anticipo vence primero.\n\nConsulto los anticipos pendientes: CE-4471, CE-4480 y CE-4492.\n\nFechas de vencimiento: CE-4471 el 15 de octubre, CE-4480 el 8 de octubre, CE-4492 el 30 de septiembre.\n\nOrdeno de la más cercana a la más lejana. El primero es CE-4492.\n\nVerifico el responsable: Nubia Rojas, por gastos de viaje.\n\nRespondo con el anticipo, el responsable y la fecha.';
+/** Streaming del tablero: 4 caracteres cada 30 ms, tras ~320 ms hasta el primer token; el razonamiento va de a 2. */
 const STEP = 4;
+const REASONING_STEP = 2;
 const TICK_MS = 30;
+const FIRST_TOKEN_MS = 320;
+const CHARS_PER_TOKEN = 4;
+/** Uso de contexto de ejemplo: una base y lo que suma cada turno (tablero «Context display»). */
+const USAGE_BASE = { inputTokens: 23600, cachedInputTokens: 20100, outputTokens: 7200, reasoningTokens: 2900 };
+const USAGE_TURN = { inputTokens: 3200, cachedInputTokens: 3900, outputTokens: 1500, reasoningTokens: 400 };
 
 const wait = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
 
-function makeModel(): ChatModelAdapter {
+function usageFor(messages: readonly ThreadMessage[], reasoning: boolean) {
+  const turns = messages.filter((m) => m.role === 'user').length - 1;
+  const add = (k: keyof typeof USAGE_BASE) => USAGE_BASE[k] + USAGE_TURN[k] * Math.max(0, turns);
+  return { inputTokens: add('inputTokens'), cachedInputTokens: add('cachedInputTokens'), outputTokens: add('outputTokens'), reasoningTokens: reasoning ? add('reasoningTokens') : 0 };
+}
+
+function makeModel(reasoning: boolean): ChatModelAdapter {
   let turn = 0;
   return {
-    async *run({ abortSignal }) {
+    async *run({ abortSignal, messages }) {
       const full = DEMO_ANSWERS[turn++ % DEMO_ANSWERS.length];
+      const start = Date.now();
+      let firstTokenTime: number | undefined;
+      let chunks = 0;
+      let length = 0;
+      const timing = (done: boolean) => {
+        const total = Date.now() - start;
+        const tokenCount = Math.ceil(length / CHARS_PER_TOKEN);
+        const generating = firstTokenTime === undefined ? 0 : (total - firstTokenTime) / 1000;
+        return {
+          streamStartTime: start, firstTokenTime, totalChunks: chunks, toolCallCount: 0, tokenCount,
+          ...(generating > 0 ? { tokensPerSecond: tokenCount / generating } : {}),
+          ...(done ? { totalStreamTime: total } : {}),
+        };
+      };
+      const tick = async () => {
+        await wait(TICK_MS);
+        chunks += 1;
+        if (firstTokenTime === undefined) firstTokenTime = Date.now() - start;
+      };
+      await wait(FIRST_TOKEN_MS);
+      if (reasoning) {
+        for (let n = REASONING_STEP; n < DEMO_REASONING.length + REASONING_STEP; n += REASONING_STEP) {
+          if (abortSignal.aborted) return;
+          await tick();
+          length = Math.min(n, DEMO_REASONING.length);
+          yield { content: [{ type: 'reasoning', text: DEMO_REASONING.slice(0, n) }], metadata: { timing: timing(false) } };
+        }
+      }
+      const head = reasoning ? [{ type: 'reasoning' as const, text: DEMO_REASONING }] : [];
       for (let n = STEP; n < full.length + STEP; n += STEP) {
         if (abortSignal.aborted) return;
-        await wait(TICK_MS);
-        yield { content: [{ type: 'text', text: full.slice(0, n) }] };
+        await tick();
+        length = (reasoning ? DEMO_REASONING.length : 0) + Math.min(n, full.length);
+        const done = n >= full.length;
+        yield {
+          content: [...head, { type: 'text', text: full.slice(0, n) }],
+          metadata: { timing: timing(done), ...(done ? { custom: { usage: usageFor(messages, reasoning) } } : {}) },
+        };
       }
     },
   };
 }
 const suggestionAdapter: SuggestionAdapter = { async generate() { return FOLLOWUPS.map((prompt) => ({ prompt })); } };
-const attachments = new CompositeAttachmentAdapter([new SimpleImageAttachmentAdapter(), new SimpleTextAttachmentAdapter()]);
+/** Documentos de ejemplo (PDF): se adjuntan con su nombre; el modelo de la demo no los lee. */
+const documentAdapter: AttachmentAdapter = {
+  accept: 'application/pdf',
+  async add({ file }) {
+    return { id: `${file.name}-${Date.now()}`, type: 'document', name: file.name, contentType: file.type, file, status: { type: 'requires-action', reason: 'composer-send' } };
+  },
+  async remove() { /* nada que liberar */ },
+  async send(a) { return { ...a, status: { type: 'complete' }, content: [{ type: 'text', text: `[${a.name}]` }] }; },
+};
+const attachments = new CompositeAttachmentAdapter([new SimpleImageAttachmentAdapter(), new SimpleTextAttachmentAdapter(), documentAdapter]);
 
 /** Voz simulada: conecta en 1,2 s, escucha y responde en turnos de 3 s, con volumen vivo. */
 const voiceAdapter: RealtimeVoiceAdapter = {
@@ -85,16 +148,18 @@ const voiceAdapter: RealtimeVoiceAdapter = {
   }),
 };
 
-function makeThreadList(seed: boolean): RemoteThreadListAdapter & { messages: Map<string, { q: string; a: string }> } {
+/** Un hilo sembrado con su conversación. */
+export type DemoThread = { id: string; title: string; ago?: number; messages: ThreadMessageLike[] };
+const SEED_THREADS: DemoThread[] = SEED.map((s) => ({ id: s.id, title: s.title, ago: s.ago, messages: [{ role: 'user', content: s.q }, { role: 'assistant', content: s.a }] }));
+
+function makeThreadList(seeded: DemoThread[]): RemoteThreadListAdapter & { messages: Map<string, ThreadMessageLike[]> } {
   const now = Date.now();
   const threads = new Map<string, RemoteThreadMetadata>();
-  const messages = new Map<string, { q: string; a: string }>();
-  if (seed) {
-    SEED.forEach((s) => {
-      threads.set(s.id, { status: 'regular', remoteId: s.id, title: s.title, lastMessageAt: new Date(now - s.ago * DAY) });
-      messages.set(s.id, { q: s.q, a: s.a });
-    });
-  }
+  const messages = new Map<string, ThreadMessageLike[]>();
+  seeded.forEach((s) => {
+    threads.set(s.id, { status: 'regular', remoteId: s.id, title: s.title, lastMessageAt: new Date(now - (s.ago ?? 0) * DAY) });
+    messages.set(s.id, s.messages);
+  });
   const set = (id: string, patch: Partial<RemoteThreadMetadata>) => { const cur = threads.get(id); if (cur) threads.set(id, { ...cur, ...patch }); };
   return {
     messages,
@@ -115,7 +180,7 @@ function makeThreadList(seed: boolean): RemoteThreadListAdapter & { messages: Ma
   };
 }
 
-function useSeededHistory(messages: Map<string, { q: string; a: string }>): ThreadHistoryAdapter {
+function useSeededHistory(messages: Map<string, ThreadMessageLike[]>): ThreadHistoryAdapter {
   // El adaptador debe ser estable (la guía de assistant-ui): el cliente se lee en cada llamada, no al montar.
   const aui = useAui();
   const auiRef = React.useRef(aui);
@@ -125,31 +190,92 @@ function useSeededHistory(messages: Map<string, { q: string; a: string }>): Thre
       const item = (auiRef.current as unknown as { threadListItem: () => { getState: () => { remoteId?: string } } }).threadListItem();
       const seed = item.getState().remoteId ? messages.get(item.getState().remoteId as string) : undefined;
       if (!seed) return { messages: [] };
-      return ExportedMessageRepository.fromArray([
-        { role: 'user', content: seed.q },
-        { role: 'assistant', content: seed.a },
-      ]);
+      return ExportedMessageRepository.fromArray(seed);
     },
     async append() { /* en memoria: el runtime ya guarda la conversación viva */ },
   }), [messages]);
 }
 
-export function AuiDemoRuntime({ children, seed = false, voice = false }: { children: React.ReactNode; seed?: boolean; voice?: boolean }) {
-  const list = React.useMemo(() => makeThreadList(seed), [seed]);
-  const model = React.useMemo(makeModel, []);
+export interface AuiDemoRuntimeProps {
+  children: React.ReactNode;
+  /** Siembra los hilos de los tableros de lista de hilos. */
+  seed?: boolean;
+  voice?: boolean;
+  /** Las respuestas razonan antes de contestar. */
+  reasoning?: boolean;
+  /** Monta el administrador MCP con los servidores de ejemplo. */
+  mcp?: boolean;
+  /** Hilos propios de la demo (además de los de `seed`). */
+  threads?: DemoThread[];
+  /** Abre este hilo al montar. */
+  startIn?: string;
+  /** Los adjuntos tardan en subir; `failNextUpload()` hace fallar la siguiente subida. */
+  slowUploads?: boolean;
+}
+
+/** Subida de ejemplo: 1,8 s en curso y luego lista (o fallida, si se pidió). */
+const UPLOAD_MS = 1800;
+let failNext = false;
+export function failNextUpload() { failNext = true; }
+const UPLOAD_ERROR = 'No se pudo subir el archivo.';
+function slowAttachments(inner: AttachmentAdapter): AttachmentAdapter {
+  return {
+    accept: inner.accept,
+    async *add({ file }) {
+      const base = await inner.add({ file }) as PendingAttachment;
+      yield { ...base, status: { type: 'running', reason: 'uploading', progress: 0 } };
+      const fail = failNext;
+      failNext = false;
+      await wait(UPLOAD_MS);
+      if (fail) {
+        yield { ...base, status: { type: 'incomplete', reason: 'error', message: UPLOAD_ERROR } as unknown as PendingAttachment['status'] };
+        return;
+      }
+      yield { ...base, status: { type: 'requires-action', reason: 'composer-send' } };
+    },
+    remove: (a) => inner.remove(a),
+    send: (a, o) => inner.send(a, o),
+  };
+}
+
+function StartIn({ id }: { id: string }) {
+  const aui = useAui();
+  const done = React.useRef(false);
+  const loaded = useAuiState((st) => !st.threads.isLoading);
+  React.useEffect(() => {
+    if (done.current || !loaded) return;
+    done.current = true;
+    void (aui as unknown as { threads: () => { switchToThread: (id: string) => Promise<void> } }).threads().switchToThread(id);
+  }, [aui, id, loaded]);
+  return null;
+}
+
+export function AuiDemoRuntime(props: AuiDemoRuntimeProps) {
+  // El administrador MCP (react-mcp 0.1.20) entra en un ciclo de actualizaciones si se monta en el mismo commit que
+  // dispara un evento del navegador (p. ej. al navegar por hash); montado desde un efecto no pasa.
+  const [ready, setReady] = React.useState(!props.mcp);
+  React.useEffect(() => { setReady(true); }, []);
+  return ready ? <DemoRuntime {...props} /> : null;
+}
+
+function DemoRuntime({ children, seed = false, voice = false, reasoning = false, mcp = false, threads, startIn, slowUploads = false }: AuiDemoRuntimeProps) {
+  const list = React.useMemo(() => makeThreadList([...(seed ? SEED_THREADS : []), ...(threads ?? [])]), [seed, threads]);
+  const uploads = React.useMemo(() => (slowUploads ? slowAttachments(attachments) : attachments), [slowUploads]);
+  const model = React.useMemo(() => makeModel(reasoning), [reasoning]);
+  if (mcp) installMockMcp();
   const adapter = React.useMemo<RemoteThreadListAdapter>(() => ({
     ...list,
     unstable_useAdapters: function useDemoAdapters() {
       const history = useSeededHistory(list.messages);
-      return React.useMemo(() => ({ history, attachments }), [history]);
+      return React.useMemo(() => ({ history, attachments: uploads }), [history]);
     },
-  }), [list]);
+  }), [list, uploads]);
   const runtime = useRemoteThreadListRuntime({
     runtimeHook: function useDemoThreadRuntime() {
-      return useLocalRuntime(model, { adapters: { suggestion: suggestionAdapter, attachments, ...(voice ? { voice: voiceAdapter } : {}) } });
+      return useLocalRuntime(model, { adapters: { suggestion: suggestionAdapter, attachments: uploads, ...(voice ? { voice: voiceAdapter } : {}) } });
     },
     adapter,
   });
-  const config = React.useMemo(() => AuiConfig({ suggestions: Suggestions(DEMO_SUGGESTIONS) }), []);
-  return <AssistantRuntimeProvider runtime={runtime} config={config}>{children}</AssistantRuntimeProvider>;
+  const config = React.useMemo(() => AuiConfig({ suggestions: Suggestions(DEMO_SUGGESTIONS), ...(mcp ? { mcp: demoMcpManager() } : {}) }), [mcp]);
+  return <AssistantRuntimeProvider runtime={runtime} config={config}>{startIn ? <StartIn id={startIn} /> : null}{children}</AssistantRuntimeProvider>;
 }

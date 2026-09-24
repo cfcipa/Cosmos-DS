@@ -9,6 +9,7 @@ import { Sun, Moon, ChevronRight } from 'lucide-react';
 import { CosmosProvider } from '../src/CosmosProvider';
 import { SECTIONS, findElement } from './registry';
 import type { ElementEntry, Section } from './registry';
+import { McpAuthorizePage, McpCallbackPage } from './elements/AuiMcpConfig';
 
 type Mode = 'light' | 'dark';
 const load = (): Mode => { try { return localStorage.getItem('cds-mode') === 'dark' ? 'dark' : 'light'; } catch { return 'light'; } };
@@ -90,6 +91,8 @@ function Sidebar({ path }: { path: string }) {
 
 function Route({ path }: { path: string }) {
   const [, root, slug] = path.split('/');
+  if (root === 'mcp-autorizar') return <McpAuthorizePage />;
+  if (root === 'mcp-callback') return <McpCallbackPage />;
   if (root === 'elements' && slug) {
     const hit = findElement(slug);
     if (hit) return <ElementDetail section={hit.section} element={hit.element} />;

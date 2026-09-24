@@ -4,6 +4,9 @@
 // acopla abajo y el hilo sigue la respuesta. El usuario edita en su lugar (Cancelar / Actualizar); cada respuesta
 // tiene copiar, regenerar y «Más» (exportar como Markdown), ocultos mientras corre y siempre visibles en la última;
 // con varias versiones aparece «n / m». Ir al final se desactiva cuando ya estás abajo. Enviar pasa a detener.
+// Las respuestas llevan formato (Markdown) y su razonamiento en un visor plegable. Opcionales: el tiempo del mensaje en
+// la barra de acciones (`messageTiming`), el uso del contexto en el composer (`modelContextWindow`) y el mapa de la
+// conversación junto al hilo (`conversationMap`).
 import * as React from 'react';
 import {
   ActionBarMorePrimitive,
@@ -14,7 +17,6 @@ import {
   ComposerPrimitive,
   ErrorPrimitive,
   groupPartByType,
-  MessagePartPrimitive,
   MessagePrimitive,
   SuggestionPrimitive,
   ThreadPrimitive,
@@ -24,15 +26,14 @@ import {
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import ButtonBase from '@mui/material/ButtonBase';
-import Collapse from '@mui/material/Collapse';
 import Paper from '@mui/material/Paper';
 import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import { visuallyHidden } from '@mui/utils';
 import { keyframes, styled } from '@mui/material/styles';
 import {
-  ArrowDown, ArrowUp, Check, ChevronDown, ChevronLeft, ChevronRight, Copy, Download, FileText, Mic,
+  ArrowDown, ArrowUp, Check, ChevronLeft, ChevronRight, Copy, Download, FileText, Mic,
   MoreHorizontal, Pencil, RefreshCw, Square, ThumbsDown, ThumbsUp,
 } from 'lucide-react';
 import { ToolCall, ToolGroup, type ToolCallStatus } from '../tool-call';
@@ -42,6 +43,13 @@ import { AuiIconButton } from './AuiIconButton';
 import { AuiComposerAddAttachment, AuiComposerAttachments, AuiUserMessageAttachments } from './Attachment';
 import { AuiFollowupSuggestions } from './FollowupSuggestions';
 import { auiMenuContent, auiMenuItem } from './menu';
+import { AuiContextDisplayRing } from './ContextDisplay';
+import { AuiConversationMapRail } from './ConversationMap';
+import { AuiMarkdownText } from './MarkdownText';
+import { AuiMessageTiming, AuiMessageTimingFooter } from './MessageTiming';
+import { AuiReasoningGroup } from './Reasoning';
+
+export type AuiThreadTiming = { design?: 'badge' | 'footer'; side?: 'top' | 'right' | 'bottom' | 'left' };
 
 export type AuiThreadComponents = {
   AssistantMessage?: React.ComponentType;
@@ -57,6 +65,13 @@ export interface AuiThreadProps {
   welcome?: string;
   /** Default 'Escribe un mensaje…'. */
   placeholder?: string;
+  /** Tiempos de cada respuesta: la insignia en la barra de acciones (`true` o `{ design: 'badge', side }`) o el pie
+   * de estadísticas bajo el texto (`{ design: 'footer' }`). */
+  messageTiming?: boolean | AuiThreadTiming;
+  /** Ventana de contexto del modelo, en tokens: muestra el anillo de uso en el composer. */
+  modelContextWindow?: number;
+  /** Muestra el mapa de la conversación a un lado del hilo. `true` = izquierda. */
+  conversationMap?: boolean | 'left' | 'right';
 }
 
 /** Medidas de assistant-ui: columna de 44rem, composer con 8px de relleno, botones de 28px, íconos de 16px. */
@@ -66,11 +81,14 @@ const ICON_SIZE = 16;
 const STOP_SIZE = 14;
 /** Espacio que reserva la barra de acciones bajo cada respuesta (min-h-7.5). */
 const ACTION_BAR = 3.75;
+/** Con el mapa de la conversación, el hilo deja libre su riel (24px más 12px a cada lado). */
+const MAP_GUTTER = 6;
 
 const pulse = keyframes`0%, 100% { opacity: 1; } 50% { opacity: .35; }`;
 
 const ComponentsContext = React.createContext<AuiThreadComponents>({});
-const LabelsContext = React.createContext({ welcome: '¿En qué te ayudo hoy?', placeholder: 'Escribe un mensaje…' });
+type ThreadOptions = { welcome: string; placeholder: string; timing?: AuiThreadTiming; modelContextWindow?: number };
+const LabelsContext = React.createContext<ThreadOptions>({ welcome: '¿En qué te ayudo hoy?', placeholder: 'Escribe un mensaje…' });
 
 // Al arrancar, el hilo de carga cuenta como chat nuevo (composer centrado); cambiar a un hilo que aún trae su
 // historial muestra el esqueleto, no la bienvenida.
@@ -86,21 +104,30 @@ const messageGroupBy = groupPartByType({
 const Root = styled(ThreadPrimitive.Root)(({ theme: t }) => ({ display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: t.palette.background.paper }));
 const Viewport = styled(ThreadPrimitive.Viewport)({ position: 'relative', display: 'flex', flex: 1, flexDirection: 'column', overflowX: 'auto', overflowY: 'scroll', scrollBehavior: 'smooth' });
 const ViewportFooter = styled(ThreadPrimitive.ViewportFooter)(({ theme: t }) => ({
-  display: 'flex', flexDirection: 'column', gap: t.spacing(2), paddingBottom: t.spacing(2), backgroundColor: 'inherit',
+  display: 'flex', flexDirection: 'column', gap: t.spacing(2), paddingBottom: t.spacing(2), backgroundColor: t.palette.background.paper,
   '&[data-docked="true"]': { position: 'sticky', bottom: 0, marginTop: 'auto' },
   [t.breakpoints.up('md')]: { paddingBottom: t.spacing(3) },
 }));
 
-export function AuiThread({ components = {}, autoFocus = true, welcome = '¿En qué te ayudo hoy?', placeholder = 'Escribe un mensaje…' }: AuiThreadProps) {
+export function AuiThread({
+  components = {}, autoFocus = true, welcome = '¿En qué te ayudo hoy?', placeholder = 'Escribe un mensaje…', messageTiming = false, modelContextWindow, conversationMap,
+}: AuiThreadProps) {
   const isEmpty = useAuiState(isNewChatView);
-  const labels = React.useMemo(() => ({ welcome, placeholder }), [welcome, placeholder]);
+  const timingDesign = messageTiming === true ? 'badge' : messageTiming ? messageTiming.design ?? 'badge' : undefined;
+  const timingSide = typeof messageTiming === 'object' ? messageTiming.side : undefined;
+  const labels = React.useMemo(
+    () => ({ welcome, placeholder, timing: timingDesign ? { design: timingDesign, side: timingSide } : undefined, modelContextWindow }),
+    [welcome, placeholder, timingDesign, timingSide, modelContextWindow],
+  );
+  const mapSide = conversationMap === true ? 'left' : conversationMap || undefined;
   const Welcome = components.Welcome ?? ThreadWelcome;
   return (
     <ComponentsContext.Provider value={components}>
       <LabelsContext.Provider value={labels}>
         <Root data-slot="aui-thread">
           <Viewport turnAnchor="top" data-slot="aui-thread-viewport">
-            <Box sx={{ mx: 'auto', display: 'flex', flexDirection: 'column', flex: 1, width: '100%', maxWidth: THREAD_MAX_WIDTH, boxSizing: 'border-box', px: 2, pt: 2, justifyContent: isEmpty ? 'center' : undefined }}>
+            {mapSide ? <AuiConversationMapRail side={mapSide} /> : null}
+            <Box sx={{ mx: 'auto', display: 'flex', flexDirection: 'column', flex: 1, width: '100%', maxWidth: THREAD_MAX_WIDTH, boxSizing: 'border-box', px: 2, pt: 2, ...(mapSide ? { [mapSide === 'left' ? 'pl' : 'pr']: MAP_GUTTER } : null), justifyContent: isEmpty ? 'center' : undefined }}>
               <AuiIf condition={isNewChatView}><Welcome /></AuiIf>
               <AuiIf condition={isHistoryLoadingView}><HistorySkeleton /></AuiIf>
               <Stack spacing={3} data-slot="aui-message-group" sx={{ mb: 7, '&:empty': { display: 'none' } }}>
@@ -123,7 +150,7 @@ export function AuiThread({ components = {}, autoFocus = true, welcome = '¿En q
 function HistorySkeleton() {
   return (
     <Stack spacing={3} role="status" sx={(t) => riseSx(t, 150)}>
-      <Box component="span" sx={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>Cargando la conversación</Box>
+      <Box component="span" sx={visuallyHidden}>Cargando la conversación</Box>
       <Skeleton variant="rounded" sx={{ ml: 'auto', width: '40%', height: (t) => t.spacing(4.5) }} />
       <Stack spacing={1}><Skeleton width="92%" /><Skeleton width="80%" /><Skeleton width="60%" /></Stack>
       <Skeleton variant="rounded" sx={{ ml: 'auto', width: '33%', height: (t) => t.spacing(4.5) }} />
@@ -211,7 +238,7 @@ const roundFilled = {
 } as const;
 
 function Composer({ autoFocus }: { autoFocus: boolean }) {
-  const { placeholder } = React.useContext(LabelsContext);
+  const { placeholder, modelContextWindow } = React.useContext(LabelsContext);
   const isSending = useAuiState((s) => s.composer.submission !== undefined && !(s.thread.isRunning && s.thread.capabilities.cancel));
   return (
     <Box component={ComposerPrimitive.Root} sx={{ position: 'relative', display: 'flex', flexDirection: 'column', width: '100%' }} data-slot="aui-composer">
@@ -222,6 +249,7 @@ function Composer({ autoFocus }: { autoFocus: boolean }) {
           <Stack direction="row" alignItems="center" justifyContent="space-between">
             <AuiComposerAddAttachment />
             <Stack direction="row" alignItems="center" spacing={0.75}>
+              {modelContextWindow ? <AuiContextDisplayRing modelContextWindow={modelContextWindow} /> : null}
               <AuiIf condition={(s) => s.thread.capabilities.dictation}>
                 <AuiIf condition={(s) => s.composer.dictation == null}>
                   <ComposerPrimitive.Dictate asChild>
@@ -273,29 +301,9 @@ function MessageError() {
   );
 }
 
-/** El texto de la respuesta, tal cual llega (con saltos de línea). */
+/** El texto de la respuesta, con formato. */
 function TextPart() {
-  return (
-    <Typography variant="body1" component="div" sx={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', '& + &': { mt: 1.5 } }}>
-      <MessagePartPrimitive.Text />
-    </Typography>
-  );
-}
-
-/** Razonamiento: plegado, con su texto en secundario al abrir. */
-function ReasoningBlock({ running, children }: { running: boolean; children: React.ReactNode }) {
-  const [open, setOpen] = React.useState(false);
-  return (
-    <Box sx={{ my: 1 }}>
-      <ButtonBase onClick={() => setOpen((o) => !o)} aria-expanded={open} sx={(t) => ({ ...t.typography.body2, gap: 0.5, color: 'text.secondary', borderRadius: 1, '&.Mui-focusVisible': { outline: `2px solid ${t.palette.ai.focusRing}` } })}>
-        {running ? 'Razonando' : 'Razonamiento'}
-        <Box component="span" sx={(t) => ({ display: 'flex', transform: open ? 'rotate(180deg)' : 'none', transition: t.transitions.create('transform', { duration: t.transitions.duration.shorter }) })}><ChevronDown size={ICON_SIZE} /></Box>
-      </ButtonBase>
-      <Collapse in={open}>
-        <Typography variant="body2" color="text.secondary" component="div" aria-busy={running} sx={{ whiteSpace: 'pre-wrap', mt: 1, pl: 1.5, borderLeft: 2, borderColor: 'divider' }}>{children}</Typography>
-      </Collapse>
-    </Box>
-  );
+  return <Box sx={{ '& + &': { mt: 1.5 } }}><AuiMarkdownText /></Box>;
 }
 
 type ToolPart = React.ComponentProps<ToolCallMessagePartComponent>;
@@ -314,6 +322,7 @@ const DefaultToolFallback: ToolCallMessagePartComponent = (part) => (
 
 function AssistantMessage() {
   const { ToolFallback = DefaultToolFallback } = React.useContext(ComponentsContext);
+  const { timing } = React.useContext(LabelsContext);
   return (
     <Box
       component={MessagePrimitive.Root}
@@ -330,11 +339,11 @@ function AssistantMessage() {
               case 'group-tool':
                 return <Box sx={{ my: 1 }}><ToolGroup count={part.indices.length} active={part.status.type === 'running'} variant="ghost">{children}</ToolGroup></Box>;
               case 'group-reasoning':
-                return <ReasoningBlock running={part.status.type === 'running'}>{children}</ReasoningBlock>;
+                return <AuiReasoningGroup streaming={part.status.type === 'running'}>{children}</AuiReasoningGroup>;
               case 'text':
                 return <TextPart />;
               case 'reasoning':
-                return <Box component="span" sx={{ whiteSpace: 'pre-wrap' }}>{part.text}</Box>;
+                return <AuiMarkdownText />;
               case 'tool-call':
                 return part.toolUI ?? <ToolFallback {...part} />;
               case 'data':
@@ -357,6 +366,7 @@ function AssistantMessage() {
           }}
         </MessagePrimitive.GroupedParts>
         <MessageError />
+        {timing?.design === 'footer' ? <AuiMessageTimingFooter sx={{ mt: 1.5 }} /> : null}
       </Box>
       <Stack direction="row" alignItems="center" sx={(t) => ({ ml: 1, minHeight: t.spacing(ACTION_BAR), pt: 0.75 })}>
         <BranchPicker />
@@ -380,6 +390,7 @@ function CopyIcon() {
 }
 
 function AssistantActionBar() {
+  const { timing } = React.useContext(LabelsContext);
   return (
     <ActionBarRoot hideWhenRunning autohide="not-last">
       <ActionBarPrimitive.Copy asChild>
@@ -406,6 +417,7 @@ function AssistantActionBar() {
           </ActionBarPrimitive.ExportMarkdown>
         </MoreContent>
       </ActionBarMorePrimitive.Root>
+      {timing?.design === 'badge' ? <AuiMessageTiming side={timing.side} /> : null}
     </ActionBarRoot>
   );
 }

@@ -56,6 +56,12 @@ import { AuiAssistantModalDoc, AuiAssistantModalCard } from './elements/AuiAssis
 import { AuiAssistantSidebarDoc, AuiAssistantSidebarCard } from './elements/AuiAssistantSidebar';
 import { AuiThreadListDoc, AuiThreadListCard } from './elements/AuiThreadList';
 import { AuiThreadListSidebarDoc, AuiThreadListSidebarCard } from './elements/AuiThreadListSidebar';
+import { AuiReasoningDoc, AuiReasoningCard } from './elements/AuiReasoning';
+import { AuiMessageTimingDoc, AuiMessageTimingCard } from './elements/AuiMessageTiming';
+import { AuiConversationMapDoc, AuiConversationMapCard } from './elements/AuiConversationMap';
+import { AuiContextDisplayDoc, AuiContextDisplayCard } from './elements/AuiContextDisplay';
+import { AuiMcpConfigDoc, AuiMcpConfigCard } from './elements/AuiMcpConfig';
+import { AuiAttachmentDoc, AuiAttachmentCard } from './elements/AuiAttachment';
 import { AuiOrbDoc, AuiOrbCard } from './elements/AuiOrb';
 
 export interface ElementEntry {
@@ -154,6 +160,12 @@ export const SECTIONS: Section[] = [
       { slug: 'aui-thread-list', title: 'Thread list', description: 'Cambio de conversación respaldado por el runtime, con búsqueda, selección activa y acciones por hilo.', Card: AuiThreadListCard, Doc: AuiThreadListDoc },
       { slug: 'aui-thread-list-sidebar', title: 'Thread list sidebar', description: 'Una estructura de barra lateral completa que pone la lista de hilos junto a la conversación activa.', Card: AuiThreadListSidebarCard, Doc: AuiThreadListSidebarDoc },
       { slug: 'aui-orb', title: 'Orb', description: 'El orbe de voz en tiempo real, con controles de conexión, silencio y estado de habla.', Card: AuiOrbCard, Doc: AuiOrbDoc },
+      { slug: 'aui-reasoning', title: 'Reasoning', description: 'Un visor plegable del razonamiento del asistente que sigue la parte activa del mensaje.', Card: AuiReasoningCard, Doc: AuiReasoningDoc },
+      { slug: 'aui-message-timing', title: 'Message timing', description: 'Estadísticas del streaming del mensaje actual: primer token, tiempo total y velocidad.', Card: AuiMessageTimingCard, Doc: AuiMessageTimingDoc },
+      { slug: 'aui-conversation-map', title: 'Conversation map', description: 'Un riel de todo el hilo: una marca por turno, la que lees resaltada, las visibles más marcadas, vista previa y salto con un clic.', Card: AuiConversationMapCard, Doc: AuiConversationMapDoc },
+      { slug: 'aui-context-display', title: 'Context display', description: 'El uso del contexto del modelo como anillo, barra o texto, con una vista detallada al pasar el cursor.', Card: AuiContextDisplayCard, Doc: AuiContextDisplayDoc },
+      { slug: 'aui-mcp-config', title: 'MCP config dialog', description: 'Un diálogo para conectores y servidores MCP propios, con autenticación y estado de conexión.', Card: AuiMcpConfigCard, Doc: AuiMcpConfigDoc },
+      { slug: 'aui-attachment', title: 'Attachment', description: 'Adjuntos del runtime para el composer y los mensajes, con vista previa, progreso y opción de quitarlos.', Card: AuiAttachmentCard, Doc: AuiAttachmentDoc },
       { slug: 'tool-approval', title: 'Tool approval', description: 'Una herramienta que pide la aprobación de la persona antes de cambiar datos y sigue según su respuesta.', Card: ToolApprovalCard, Doc: ToolApprovalDoc },
     ],
   },
