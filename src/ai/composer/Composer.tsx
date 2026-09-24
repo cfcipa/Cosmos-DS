@@ -92,7 +92,10 @@ export function ComposerSend({ running, disabled, onCancel, sendLabel = 'Enviar 
             '&.Mui-disabled': { bgcolor: 'action.disabledBackground', color: 'action.disabled' },
           }}
         >
-          {running ? <Square size={ICON_SIZE - 6} fill="currentColor" /> : <ArrowUp size={ICON_SIZE} strokeWidth={2.25} />}
+          {/* Mismo cuadro para las dos glifos: el botón no cambia de tamaño al pasar a detener. */}
+          <Box component="span" aria-hidden="true" sx={{ width: ICON_SIZE, height: ICON_SIZE, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+            {running ? <Square size={ICON_SIZE - 6} fill="currentColor" /> : <ArrowUp size={ICON_SIZE} strokeWidth={2.25} />}
+          </Box>
         </IconButton>
       </span>
     </Tooltip>

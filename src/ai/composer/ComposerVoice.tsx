@@ -76,7 +76,10 @@ export function ComposerVoiceButton({ active, onClick, disabled }: { active: boo
           onClick={onClick}
           sx={active ? { bgcolor: 'error.main', color: 'error.contrastText', '&:hover': { bgcolor: 'error.dark' } } : undefined}
         >
-          {active ? <Square size={12} fill="currentColor" /> : <Mic size={18} />}
+          {/* Mismo cuadro para las dos glifos: el botón no cambia de tamaño al empezar a grabar. */}
+          <Box component="span" aria-hidden="true" sx={{ width: 18, height: 18, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+            {active ? <Square size={12} fill="currentColor" /> : <Mic size={18} />}
+          </Box>
         </IconButton>
       </span>
     </Tooltip>
