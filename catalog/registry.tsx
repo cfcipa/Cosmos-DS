@@ -17,6 +17,14 @@ import { TimestampsDoc, TimestampsCard } from './elements/Timestamps';
 import { SpeakerIdentityDoc, SpeakerIdentityCard } from './elements/SpeakerIdentity';
 import { RegenerateMenuDoc, RegenerateMenuCard } from './elements/RegenerateMenu';
 import { ConfidenceDoc, ConfidenceCard } from './elements/Confidence';
+import { WebSearchDoc, WebSearchCard } from './elements/WebSearch';
+import { InlineCitationDoc, InlineCitationCard } from './elements/InlineCitation';
+import { ImageGenerationDoc, ImageGenerationCard } from './elements/ImageGeneration';
+import { RetrievalChunksDoc, RetrievalChunksCard } from './elements/RetrievalChunks';
+import { DocumentReferenceDoc, DocumentReferenceCard } from './elements/DocumentReference';
+import { MemoryChipsDoc, MemoryChipsCard } from './elements/MemoryChips';
+import { ResearchReportDoc, ResearchReportCard } from './elements/ResearchReport';
+import { MapAnswerDoc, MapAnswerCard } from './elements/MapAnswer';
 import { ToolApprovalDoc, ToolApprovalCard } from './elements/ToolApproval';
 
 export interface ElementEntry {
@@ -56,6 +64,18 @@ export const SECTIONS: Section[] = [
       { slug: 'speaker-identity', title: 'Speaker identity', description: 'Quién habla, cuando un hilo tiene más voces que la persona y un modelo.', Card: SpeakerIdentityCard, Doc: SpeakerIdentityDoc },
       { slug: 'regenerate-with', title: 'Regenerate with', description: 'Bifurca el mismo turno hacia otro modelo en lugar de volver a tirar los mismos dados.', Card: RegenerateMenuCard, Doc: RegenerateMenuDoc },
       { slug: 'confidence', title: 'Confidence', description: 'Qué afirmaciones vienen de una fuente, cuáles se infirieron y cuáles son suposiciones.', Card: ConfidenceCard, Doc: ConfidenceDoc },
+    ],
+  },
+  {
+    id: 'knowledge', title: 'Knowledge', elements: [
+      { slug: 'web-search', title: 'Web search', description: 'Una búsqueda y sus resultados llegando uno a uno mientras el asistente lee.', Card: WebSearchCard, Doc: WebSearchDoc },
+      { slug: 'inline-citation', title: 'Inline citation', description: 'Referencias numeradas dentro de la frase, cada una con una vista previa de su fuente.', Card: InlineCitationCard, Doc: InlineCitationDoc },
+      { slug: 'image-generation', title: 'Image generation', description: 'Una rejilla de puntos sostiene el marco mientras la imagen se aclara desde el desenfoque.', Card: ImageGenerationCard, Doc: ImageGenerationDoc },
+      { slug: 'retrieval-chunks', title: 'Retrieval chunks', description: 'Los pasajes en los que se apoya una respuesta, con su puntaje, antes de que llegue la respuesta.', Card: RetrievalChunksCard, Doc: RetrievalChunksDoc },
+      { slug: 'document-reference', title: 'Document reference', description: 'Un documento en el que se apoya la respuesta, con el pasaje citado y la página a la que saltar.', Card: DocumentReferenceCard, Doc: DocumentReferenceDoc },
+      { slug: 'memory', title: 'Memory', description: 'Lo que ahora recuerda de ti, escrito durante el turno y que puedes quitar.', Card: MemoryChipsCard, Doc: MemoryChipsDoc },
+      { slug: 'research-report', title: 'Research report', description: 'Un esquema que se llena sección por sección, cada una con las fuentes que la respaldan.', Card: ResearchReportCard, Doc: ResearchReportDoc },
+      { slug: 'map', title: 'Map', description: 'Una respuesta de ubicación: pines, una ruta entre ellos y la lista de donde salen.', Card: MapAnswerCard, Doc: MapAnswerDoc },
     ],
   },
   {

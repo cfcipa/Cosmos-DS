@@ -28,5 +28,13 @@ export * from './ai/day-separator';
 export * from './ai/speaker-identity';
 export * from './ai/regenerate-menu';
 export * from './ai/confidence-marker';
+export * from './ai/web-search';
+export * from './ai/inline-citation';
+export * from './ai/image-generation';
+export * from './ai/retrieval-chunks';
+export * from './ai/document-reference';
+export * from './ai/memory-chips';
+export * from './ai/research-report';
+export * from './ai/map-answer';
 // 3 · Tool use
 export * from './ai/tool-call';
