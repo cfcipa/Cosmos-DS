@@ -17,5 +17,6 @@ export * from './ai/reasoning-effort';
 export * from './ai/guardrail-notice';
 // Messages
 export * from './ai/message-pair';
+export * from './ai/message-branches';
 // 3 · Tool use
 export * from './ai/tool-call';

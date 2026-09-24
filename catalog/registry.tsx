@@ -6,6 +6,7 @@ import { TypingIndicatorDoc, TypingIndicatorCard } from './elements/TypingIndica
 import { ReasoningEffortDoc, ReasoningEffortCard } from './elements/ReasoningEffort';
 import { GuardrailNoticeDoc, GuardrailNoticeCard } from './elements/GuardrailNotice';
 import { MessagePairDoc, MessagePairCard } from './elements/MessagePair';
+import { MessageBranchesDoc, MessageBranchesCard } from './elements/MessageBranches';
 
 export interface ElementEntry {
   slug: string;
@@ -33,6 +34,7 @@ export const SECTIONS: Section[] = [
   {
     id: 'messages', title: 'Messages', elements: [
       { slug: 'message-pair', title: 'Message pair', description: 'Una burbuja del usuario y una respuesta que llega en vivo, con acciones que aparecen al pasar el cursor.', Card: MessagePairCard, Doc: MessagePairDoc },
+      { slug: 'message-branches', title: 'Message branches', description: 'Recorre las versiones regeneradas de una misma respuesta sin perder tu lugar.', Card: MessageBranchesCard, Doc: MessageBranchesDoc },
     ],
   },
 ];
