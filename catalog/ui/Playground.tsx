@@ -41,7 +41,7 @@ export function PropRow({ label, children }: { label: string; children: React.Re
   return (
     <Stack direction="row" spacing={2} alignItems="center" sx={{ minHeight: 32 }}>
       <Typography variant="body2" color="text.secondary" sx={{ width: 112, flexShrink: 0 }}>{label}</Typography>
-      <Stack direction="row" useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center', gap: 1, minWidth: 0, flex: 1 }}>{children}</Stack>
+      <Stack direction="row" useFlexGap sx={{ flexWrap: 'wrap', alignItems: 'center', gap: 1, minWidth: 0, flex: 1, overflowX: 'auto' }}>{children}</Stack>
     </Stack>
   );
 }
