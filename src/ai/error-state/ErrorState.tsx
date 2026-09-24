@@ -10,6 +10,7 @@ import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { keyframes } from '@mui/material/styles';
+import type { Theme } from '@mui/material/styles';
 import { CircleAlert, RefreshCw } from 'lucide-react';
 import { REDUCED_MOTION, shimmerTextSx } from '../lib/shimmerText';
 
@@ -28,7 +29,7 @@ export interface ErrorStateProps {
 
 const spin = keyframes`to { transform: rotate(360deg); }`;
 const fadein = keyframes`from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: none; }`;
-const enter = { animation: `${fadein} .3s ease-out`, [REDUCED_MOTION]: { animation: 'none' } };
+const enter = (t: Theme) => ({ animation: `${fadein} ${t.transitions.duration.complex}ms ${t.transitions.easing.easeOut}`, [REDUCED_MOTION]: { animation: 'none' } });
 
 export function ErrorState({
   title,
@@ -41,7 +42,7 @@ export function ErrorState({
 }: ErrorStateProps) {
   if (retrying) {
     return (
-      <Stack key="retrying" role="status" direction="row" alignItems="center" spacing={1} className={className} data-slot="error-state" sx={{ px: 2, py: 1.5, ...enter }}>
+      <Stack key="retrying" role="status" direction="row" alignItems="center" spacing={1} className={className} data-slot="error-state" sx={(t) => ({ px: 2, py: 1.5, ...enter(t) })}>
         <Box component="span" aria-hidden="true" sx={{ display: 'inline-flex', color: 'text.secondary', animation: `${spin} 1s linear infinite`, [REDUCED_MOTION]: { animation: 'none' } }}>
           <RefreshCw size={16} />
         </Box>

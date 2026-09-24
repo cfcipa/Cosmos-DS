@@ -55,13 +55,13 @@ export function EditMessage({
             color: 'ai.userBubbleText',
             textAlign: 'left',
             ...t.typography.body1,
-            '& [data-slot="edit-hint"]': { opacity: 0, transition: 'opacity .15s' },
+            '& [data-slot="edit-hint"]': { opacity: 0, transition: t.transitions.create('opacity', { duration: t.transitions.duration.shortest }) },
             '&:hover [data-slot="edit-hint"], &.Mui-focusVisible [data-slot="edit-hint"]': { opacity: 1 },
             '&.Mui-focusVisible': { outline: `2px solid ${t.palette.ai.focusRing}`, outlineOffset: 2 },
           })}
         >
           {value}
-          <Box component="span" data-slot="edit-hint" aria-hidden="true" sx={{ position: 'absolute', top: 8, right: 8, display: 'inline-flex', color: 'primary.main' }}>
+          <Box component="span" data-slot="edit-hint" aria-hidden="true" sx={{ position: 'absolute', top: (t) => t.spacing(1), right: (t) => t.spacing(1), display: 'inline-flex', color: 'primary.main' }}>
             <Pencil size={14} />
           </Box>
         </ButtonBase>

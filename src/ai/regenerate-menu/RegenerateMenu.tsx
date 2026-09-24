@@ -2,7 +2,8 @@
 // Tablero aprobado «Regenerate with»: bifurca el mismo turno hacia otro modelo en lugar de volver a tirar los mismos dados.
 // Como en assistant-ui: la lista se abre y se cierra solo con el disparador (no con clic afuera ni Esc),
 // marca el modelo actual y, sin onPick, las opciones se muestran pero no se eligen.
-// Botón dividido = ButtonGroup de MUI; la lista es un panel en línea (Paper + MenuList), como en la referencia.
+// Botón dividido = ButtonGroup de MUI. La lista flota bajo el botón (Popper + Paper + MenuList): Popper no se cierra
+// con clic afuera ni con Esc, que es lo que pide la referencia.
 import * as React from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -11,6 +12,7 @@ import ListItemText from '@mui/material/ListItemText';
 import MenuItem from '@mui/material/MenuItem';
 import MenuList from '@mui/material/MenuList';
 import Paper from '@mui/material/Paper';
+import Popper from '@mui/material/Popper';
 import { keyframes } from '@mui/material/styles';
 import { ChevronDown, RefreshCw } from 'lucide-react';
 import { REDUCED_MOTION } from '../lib/shimmerText';
@@ -37,6 +39,9 @@ export interface RegenerateMenuProps {
 }
 
 const spin = keyframes`to { transform: rotate(360deg); }`;
+const fadein = keyframes`from { opacity: 0; transform: translateY(-2px); } to { opacity: 1; transform: none; }`;
+/** Ancho de la lista en el tablero. */
+const MENU_WIDTH = 260;
 
 export function RegenerateMenu({
   options,
@@ -48,9 +53,11 @@ export function RegenerateMenu({
   onPick,
   className,
 }: RegenerateMenuProps) {
+  const [anchor, setAnchor] = React.useState<HTMLDivElement | null>(null);
+
   return (
     <Box className={className} data-slot="regenerate-menu" sx={{ alignSelf: 'flex-start' }}>
-      <ButtonGroup variant="outlined" aria-label="Regenerar">
+      <ButtonGroup ref={setAnchor} variant="outlined" aria-label="Regenerar">
         <Button
           disabled={regenerating}
           onClick={onRegenerate}
@@ -69,8 +76,16 @@ export function RegenerateMenu({
         ) : null}
       </ButtonGroup>
 
-      {open ? (
-        <Paper variant="outlined" sx={{ mt: 0.5, minWidth: 260, width: 'fit-content' }}>
+      <Popper open={open && Boolean(anchor)} anchorEl={anchor} placement="bottom-start" disablePortal sx={{ zIndex: "modal" }}>
+        <Paper
+          elevation={8}
+          sx={(t) => ({
+            mt: 0.5,
+            width: MENU_WIDTH,
+            animation: `${fadein} ${t.transitions.duration.shorter}ms ${t.transitions.easing.easeOut}`,
+            [REDUCED_MOTION]: { animation: 'none' },
+          })}
+        >
           <MenuList aria-label="Regenerar con">
             {options.map((option) => {
               const isCurrent = option.id === currentId;
@@ -79,13 +94,13 @@ export function RegenerateMenu({
                   key={option.id}
                   role="menuitemradio"
                   aria-checked={isCurrent}
-                  selected={isCurrent}
                   disabled={!onPick}
                   onClick={() => onPick?.(option.id)}
                   sx={{ '&.Mui-disabled': { opacity: 1 } }}
                 >
                   <ListItemText
                     primary={option.label}
+                    primaryTypographyProps={isCurrent ? { fontWeight: 'fontWeightMedium' } : undefined}
                     secondary={isCurrent ? 'actual' : option.detail}
                     secondaryTypographyProps={isCurrent ? { color: 'primary.main' } : undefined}
                   />
@@ -94,7 +109,7 @@ export function RegenerateMenu({
             })}
           </MenuList>
         </Paper>
-      ) : null}
+      </Popper>
     </Box>
   );
 }

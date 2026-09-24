@@ -3,6 +3,7 @@
 // Como en assistant-ui: motivos de selección múltiple, una nota opcional y, al enviar, un agradecimiento en su lugar.
 // La región de estado está montada siempre, para que el lector de pantalla anuncie el agradecimiento.
 import * as React from 'react';
+import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
@@ -10,7 +11,10 @@ import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import { keyframes } from '@mui/material/styles';
+import type { Theme } from '@mui/material/styles';
 import { Check } from 'lucide-react';
+import { REDUCED_MOTION } from '../lib/shimmerText';
 
 export interface FeedbackDialogProps {
   reasons: readonly string[];
@@ -29,6 +33,9 @@ export interface FeedbackDialogProps {
   className?: string;
 }
 
+const fadein = keyframes`from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: none; }`;
+const enter = (t: Theme) => ({ animation: `${fadein} ${t.transitions.duration.shorter}ms ${t.transitions.easing.easeOut}`, [REDUCED_MOTION]: { animation: 'none' } });
+
 export function FeedbackDialog({
   reasons,
   selected,
@@ -46,16 +53,12 @@ export function FeedbackDialog({
   return (
     <Box className={className} data-slot="feedback-dialog">
       <Box role="status" aria-live="polite">
-        {sent ? (
-          <Stack direction="row" alignItems="center" spacing={1} sx={{ px: 2, py: 1.5, borderRadius: 1, bgcolor: 'ai.surfaceMuted' }}>
-            <Box component="span" aria-hidden="true" sx={{ display: 'inline-flex', color: 'success.main' }}><Check size={16} /></Box>
-            <Typography variant="body1">{thanks}</Typography>
-          </Stack>
-        ) : null}
+        {/* role «none»: el anuncio lo hace la región de estado, que ya estaba montada. */}
+        {sent ? <Alert severity="success" role="none" icon={<Check size={18} />} sx={enter}>{thanks}</Alert> : null}
       </Box>
 
       {sent ? null : (
-        <Paper variant="outlined" role="group" aria-labelledby={titleId} sx={{ p: 2 }}>
+        <Paper variant="outlined" role="group" aria-labelledby={titleId} sx={(t) => ({ p: 2, ...enter(t) })}>
           <Stack spacing={1.5}>
             <Typography id={titleId} variant="subtitle1">{title}</Typography>
             <Stack direction="row" useFlexGap sx={{ flexWrap: 'wrap', gap: 1 }}>
@@ -68,7 +71,8 @@ export function FeedbackDialog({
                     variant="outlined"
                     color={isSelected ? 'primary' : 'default'}
                     icon={isSelected ? <Check size={16} /> : undefined}
-                    aria-pressed={isSelected}
+                    // Sin onToggleReason el motivo solo se muestra: sin rol de botón ni estado presionado.
+                    aria-pressed={onToggleReason ? isSelected : undefined}
                     onClick={onToggleReason ? () => onToggleReason(reason) : undefined}
                   />
                 );

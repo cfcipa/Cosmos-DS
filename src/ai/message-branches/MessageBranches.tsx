@@ -5,6 +5,7 @@ import * as React from 'react';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
 import { keyframes } from '@mui/material/styles';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { REDUCED_MOTION } from '../lib/shimmerText';
@@ -31,11 +32,11 @@ export interface MessageBranchesProps {
   className?: string;
 }
 
-/** Medidas y tiempos del tablero. */
-const STEP_BUTTON_SIZE = 28;
 const ICON_SIZE = 16;
-const COUNTER_MIN_WIDTH = 40;
-const MESSAGE_MIN_HEIGHT = 72;
+/** Líneas que reserva la respuesta, para que el stepper no salte entre versiones (min-h de la referencia). */
+const RESERVED_LINES = 3;
+/** Ancho del contador en caracteres: «10 / 10» no mueve las flechas. */
+const COUNTER_CH = 7;
 
 const fadein = keyframes`from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: none; }`;
 
@@ -72,20 +73,17 @@ export function MessageBranches({
 
   return (
     <Stack spacing={1.5} className={className} data-slot="message-branches">
-      <Box sx={{ minHeight: MESSAGE_MIN_HEIGHT }}>
-        <Box
+      <Box sx={(t) => ({ minHeight: `calc(${t.typography.body1.lineHeight} * ${RESERVED_LINES})` })}>
+        <Typography
           key={`${currentIndex}-${message}`}
-          component="p"
+          variant="body1"
           sx={(t) => ({
-            m: 0,
-            ...t.typography.body1,
-            color: 'text.primary',
-            animation: `${fadein} .3s ease-out`,
+            animation: `${fadein} ${t.transitions.duration.complex}ms ${t.transitions.easing.easeOut}`,
             [REDUCED_MOTION]: { animation: 'none' },
           })}
         >
           {message}
-        </Box>
+        </Typography>
       </Box>
 
       {showStepper ? (
@@ -94,30 +92,22 @@ export function MessageBranches({
             aria-label={previousLabel}
             disabled={!hasNavigation || (!wraps && isFirst)}
             onClick={goPrevious}
-            sx={{ width: STEP_BUTTON_SIZE, height: STEP_BUTTON_SIZE }}
           >
             <ChevronLeft size={ICON_SIZE} />
           </IconButton>
-          <Box
+          <Typography
+            variant="body3"
             component="span"
+            color="text.secondary"
             aria-live="polite"
-            sx={(t) => ({
-              minWidth: COUNTER_MIN_WIDTH,
-              textAlign: 'center',
-              ...t.aiKit.code,
-              fontSize: t.typography.body3.fontSize,
-              lineHeight: t.typography.body3.lineHeight,
-              color: 'text.secondary',
-              fontVariantNumeric: 'tabular-nums',
-            })}
+            sx={(t) => ({ minWidth: `${COUNTER_CH}ch`, textAlign: 'center', fontFamily: t.aiKit.code.fontFamily, fontVariantNumeric: 'tabular-nums' })}
           >
             {count === 0 ? '0 / 0' : `${currentIndex + 1} / ${count}`}
-          </Box>
+          </Typography>
           <IconButton
             aria-label={nextLabel}
             disabled={!hasNavigation || (!wraps && isLast)}
             onClick={goNext}
-            sx={{ width: STEP_BUTTON_SIZE, height: STEP_BUTTON_SIZE }}
           >
             <ChevronRight size={ICON_SIZE} />
           </IconButton>

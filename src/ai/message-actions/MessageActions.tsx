@@ -30,8 +30,6 @@ export interface MessageActionsProps {
   className?: string;
 }
 
-/** Medidas del tablero. */
-const ACTION_SIZE = 32;
 const ICON_SIZE = 16;
 
 const spin = keyframes`to { transform: rotate(360deg); }`;
@@ -47,11 +45,7 @@ export function MessageActions({
   moreOpen = false,
   className,
 }: MessageActionsProps) {
-  const actionSx = { width: ACTION_SIZE, height: ACTION_SIZE };
-  const reactionSx = (value: Exclude<MessageReaction, null>) => ({
-    ...actionSx,
-    ...(reaction === value ? { color: 'primary.main' } : null),
-  });
+  const reactionSx = (value: Exclude<MessageReaction, null>) => (reaction === value ? { color: 'primary.main' } : undefined);
   const toggleReaction = (value: Exclude<MessageReaction, null>) => onReactionChange(reaction === value ? null : value);
 
   return (
@@ -60,7 +54,7 @@ export function MessageActions({
         <IconButton
           aria-label={copied ? 'Copiado' : 'Copiar respuesta'}
           onClick={onCopy}
-          sx={{ ...actionSx, ...(copied ? { color: 'success.main' } : null) }}
+          sx={copied ? { color: 'success.main' } : undefined}
         >
           {copied ? <Check size={ICON_SIZE} /> : <Copy size={ICON_SIZE} />}
         </IconButton>
@@ -80,7 +74,7 @@ export function MessageActions({
 
       <Tooltip title="Regenerar">
         <span>
-          <IconButton aria-label="Regenerar respuesta" disabled={regenerating} onClick={onRegenerate} sx={actionSx}>
+          <IconButton aria-label="Regenerar respuesta" disabled={regenerating} onClick={onRegenerate}>
             <Box
               component="span"
               sx={{
@@ -100,7 +94,7 @@ export function MessageActions({
           aria-haspopup="menu"
           aria-expanded={moreOpen}
           onClick={(event) => onMore(event.currentTarget)}
-          sx={actionSx}
+         
         >
           <Ellipsis size={ICON_SIZE} />
         </IconButton>

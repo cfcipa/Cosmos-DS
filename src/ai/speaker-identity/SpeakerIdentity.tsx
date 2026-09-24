@@ -30,10 +30,11 @@ export interface SpeakerIdentityProps {
 const KIND_LABEL: Record<SpeakerKind, string> = { user: 'tú', agent: 'agente', subagent: 'subagente', tool: 'herramienta' };
 const ICON_SIZE = 16;
 
+/** Persona y subagente usan los colores de Avatar que define el tema; el agente va en primary y la herramienta, apagada. */
 const avatarColors = (kind: SpeakerKind) => (t: Theme) => {
   if (kind === 'agent') return { bgcolor: primaryTint(t), color: t.palette.primary.main };
   if (kind === 'tool') return { bgcolor: t.palette.ai.surfaceMuted, color: t.palette.action.active };
-  return { bgcolor: t.palette.action.selected, color: t.palette.text.primary };
+  return null;
 };
 
 export function SpeakerIdentity({ turns, className }: SpeakerIdentityProps) {

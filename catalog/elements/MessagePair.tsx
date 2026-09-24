@@ -49,7 +49,7 @@ export function MessagePairDoc() {
         demoHeight={320}
         demo={
           <Box sx={{ position: 'relative', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 3 }}>
-            <IconButton size="small" aria-label="Reproducir de nuevo" title="Reproducir de nuevo" onClick={playback.play} sx={{ position: 'absolute', top: 8, right: 8 }}>
+            <IconButton aria-label="Reproducir de nuevo" title="Reproducir de nuevo" onClick={playback.play} sx={{ position: "absolute", top: (t) => t.spacing(1), right: (t) => t.spacing(1) }}>
               <RotateCcw size={16} />
             </IconButton>
             <Box sx={{ width: '100%', maxWidth: 460 }}>

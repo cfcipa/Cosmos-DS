@@ -8,6 +8,7 @@ import ButtonBase from '@mui/material/ButtonBase';
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import { alpha } from '@mui/material/styles';
 import type { Theme } from '@mui/material/styles';
 
 export type Confidence = 'grounded' | 'inferred' | 'uncertain';
@@ -31,14 +32,27 @@ export interface ConfidenceMarkerProps {
 
 export const CONFIDENCE_LABEL: Record<Confidence, string> = { grounded: 'Con fuente', inferred: 'Inferido', uncertain: 'Incierto' };
 
-/** Subrayado con el degradado de IA del kit: 2px continuo, 1px continuo o 2px punteado. */
+/** Grosor del subrayado: 2px continuo, 1px continuo o 2px punteado (tablero). */
+const THICKNESS: Record<Confidence, string> = { grounded: '2px', inferred: '1px', uncertain: '2px' };
+
+/**
+ * Subrayado con el degradado de IA del kit (markStart → markEnd). El punteado se recorta con el color de la superficie
+ * (background.paper); el tinte del hover va encima de todo, para que el punteado no cambie de tono.
+ */
 const underline = (confidence: Confidence, highlighted: boolean) => (t: Theme) => {
-  const gradient = `linear-gradient(90deg, ${t.palette.ai.markStart}, ${t.palette.ai.markEnd})`;
-  const thickness = confidence === 'inferred' ? '1px' : '2px';
-  const surface = highlighted ? t.palette.action.selected : t.palette.background.paper;
-  const dots = confidence === 'uncertain' ? `repeating-linear-gradient(90deg, transparent 0 2px, ${surface} 2px 4px) left bottom / 100% ${thickness} no-repeat, ` : '';
-  const tint = highlighted ? `, linear-gradient(${t.palette.action.selected}, ${t.palette.action.selected})` : '';
-  return { background: `${dots}${gradient} left bottom / 100% ${thickness} no-repeat${tint}`, WebkitBoxDecorationBreak: 'clone', boxDecorationBreak: 'clone' } as const;
+  const size = `left bottom / 100% ${THICKNESS[confidence]} no-repeat`;
+  const tintColor = alpha(t.palette.primary.main, t.palette.action.selectedOpacity);
+  const layers = [
+    highlighted ? `linear-gradient(${tintColor}, ${tintColor})` : null,
+    confidence === 'uncertain' ? `repeating-linear-gradient(90deg, transparent 0 2px, ${t.palette.background.paper} 2px 4px) ${size}` : null,
+    `linear-gradient(90deg, ${t.palette.ai.markStart}, ${t.palette.ai.markEnd}) ${size}`,
+  ].filter(Boolean);
+  return {
+    background: layers.join(', '),
+    transition: t.transitions.create('background', { duration: t.transitions.duration.shortest }),
+    WebkitBoxDecorationBreak: 'clone',
+    boxDecorationBreak: 'clone',
+  } as const;
 };
 
 export function ConfidenceMarker({ claims, hoveredId, onHover, showLegend = true, className }: ConfidenceMarkerProps) {
@@ -47,7 +61,8 @@ export function ConfidenceMarker({ claims, hoveredId, onHover, showLegend = true
 
   return (
     <Stack spacing={2} className={className} data-slot="confidence-marker">
-      <Typography component="p" variant="body1" sx={{ m: 0, lineHeight: 1.9 }}>
+      {/* Interlineado del tablero (28px, en la escala de spacing): deja sitio al subrayado entre líneas. */}
+      <Typography variant="body1" sx={(t) => ({ lineHeight: t.spacing(3.5) })}>
         {claims.map((claim) => {
           const isHovered = claim.id === hoveredId;
           return (
@@ -83,7 +98,7 @@ export function ConfidenceMarker({ claims, hoveredId, onHover, showLegend = true
       </Typography>
 
       {/* Alto reservado: el fundamento aparece sin mover el resto. */}
-      <Box sx={{ minHeight: (t) => t.spacing(4), display: 'flex', alignItems: 'center' }}>
+      <Box role="status" sx={{ minHeight: (t) => t.spacing(4), display: 'flex', alignItems: 'center' }}>
         {hovered ? (
           <Chip
             id={basisId}

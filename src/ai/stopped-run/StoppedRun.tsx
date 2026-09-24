@@ -26,16 +26,16 @@ const blink = keyframes`0%, 100% { opacity: 1; } 50% { opacity: 0; }`;
 export function StoppedRun({ text, reason, onContinue, onDiscard, className }: StoppedRunProps) {
   return (
     <Stack spacing={1.5} className={className} data-slot="stopped-run">
-      <Typography component="p" variant="body1" sx={{ m: 0 }}>
+      <Typography variant="body1">
         {text}
         <Box
           component="span"
           aria-hidden="true"
-          sx={{ display: 'inline-block', width: 2, height: '1em', ml: 0.25, verticalAlign: 'text-bottom', bgcolor: 'primary.main', animation: `${blink} 1s steps(2) infinite`, [REDUCED_MOTION]: { animation: 'none' } }}
+          sx={{ display: 'inline-block', width: (t) => t.spacing(0.25), height: '1em', ml: 0.25, verticalAlign: 'text-bottom', bgcolor: 'primary.main', animation: `${blink} 1s steps(2) infinite`, [REDUCED_MOTION]: { animation: 'none' } }}
         />
       </Typography>
       <Stack direction="row" alignItems="center" spacing={1}>
-        <Chip size="small" label={reason} sx={(t) => ({ ...t.aiKit.code, fontSize: t.typography.body3.fontSize })} />
+        <Chip size="small" label={reason} sx={(t) => ({ fontFamily: t.aiKit.code.fontFamily, fontSize: t.typography.body3.fontSize, color: 'text.secondary' })} />
         {onContinue ? <Button variant="contained" onClick={onContinue}>Continuar</Button> : null}
         {onDiscard ? <Button variant="text" onClick={onDiscard}>Descartar</Button> : null}
       </Stack>

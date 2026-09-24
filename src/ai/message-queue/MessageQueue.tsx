@@ -45,7 +45,7 @@ export function MessageQueue({ running, queued, onCancel, onSendNext, className 
           <Box
             component="span"
             aria-hidden="true"
-            sx={{ width: 8, height: 8, flexShrink: 0, borderRadius: '50%', bgcolor: 'primary.main', animation: `${pulse} 1.4s ease-in-out infinite`, [REDUCED_MOTION]: { animation: 'none' } }}
+            sx={{ width: (t) => t.spacing(1), height: (t) => t.spacing(1), flexShrink: 0, borderRadius: '50%', bgcolor: 'primary.main', animation: `${pulse} 1.4s ease-in-out infinite`, [REDUCED_MOTION]: { animation: 'none' } }}
           />
           <Typography variant="subtitle2" noWrap sx={{ flexGrow: 1, minWidth: 0 }}>{running}</Typography>
           <Chip size="small" color="primary" variant="outlined" label="en curso" />
@@ -60,21 +60,21 @@ export function MessageQueue({ running, queued, onCancel, onSendNext, className 
         </Typography>
       ) : null}
 
-      <List disablePadding sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+      <Stack component={List} disablePadding spacing={0.75}>
         {queued.map((message) => (
           <ListItem
             key={message.id}
             disableGutters
-            sx={{
+            sx={(t) => ({
               pl: 1.5,
               pr: 0.5,
               border: 1,
               borderColor: 'divider',
               borderRadius: 1,
               bgcolor: 'ai.surfaceMuted',
-              animation: `${fadein} .25s ease-out`,
+              animation: `${fadein} ${t.transitions.duration.enteringScreen}ms ${t.transitions.easing.easeOut}`,
               [REDUCED_MOTION]: { animation: 'none' },
-            }}
+            })}
             secondaryAction={
               <Stack direction="row">
                 {onSendNext ? (
@@ -97,7 +97,7 @@ export function MessageQueue({ running, queued, onCancel, onSendNext, className 
             <ListItemText primary={message.text} primaryTypographyProps={{ variant: 'body2', noWrap: true }} />
           </ListItem>
         ))}
-      </List>
+      </Stack>
     </Stack>
   );
 }
