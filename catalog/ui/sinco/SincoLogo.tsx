@@ -1,6 +1,5 @@
 // El logo de Sinco del tablero «Obligaciones · Composer flotante»: el símbolo en primary y el nombre en el color del
 // texto, para que funcione en claro y oscuro.
-import * as React from 'react';
 import { useTheme } from '@mui/material/styles';
 
 const MARK = [

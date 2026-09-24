@@ -1,8 +1,6 @@
 import * as React from 'react';
-import type { ChatModelAdapter, ThreadMessage } from '@assistant-ui/react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Chip from '@mui/material/Chip';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
@@ -10,6 +8,8 @@ import { alpha } from '@mui/material/styles';
 import { ChartColumn, FileSearch, PencilLine, Sparkles, Text } from 'lucide-react';
 import { AuiInlinePrompt, AuiInlinePromptAnchor, type AuiInlinePromptAction } from '../../src/ai/aui';
 import { DEMO_ATTACHMENTS, demoDictation } from '../ui/AuiDemoRuntime';
+import { lastUserText, textModel } from '../ui/demoStream';
+import { EstadoChip } from '../ui/sinco/parts';
 import { ElementPage, PropRow, PropToggle } from '../ui/Playground';
 
 type Mode = 'hover' | 'selection' | 'record';
@@ -44,21 +44,8 @@ const instructionFor = (key: Key) => (key === 'record'
   ? 'El usuario pregunta por la factura FV-0932 de Ferretería El Roble: <campo>record</campo>'
   : `El usuario pregunta por el campo ${ROWS.find((r) => r.key === key)?.k} de la factura FV-0932: <campo>${key}</campo>`);
 
-const wait = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
-const lastUser = (messages: readonly ThreadMessage[]) => [...messages].reverse().find((m) => m.role === 'user')?.content.map((p) => (p.type === 'text' ? p.text : '')).join(' ') ?? '';
 /** Responde según el campo (que llega en el contexto) y la acción elegida. */
-const MODEL: ChatModelAdapter = {
-  async *run({ abortSignal, messages, context }) {
-    await wait(320);
-    const key = (context?.system?.match(/<campo>(\w+)<\/campo>/)?.[1] ?? 'valor') as Key;
-    const text = ACTION_ANSWERS[lastUser(messages).trim()] ?? ANSWERS[key];
-    for (let n = 4; n < text.length + 4; n += 4) {
-      if (abortSignal.aborted) return;
-      await wait(30);
-      yield { content: [{ type: 'text', text: text.slice(0, n) }] };
-    }
-  },
-};
+const MODEL = textModel(({ messages, context }) => ACTION_ANSWERS[lastUserText(messages).trim()] ?? ANSWERS[(context?.system?.match(/<campo>(\w+)<\/campo>/)?.[1] ?? 'valor') as Key]);
 const ADAPTERS = { attachments: DEMO_ATTACHMENTS, dictation: demoDictation('¿Por qué subió este valor?') };
 
 function Prompt({ id, open, onOpen }: { id: Key; open: boolean; onOpen: (k: Key | null) => void }) {
@@ -87,7 +74,7 @@ function Record({ mode, sel, onSelect, openKey, onOpen, only }: { mode: Mode; se
             <Typography variant="subtitle1" noWrap>Factura FV-0932 · Ferretería El Roble</Typography>
             <Typography variant="caption" color="text.secondary">NIT 900.412.387-1 · Cuentas por pagar</Typography>
           </Stack>
-          <Chip size="small" label="Pendiente" sx={(t) => ({ borderRadius: 1, bgcolor: alpha(t.palette.warning.main, t.palette.action.selectedOpacity), color: 'warning.dark' })} />
+          <EstadoChip estado="pendiente" />
           <Prompt id="record" open={openKey === 'record'} onOpen={onOpen} />
         </AuiInlinePromptAnchor>
       )}

@@ -1,24 +1,15 @@
 // Guiones del modelo de ejemplo para las demos AUI connected: una herramienta que pide aprobación, un grupo de
 // herramientas, una respuesta con fuentes y una con imagen. Cada guion devuelve fragmentos como un ChatModelAdapter.
 import type { ChatModelRunResult, ThreadMessage } from '@assistant-ui/react';
+import { streamText, wait, type DemoPart } from './demoStream';
 
 export type DemoScript = 'answer' | 'approval' | 'tools' | 'sources' | 'image';
 
 type ScriptContext = { abortSignal: AbortSignal; message: () => ThreadMessage | undefined; failTools?: boolean };
-type Part = NonNullable<ChatModelRunResult['content']>[number];
-
-const STEP = 4;
-const TICK_MS = 30;
-const wait = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
+type Part = DemoPart;
 
 /** Escribe `text` de a 4 caracteres, después de `head`. */
-async function* stream(ctx: ScriptContext, head: Part[], text: string, tail: Part[] = []): AsyncGenerator<ChatModelRunResult> {
-  for (let n = STEP; n < text.length + STEP; n += STEP) {
-    if (ctx.abortSignal.aborted) return;
-    await wait(TICK_MS);
-    yield { content: [...head, { type: 'text', text: text.slice(0, n) }, ...tail] };
-  }
-}
+const stream = (ctx: ScriptContext, head: Part[], text: string, tail: Part[] = []) => streamText(ctx.abortSignal, text, head, tail);
 
 // ——— Aprobación (tablero «Tool fallback») ———
 export const APPROVAL_TOOL = 'enviar_recordatorios';

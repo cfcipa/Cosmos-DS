@@ -19,8 +19,10 @@ import Typography from '@mui/material/Typography';
 import { Check, Code, Copy, Monitor, Plus, RotateCcw, Smartphone, Tablet, X } from 'lucide-react';
 import { CosmosProvider } from '../../src/CosmosProvider';
 import type { AuiAssistantSurface } from '../../src/ai/aui';
-import { DEFAULT_PLAYGROUND, playgroundCode, type MapSide, type PlaygroundConfig, type Quotes, type Timing, type Tuck } from './config';
-import { SincoTemplate, type TemplateControls } from './SincoTemplate';
+import { CONTEXT_WINDOW, DEFAULT_PLAYGROUND, playgroundCode, type MapSide, type PlaygroundConfig, type Quotes, type Timing, type Tuck } from './config';
+import { STARTERS } from '../ui/sinco/obligaciones';
+import { SincoAssistant, type SincoAssistantProps, type SincoControls } from '../ui/sinco/SincoAssistant';
+import { DEFAULT_EFFORT, DEFAULT_MODEL, MODELS } from '../elements/AuiModelSelector';
 
 /** Medidas del referente: columna de controles de 320px, barra de 48px, tablet 768px, móvil 375px, mínimo 320px. */
 const CONTROLS_WIDTH = 40;
@@ -36,6 +38,31 @@ const MIN_WIDTH = 320;
 const HANDLE = { width: 2, line: 6 };
 const ICON = 14;
 const COPIED_MS = 1600;
+const TUCK = { '4000': 4000, '8000': 8000, never: Number.POSITIVE_INFINITY } as const;
+
+/** La configuración del playground como props de la plantilla. */
+function templateProps(c: PlaygroundConfig): SincoAssistantProps {
+  const t = c.thread;
+  return {
+    surface: c.assistant.surface,
+    pill: c.assistant.pill,
+    preview: c.assistant.preview ? { autoTuck: TUCK[c.assistant.autoTuck] } : false,
+    agents: c.assistant.agents,
+    starters: c.empty.starters ? STARTERS.slice(0, c.empty.startersCount) : null,
+    disclaimer: c.empty.disclaimer,
+    selection: c.context.selection,
+    askAi: c.context.askAi,
+    followups: t.followups,
+    thread: {
+      quotes: t.quotes === 'off' ? false : t.quotes === 'actions' ? 'actions' : true,
+      messageTiming: t.timing === 'off' ? false : t.timing === 'footer' ? { design: 'footer' } : true,
+      conversationMap: t.conversationMap === 'off' ? undefined : t.conversationMap,
+      modelContextWindow: t.contextWindow ? CONTEXT_WINDOW : undefined,
+      modelSelector: t.modelSelector ? { models: MODELS, defaultValue: DEFAULT_MODEL, defaultEffort: DEFAULT_EFFORT } : undefined,
+      mentions: t.mentions,
+    },
+  };
+}
 
 type Updater = (c: PlaygroundConfig) => PlaygroundConfig;
 
@@ -194,7 +221,7 @@ export function PlaygroundPage() {
   const [width, setWidth] = React.useState<number | '100%'>('100%');
   const [showCode, setShowCode] = React.useState(false);
   const [resetKey, setResetKey] = React.useState(0);
-  const controls = React.useRef<TemplateControls | null>(null);
+  const controls = React.useRef<SincoControls | null>(null);
   const container = React.useRef<HTMLDivElement>(null);
   const startResize = useResize(width, (w) => setWidth(w), container);
   const onSurfaceChange = React.useCallback((surface: AuiAssistantSurface) => setConfig((c) => ({ ...c, assistant: { ...c.assistant, surface } })), []);
@@ -233,7 +260,7 @@ export function PlaygroundPage() {
               sx={{ position: 'relative', height: '100%', width, maxWidth: '100%', overflow: 'hidden', isolation: 'isolate', ...(framed && { border: 1, borderColor: 'divider', borderRadius: 2.5 }) }}
             >
               <CosmosProvider mode={config.theme} baseline={false}>
-                <SincoTemplate key={resetKey} config={config} onSurfaceChange={onSurfaceChange} controlsRef={controls} />
+                <SincoAssistant resetKey={resetKey} {...templateProps(config)} onSurfaceChange={onSurfaceChange} controlsRef={controls} />
               </CosmosProvider>
             </Box>
             {framed ? <ResizeHandle onPointerDown={startResize('right')} /> : null}

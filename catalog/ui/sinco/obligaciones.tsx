@@ -1,27 +1,12 @@
-// La pantalla anfitriona de los tableros Sinco: Obligaciones por pagar · Compras, con su tabla, filtros por estado y
-// barra de selección, y el modelo de ejemplo que la conoce (resume, filtra y confirma o causa con aprobación).
+// Los datos y el estado de la pantalla anfitriona de los tableros Sinco (Obligaciones por pagar · Compras), y el
+// modelo de ejemplo que la conoce: resume, filtra y confirma o causa con aprobación. La pantalla es ObligacionesPage.
 import * as React from 'react';
-import type { ChatModelAdapter, ChatModelRunResult, SuggestionAdapter, ThreadMessage } from '@assistant-ui/react';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Checkbox from '@mui/material/Checkbox';
-import Chip from '@mui/material/Chip';
-import Divider from '@mui/material/Divider';
-import Paper from '@mui/material/Paper';
-import Snackbar from '@mui/material/Snackbar';
-import Stack from '@mui/material/Stack';
-import Tab from '@mui/material/Tab';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Tabs from '@mui/material/Tabs';
-import Typography from '@mui/material/Typography';
-import { alpha, keyframes, type Theme } from '@mui/material/styles';
-import { Check, CircleCheck, Filter, Receipt, ShieldCheck } from 'lucide-react';
-import { AuiAskAiAction, type AuiAssistantAgent, type AuiSelection, type AuiStarter } from '../../../src/ai/aui';
+import type { ChatModelAdapter, SuggestionAdapter } from '@assistant-ui/react';
+import { keyframes } from '@mui/material/styles';
+import { CircleCheck, Filter, Receipt, ShieldCheck } from 'lucide-react';
+import type { AuiAssistantAgent, AuiSelection, AuiStarter } from '../../../src/ai/aui';
 import type { DemoThread } from '../AuiDemoRuntime';
+import { FIRST_TOKEN_MS, lastUserText, streamText, wait, type DemoPart } from '../demoStream';
 
 export type Estado = 'borrador' | 'pendiente' | 'rechazada' | 'confirmada' | 'causada' | 'pagada' | 'descartado';
 /** Medio de pago: tarjeta (marca y últimos dígitos), transferencia, efectivo, billetera u otro. */
@@ -33,30 +18,49 @@ export type Obligacion = {
   mp?: MedioPago; fc?: string; fr?: string; saldo?: Saldo; motivo?: string;
 };
 
-export const ESTADOS_COMPACTOS: Array<{ k: Estado | 'todas'; label: string }> = [
-  { k: 'todas', label: 'Todas' }, { k: 'pendiente', label: 'Pendientes' }, { k: 'confirmada', label: 'Confirmadas' }, { k: 'causada', label: 'Causadas' }, { k: 'pagada', label: 'Pagadas' },
-];
 export const CHIP: Record<Estado, { label: string; color: 'primary' | 'warning' | 'error' | 'info' | 'secondary' | 'success' | 'grey' }> = {
   borrador: { label: 'Borrador', color: 'primary' }, pendiente: { label: 'Pendiente', color: 'warning' }, rechazada: { label: 'Rechazada', color: 'error' },
   confirmada: { label: 'Confirmada', color: 'info' }, causada: { label: 'Causada', color: 'secondary' }, pagada: { label: 'Pagada', color: 'success' }, descartado: { label: 'Descartado', color: 'grey' },
 };
 
-/** Las obligaciones del tablero (Obligaciones por pagar · Compras). */
-export const ROWS: readonly Obligacion[] = [
-  { id: 1, prov: 'Soluciones Integrales S.A.', nit: 'Nit 8682548294-1', ob: 'FAC-123456', total: 1345678, cur: 'COP', est: 'pendiente' },
-  { id: 3, prov: 'Innovación Empresarial S.A.', nit: 'Nit 8682548294-1', ob: 'FAC-864209753', total: 3567890, cur: 'COP', est: 'rechazada' },
-  { id: 4, prov: 'Proveedores Unidos S.A.', nit: 'Nit 8682548294-1', ob: 'INVOICE-1357902468', total: 6890123, cur: 'COP', est: 'causada' },
-  { id: 5, prov: 'Uber transporte', nit: 'Nit 8682548294-1', ob: 'INVOICE-987654321', total: 78901, cur: 'COP', est: 'pagada' },
-  { id: 6, prov: 'Logística y Servicios S.A.S.', nit: 'Nit 8682548294-1', ob: 'FAC-654321', total: 13567890, cur: 'COP', est: 'confirmada' },
-  { id: 7, prov: 'Consultoría Avanzada S.A.S.', nit: 'Nit 8682548294-1', ob: 'FCT-246801', total: 25, cur: 'USD', est: 'pendiente', soporte: { dias: 0, txt: 'vence hoy' } },
-  { id: 9, prov: 'Tecnología y Servicios S.A.S.', nit: 'Nit 8682548294-1', ob: 'INVOICE-9876543210', total: 8012345, cur: 'COP', est: 'pendiente' },
-  { id: 10, prov: 'Distribuciones del Pacífico S.A.', nit: 'Nit 8682548294-1', ob: 'FAC-258963', total: 9123456, cur: 'COP', est: 'confirmada' },
-  { id: 11, prov: 'Express Soluciones S.A.', nit: 'Nit 8682548294-1', ob: 'INVOICE-2468013579', total: 12456789, cur: 'COP', est: 'pendiente', bloqueo: true },
-  { id: 13, prov: 'Soluciones Integrales S.A.', nit: 'Nit 8682548294-1', ob: 'FCT-246801', total: 1345678, cur: 'COP', est: 'pendiente', soporte: { dias: 3, txt: 'vence en 3 días' } },
-  { id: 16, prov: 'Express Soluciones S.A.', nit: 'Nit 8682548294-1', ob: 'FCT-123456', total: 12456789, cur: 'COP', est: 'pendiente' },
-  { id: 19, prov: 'Bre-b Servicios S.A.S.', nit: 'Nit 8682548294-1', ob: 'FAC-778899', total: 452300, cur: 'COP', est: 'confirmada' },
-  { id: 24, prov: 'Tecnología y Servicios S.A.S.', nit: 'Nit 8682548294-1', ob: 'FCT-246802', total: 540000, cur: 'COP', est: 'pendiente', soporte: { dias: 6, txt: 'vence en 6 días' } },
-];
+const tc = (brand: string, last: string): MedioPago => ({ t: 'T. Crédito', brand, d: `**** ${last}`, mask: true });
+const MP = {
+  visa: tc('VISA', '5444'), master: tc('MC', '5444'), amex: tc('AMEX', '5444'), diners: tc('DINERS', '5444'),
+  transfer: { t: 'Transferencia', icon: 'transfer', d: 'ref. #######' }, efectivo: { t: 'Efectivo', icon: 'cash' }, otro: { t: 'Otro', icon: 'other' },
+  paypal: { t: 'Paypal', brand: 'PP', d: '@ Juanabanana' }, nequi: { t: 'Nequi', brand: 'NEQUI', d: '# 312 8475635' }, breb: { t: 'Bre-b', brand: 'BRE-B', d: '@ Aguacate123' },
+} satisfies Record<string, MedioPago>;
+const NIT = 'Nit 8682548294-1';
+const FECHAS = ['21/09/2026', '22/09/2026', '23/09/2026', '24/09/2026', '25/09/2026', '27/09/2026'];
+
+/** Las 25 obligaciones del tablero (Obligaciones por pagar · Compras). */
+export const ROWS: readonly Obligacion[] = ([
+  { id: 1, prov: 'Soluciones Integrales S.A.', nit: NIT, ob: 'FAC-123456', mp: MP.visa, total: 1345678, cur: 'COP', est: 'pendiente', saldo: { tipo: 'extracto' } },
+  { id: 2, prov: 'Servicios Globales Ltda.', nit: 'CC 123456789', ob: 'FAC-135792468', mp: MP.paypal, total: 986, cur: 'USD', est: 'borrador', saldo: { tipo: 'na' } },
+  { id: 3, prov: 'Innovación Empresarial S.A.', nit: NIT, ob: 'FAC-864209753', mp: MP.master, total: 3567890, cur: 'COP', est: 'rechazada', motivo: 'Motivo de rechazo · 05/09/2026 · C. Ramírez', saldo: { tipo: 'extracto' } },
+  { id: 4, prov: 'Proveedores Unidos S.A.', nit: NIT, ob: 'INVOICE-1357902468', mp: MP.diners, total: 6890123, cur: 'COP', est: 'causada', saldo: { tipo: 'extracto' } },
+  { id: 5, prov: 'Uber transporte', nit: NIT, ob: 'INVOICE-987654321', mp: MP.transfer, total: 78901, cur: 'COP', est: 'pagada', saldo: { tipo: 'abonos', valor: 0, n: 3 } },
+  { id: 6, prov: 'Logística y Servicios S.A.S.', nit: NIT, ob: 'FAC-654321', mp: MP.master, total: 13567890, cur: 'COP', est: 'confirmada', saldo: { tipo: 'extracto' } },
+  { id: 7, prov: 'Consultoría Avanzada S.A.S.', nit: NIT, ob: 'FCT-246801', mp: MP.visa, total: 25, cur: 'USD', est: 'pendiente', soporte: { dias: 0, txt: 'vence hoy' }, saldo: { tipo: 'extracto' } },
+  { id: 8, prov: 'Comercializadora Segura S.A.S.', nit: NIT, ob: 'INVOICE-1234567890', mp: MP.master, total: 7901234, cur: 'COP', est: 'causada', saldo: { tipo: 'abonos', valor: 30500, n: 3 } },
+  { id: 9, prov: 'Tecnología y Servicios S.A.S.', nit: NIT, ob: 'INVOICE-9876543210', mp: MP.efectivo, total: 8012345, cur: 'COP', est: 'pendiente', saldo: { tipo: 'na' } },
+  { id: 10, prov: 'Distribuciones del Pacífico S.A.', nit: NIT, ob: 'FAC-258963', mp: MP.nequi, total: 9123456, cur: 'COP', est: 'confirmada', saldo: { tipo: 'sin' } },
+  { id: 11, prov: 'Express Soluciones S.A.', nit: NIT, ob: 'INVOICE-2468013579', mp: MP.otro, total: 12456789, cur: 'COP', est: 'pendiente', bloqueo: true, saldo: { tipo: 'na' } },
+  { id: 12, prov: 'Suministros Nacionales S.A.S', nit: NIT, ob: 'FAC-456789', mp: MP.master, total: 4567, cur: 'MXN', est: 'descartado', saldo: { tipo: 'na' } },
+  { id: 13, prov: 'Soluciones Integrales S.A.', nit: NIT, ob: 'FCT-246801', mp: MP.visa, total: 1345678, cur: 'COP', est: 'pendiente', soporte: { dias: 3, txt: 'vence en 3 días' }, saldo: { tipo: 'extracto' } },
+  { id: 14, prov: 'Innovación Empresarial S.A.', nit: NIT, ob: 'FCT-135790', mp: MP.master, total: 3567890, cur: 'COP', est: 'confirmada', saldo: { tipo: 'extracto' } },
+  { id: 15, prov: 'Suministros Nacionales S.A.S', nit: NIT, ob: 'FCT-789456', mp: MP.master, total: 4567, cur: 'MXN', est: 'pendiente', bloqueo: true, saldo: { tipo: 'na' } },
+  { id: 16, prov: 'Express Soluciones S.A.', nit: NIT, ob: 'FCT-123456', mp: MP.visa, total: 12456789, cur: 'COP', est: 'pendiente', saldo: { tipo: 'na' } },
+  { id: 17, prov: 'Consultoría Avanzada S.A.S.', nit: NIT, ob: 'FCT-321654', mp: MP.visa, total: 25850, cur: 'COP', est: 'causada', saldo: { tipo: 'extracto' } },
+  { id: 18, prov: 'Logística y Servicios S.A.S.', nit: NIT, ob: 'FAC-654322', mp: MP.master, total: 13567890, cur: 'COP', est: 'pagada', saldo: { tipo: 'extracto' } },
+  { id: 19, prov: 'Bre-b Servicios S.A.S.', nit: NIT, ob: 'FAC-778899', mp: MP.breb, total: 452300, cur: 'COP', est: 'confirmada', saldo: { tipo: 'sin' } },
+  { id: 20, prov: 'Comercializadora Segura S.A.S.', nit: NIT, ob: 'FCT-987654', mp: MP.amex, total: 8012345, cur: 'COP', est: 'confirmada', saldo: { tipo: 'extracto' } },
+  { id: 21, prov: 'Soluciones Integrales S.A.', nit: NIT, ob: 'FAC-123457', mp: MP.transfer, total: 30500, cur: 'COP', est: 'causada', saldo: { tipo: 'sin', valor: 30500 } },
+  { id: 22, prov: 'Servicios Globales Ltda.', nit: 'CC 123456789', ob: 'FAC-135792469', mp: MP.paypal, total: 1986, cur: 'USD', est: 'descartado', saldo: { tipo: 'na' } },
+  { id: 23, prov: 'Proveedores Unidos S.A.', nit: NIT, ob: 'INVOICE-1357902469', mp: MP.diners, total: 6890123, cur: 'COP', est: 'pagada', saldo: { tipo: 'extracto' } },
+  { id: 24, prov: 'Tecnología y Servicios S.A.S.', nit: NIT, ob: 'FCT-246802', mp: MP.visa, total: 540000, cur: 'COP', est: 'pendiente', soporte: { dias: 6, txt: 'vence en 6 días' }, saldo: { tipo: 'extracto' } },
+  { id: 25, prov: 'Distribuciones del Pacífico S.A.', nit: NIT, ob: 'FAC-258964', mp: MP.nequi, total: 2230000, cur: 'COP', est: 'pagada', saldo: { tipo: 'abonos', valor: 0, n: 2 } },
+] as Obligacion[]).map((r, i) => ({ ...r, fc: FECHAS[i % FECHAS.length], fr: '27/09/2026' }));
+
 const VENCEN = [7, 13, 24];
 export const BLOQUEO = 'Tú radicaste esta obligación; la confirmación la hace otra persona.';
 
@@ -68,9 +72,8 @@ export const NEXT = { Confirmar: 'confirmada', Causar: 'causada' } as const;
 export type ObligacionesState = ReturnType<typeof useObligaciones>;
 
 /** El estado de la pantalla: filas, filtro, selección, resaltado y el aviso con Deshacer. */
-export function useObligaciones(initial: { filter?: Estado | 'todas'; selected?: number[]; rows?: readonly Obligacion[] } = {}) {
-  const source = initial.rows ?? ROWS;
-  const [rows, setRows] = React.useState<Obligacion[]>(() => source.map((r) => ({ ...r })));
+export function useObligaciones(initial: { filter?: Estado | 'todas'; selected?: number[] } = {}) {
+  const [rows, setRows] = React.useState<Obligacion[]>(() => ROWS.map((r) => ({ ...r })));
   const [filter, setFilterState] = React.useState<Estado | 'todas'>(initial.filter ?? 'todas');
   const [selected, setSelected] = React.useState<ReadonlySet<number>>(() => new Set(initial.selected ?? []));
   const [flash, setFlash] = React.useState<ReadonlySet<number>>(() => new Set());
@@ -102,7 +105,7 @@ export function useObligaciones(initial: { filter?: Estado | 'todas'; selected?:
   const setFilter = React.useCallback((f: Estado | 'todas') => { setFilterState(f); setSelected(new Set()); }, []);
   const kind = bulkKind(filter);
   const selRows = kind ? rows.filter((r) => selected.has(r.id) && !r.bloqueo && (filter === 'todas' || r.est === filter)) : [];
-  return { rows, filter, setFilter, selected, setSelected, selRows, kind, flash, doFlash, setEst, snack, setSnack, undo, reset: () => { setRows(source.map((r) => ({ ...r }))); setFilterState(initial.filter ?? 'todas'); setSelected(new Set(initial.selected ?? [])); } };
+  return { rows, filter, setFilter, selected, setSelected, selRows, kind, flash, doFlash, setEst, snack, setSnack, undo, reset: () => { setRows(ROWS.map((r) => ({ ...r }))); setFilterState(initial.filter ?? 'todas'); setSelected(new Set(initial.selected ?? [])); } };
 }
 
 /** La selección como contexto del modelo: el resumen en la ficha y el detalle para el modelo. */
@@ -120,153 +123,14 @@ export function obligacionesSelection(s: ObligacionesState): AuiSelection | null
 
 export const flashIn = keyframes`from { background-color: var(--flash); } to { background-color: transparent; }`;
 
-/** La pantalla: pestañas con la barra de selección, filtros por estado y la tabla. */
-export function ObligacionesHost({ state: s, askAi = true, compact = false }: { state: ObligacionesState; askAi?: boolean; compact?: boolean }) {
-  const counts = React.useMemo(() => {
-    const c: Record<string, number> = { todas: s.rows.length };
-    s.rows.forEach((r) => { c[r.est] = (c[r.est] ?? 0) + 1; });
-    return c;
-  }, [s.rows]);
-  const visible = s.filter === 'todas' ? s.rows : s.rows.filter((r) => r.est === s.filter);
-  const selectable = visible.filter((r) => !r.bloqueo);
-  const nSel = s.selRows.length;
-  const total = s.selRows.reduce((a, r) => a + r.total, 0);
-  const toggle = (id: number) => { const n = new Set(s.selected); if (n.has(id)) n.delete(id); else n.add(id); s.setSelected(n); };
-  const allOn = nSel > 0 && nSel === selectable.length;
-  return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', flex: '1 0 auto', bgcolor: 'background.default' }}>
-      <Stack direction="row" alignItems="center" spacing={1} sx={(t) => ({ flexShrink: 0, height: t.spacing(6), px: 3, bgcolor: 'background.paper', boxShadow: t.shadows[4], position: 'relative', zIndex: 1 })}>
-        <Typography variant="subtitle1" component="h2" sx={{ m: 0 }}>Obligaciones por pagar</Typography>
-        <Box sx={{ flex: 1 }} />
-        {compact ? null : <Typography variant="body2" color="text.secondary">Empresa de insumos S.A.S</Typography>}
-      </Stack>
-      <Box sx={{ p: compact ? 2 : 3 }}>
-        <Paper sx={{ overflow: 'hidden' }}>
-          <Stack direction="row" alignItems="center" sx={{ borderBottom: 1, borderColor: 'divider', pr: 1, minHeight: 48 }}>
-            <Tabs value="compras" aria-label="Tipo de obligación"><Tab value="compras" label="Compras" sx={{ textTransform: 'none' }} /><Tab value="anticipos" label="Anticipos" disabled sx={{ textTransform: 'none' }} /></Tabs>
-            <Box sx={{ flex: 1 }} />
-            {nSel > 0 ? (
-              <Stack
-                direction="row"
-                alignItems="center"
-                spacing={1.5}
-                role="toolbar"
-                aria-label="Selección"
-                data-slot="selection-bar"
-                sx={(t) => ({ bgcolor: alpha(t.palette.primary.main, t.palette.action.selectedOpacity), borderRadius: 1, py: 0.5, pr: 0.5, pl: 1.5, minHeight: t.spacing(4.75) })}
-              >
-                <Typography variant="subtitle1" color="primary" sx={{ whiteSpace: 'nowrap' }}>{nSel === 1 ? '1 seleccionada' : `${nSel} seleccionadas`}</Typography>
-                <Divider orientation="vertical" flexItem sx={{ my: 0.5 }} />
-                {compact ? null : <Typography variant="body2" sx={{ whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>Total de {money(total)}</Typography>}
-                {askAi ? <AuiAskAiAction /> : null}
-                <Divider orientation="vertical" flexItem sx={{ my: 0.5 }} />
-                <Button size="small" variant="contained" onClick={() => s.kind && s.setEst(s.selRows.map((r) => r.id), NEXT[s.kind], `${nObl(nSel)} ${s.kind === 'Confirmar' ? 'confirmada' : 'causada'}${nSel === 1 ? '.' : 's.'}`)}>{s.kind}</Button>
-              </Stack>
-            ) : null}
-          </Stack>
-          <Stack direction="row" useFlexGap flexWrap="wrap" spacing={1} sx={{ px: 2, py: 1.5 }} role="group" aria-label="Filtrar por estado">
-            {ESTADOS_COMPACTOS.map((e) => {
-              const on = s.filter === e.k;
-              return (
-                <Chip
-                  key={e.k}
-                  variant="outlined"
-                  color={on ? 'primary' : 'default'}
-                  icon={on ? <Check size={16} /> : undefined}
-                  label={<>{e.label} <Box component="span" sx={{ color: on ? 'primary.main' : 'text.secondary', fontVariantNumeric: 'tabular-nums' }}>{counts[e.k] ?? 0}</Box></>}
-                  onClick={() => s.setFilter(e.k)}
-                  aria-pressed={on}
-                  sx={(t) => ({ borderRadius: 1, ...(on && { bgcolor: alpha(t.palette.primary.main, t.palette.action.selectedOpacity) }) })}
-                />
-              );
-            })}
-          </Stack>
-          <Box sx={{ overflowX: 'auto' }}>
-            <Table size="small" aria-label="Obligaciones">
-              <TableHead>
-                <TableRow>
-                  {s.kind ? <TableCell padding="checkbox"><Checkbox size="small" checked={allOn} indeterminate={nSel > 0 && !allOn} onChange={() => s.setSelected(allOn ? new Set() : new Set(selectable.map((r) => r.id)))} inputProps={{ 'aria-label': 'Seleccionar todo' }} /></TableCell> : null}
-                  <TableCell>Proveedor</TableCell>
-                  <TableCell>N.º de obligación</TableCell>
-                  <TableCell align="right">Total / Moneda</TableCell>
-                  <TableCell>Estado</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {visible.map((r) => {
-                  const sel = s.selected.has(r.id) && !!s.kind;
-                  const chip = CHIP[r.est];
-                  return (
-                    <TableRow
-                      key={r.id}
-                      hover
-                      selected={sel}
-                      sx={(t) => (s.flash.has(r.id) ? { '--flash': alpha(t.palette.primary.main, t.palette.action.focusOpacity), animation: `${flashIn} 1.6s ease-out` } : {})}
-                    >
-                      {s.kind ? (
-                        <TableCell padding="checkbox">
-                          {r.bloqueo
-                            ? <Checkbox size="small" disabled title={BLOQUEO} inputProps={{ 'aria-label': 'No puedes confirmar esta obligación' }} />
-                            : <Checkbox size="small" checked={sel} onChange={() => toggle(r.id)} inputProps={{ 'aria-label': `Seleccionar ${r.ob}` }} />}
-                        </TableCell>
-                      ) : null}
-                      <TableCell>
-                        <Typography variant="body2" color="primary" sx={{ whiteSpace: 'nowrap' }}>{r.prov}</Typography>
-                        <Typography variant="caption" color="text.secondary">{r.nit}</Typography>
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" sx={{ whiteSpace: 'nowrap' }}>{r.ob}</Typography>
-                        {r.soporte ? <Typography variant="caption" color={r.soporte.dias <= 1 ? 'error' : r.soporte.dias <= 4 ? 'warning.dark' : 'text.secondary'}>Doc. soporte · {r.soporte.txt}</Typography> : null}
-                      </TableCell>
-                      <TableCell align="right" sx={{ whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>{money(r.total)} <Typography component="span" variant="caption" color="text.secondary">{r.cur}</Typography></TableCell>
-                      <TableCell>
-                        <Chip
-                          size="small"
-                          label={chip.label}
-                          sx={(t: Theme) => (chip.color === 'grey'
-                            ? { borderRadius: 1, bgcolor: t.palette.grey[200], color: 'text.secondary' }
-                            : { borderRadius: 1, bgcolor: alpha(t.palette[chip.color].main, t.palette.action.selectedOpacity), color: `${chip.color}.dark` })}
-                        />
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </Box>
-        </Paper>
-      </Box>
-      <Snackbar
-        open={!!s.snack}
-        autoHideDuration={s.snack?.undo ? 6000 : 3200}
-        onClose={() => s.setSnack(null)}
-        message={s.snack?.text}
-        action={s.snack?.undo ? <Button color="inherit" size="small" onClick={s.undo}>Deshacer</Button> : undefined}
-        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
-        sx={{ position: 'absolute' }}
-      />
-    </Box>
-  );
-}
-
 // ——— El modelo de la pantalla ———
-type Part = NonNullable<ChatModelRunResult['content']>[number];
+type Part = DemoPart;
 export type ObligacionesBridge = React.MutableRefObject<ObligacionesState | null>;
-const wait = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
-const STEP = 4;
-const TICK_MS = 30;
-const FIRST_TOKEN_MS = 320;
 const TOOL_MS = 1200;
 const APPLY_MS = 900;
 const APPROVAL_TOOLS = /^(confirmar|causar)_obligaciones$/;
 
-async function* stream(signal: AbortSignal, head: Part[], text: string): AsyncGenerator<ChatModelRunResult> {
-  for (let n = STEP; n < text.length + STEP; n += STEP) {
-    if (signal.aborted) return;
-    await wait(TICK_MS);
-    yield { content: [...head, { type: 'text', text: text.slice(0, n) }] };
-  }
-}
+const stream = (signal: AbortSignal, head: Part[], text: string) => streamText(signal, text, head);
 
 type Seleccion = { accion: 'Confirmar' | 'Causar' | null; obligaciones: Array<{ id: number; ob: string; prov: string; total: number }> };
 /** La selección llega en las instrucciones del modelo (Selection as context). */
@@ -275,10 +139,6 @@ function seleccionDe(system: string | undefined): Seleccion | null {
   if (!m) return null;
   try { return JSON.parse(m[1]) as Seleccion; } catch { return null; }
 }
-const lastUserText = (messages: readonly ThreadMessage[]) => {
-  const u = [...messages].reverse().find((m) => m.role === 'user');
-  return u ? u.content.map((p) => (p.type === 'text' ? p.text : '')).join(' ') : '';
-};
 
 function resumenPendientes(rows: readonly Obligacion[]) {
   const pend = rows.filter((r) => r.est === 'pendiente');

@@ -2,6 +2,7 @@
 // un conector sin autenticación, uno con OAuth (registro dinámico, autorización y token de ejemplo) y un servidor propio
 // que falla la primera vez que conecta. Solo intercepta las URLs de DEMO_HOST; lo demás sale a la red.
 import { McpCustomStorage, McpManagerResource, type MCPConnector, type MCPCustomServerRecord, type MCPPersistedAuthState } from '@assistant-ui/react-mcp';
+import { wait } from './demoStream';
 
 export const DEMO_HOST = 'https://mcp.demo.cosmos';
 /** Las pestañas de la demo se avisan por aquí cuando termina una autorización. */
@@ -32,7 +33,6 @@ let customServers = SEED_CUSTOM;
 let bankAttempts = 0;
 
 const json = (body: unknown, init: ResponseInit = {}) => new Response(JSON.stringify(body), { ...init, headers: { 'content-type': 'application/json', ...(init.headers ?? {}) } });
-const wait = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
 
 type RpcMessage = { jsonrpc: '2.0'; id?: number | string; method: string; params?: { protocolVersion?: string } };
 function rpc(server: string, message: RpcMessage) {

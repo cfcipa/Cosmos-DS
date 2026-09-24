@@ -6,14 +6,12 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { Play } from 'lucide-react';
 import {
-  AuiThread, AuiToolFallback, AuiToolGroupCard, AuiToolGroupContent, AuiToolGroupRoot, AuiToolGroupTrigger, toolCallsLabel,
+  AuiToolFallback, AuiToolGroupCard, AuiToolGroupContent, AuiToolGroupRoot, AuiToolGroupTrigger, toolCallsLabel,
   type AuiGroupedTool, type AuiToolGroupVariant,
 } from '../../src/ai/aui';
 import { riseSx, userBubbleSx } from '../../src/ai/lib/thread';
-import { AuiAsk } from '../ui/AuiAsk';
 import { AuiDemoRuntime } from '../ui/AuiDemoRuntime';
 import { ElementPage, PropRow, PropToggle } from '../ui/Playground';
-import { ThreadFrame } from '../ui/ThreadFrame';
 
 const ASK = '¿Qué anticipo vence primero y quién lo tiene?';
 /** Las llamadas del tablero: en el hilo van una tras otra (seq); en el resumen corren a la vez (par). */

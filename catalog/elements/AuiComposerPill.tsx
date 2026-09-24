@@ -4,11 +4,10 @@ import Button from '@mui/material/Button';
 import { AuiComposerPill } from '../../src/ai/aui';
 import { AuiDemoRuntime } from '../ui/AuiDemoRuntime';
 import { ElementPage, PropRow, PropToggle } from '../ui/Playground';
-import { SincoAssistantDemo, type SincoControls } from '../ui/sinco/SincoAssistantDemo';
+import { SINCO_PREVIOUS_THREADS, SincoAssistant, type SincoControls } from '../ui/sinco/SincoAssistant';
 import { DICTATED, SINCO_THREADS } from '../ui/sinco/obligaciones';
 import { SINCO_DEMO_HEIGHT, SINCO_PAGE_WIDTH } from './AuiAssistantPanel';
 
-const PREVIOUS = SINCO_THREADS.slice(1);
 const ASK = 'Resume las obligaciones pendientes de Compras';
 
 export function AuiComposerPillDoc() {
@@ -18,7 +17,7 @@ export function AuiComposerPillDoc() {
     <Box sx={{ maxWidth: SINCO_PAGE_WIDTH }}>
       <ElementPage
         demoHeight={SINCO_DEMO_HEIGHT}
-        demo={<SincoAssistantDemo resetKey={has} preview={false} threads={has === 'true' ? SINCO_THREADS : PREVIOUS} startIn={has === 'true' ? 'resumen' : undefined} controlsRef={controls} />}
+        demo={<SincoAssistant resetKey={has} preview={false} threads={has === 'true' ? SINCO_THREADS : SINCO_PREVIOUS_THREADS} startIn={has === 'true' ? 'resumen' : undefined} controlsRef={controls} />}
         properties={
           <>
             <PropRow label="hasMessages"><PropToggle label="hasMessages" value={has} onChange={setHas} options={[['false', 'false'], ['true', 'true']]} /></PropRow>

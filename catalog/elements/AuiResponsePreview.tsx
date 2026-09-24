@@ -4,13 +4,12 @@ import Button from '@mui/material/Button';
 import { AuiAssistantProvider, AuiComposerPill, AuiResponsePreview } from '../../src/ai/aui';
 import { AuiDemoRuntime } from '../ui/AuiDemoRuntime';
 import { ElementPage, PropRow, PropToggle } from '../ui/Playground';
-import { SincoAssistantDemo, approvalPreviewText, type SincoControls } from '../ui/sinco/SincoAssistantDemo';
+import { SINCO_PREVIOUS_THREADS, SincoAssistant, approvalPreviewText, type SincoControls } from '../ui/sinco/SincoAssistant';
 import { SINCO_THREADS } from '../ui/sinco/obligaciones';
 import { SINCO_DEMO_HEIGHT, SINCO_PAGE_WIDTH } from './AuiAssistantPanel';
 
 type Kind = 'answer' | 'approval';
 type Peek = 'card' | 'tab';
-const PREVIOUS = SINCO_THREADS.slice(1);
 const ASK = 'Resume las obligaciones pendientes de Compras';
 const CONFIRM = 'Confirma las seleccionadas';
 /** Las dos pendientes que el tablero deja seleccionadas para pedir la aprobación. */
@@ -37,9 +36,9 @@ export function AuiResponsePreviewDoc() {
       <ElementPage
         demoHeight={SINCO_DEMO_HEIGHT}
         demo={
-          <SincoAssistantDemo
+          <SincoAssistant
             resetKey={`${kind}-${peek}-${pose}`}
-            threads={approval ? PREVIOUS : SINCO_THREADS}
+            threads={approval ? SINCO_PREVIOUS_THREADS : SINCO_THREADS}
             startIn={approval ? undefined : 'resumen'}
             filter={approval ? 'pendiente' : 'todas'}
             selected={approval ? SELECTED : undefined}

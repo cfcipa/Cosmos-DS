@@ -2,13 +2,10 @@ import * as React from 'react';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { AuiImage, AuiThread, type AuiImageSize, type AuiImageVariant } from '../../src/ai/aui';
+import { AuiImage, type AuiImageSize, type AuiImageVariant } from '../../src/ai/aui';
 import { userBubbleSx } from '../../src/ai/lib/thread';
-import { AuiAsk } from '../ui/AuiAsk';
-import { AuiDemoRuntime } from '../ui/AuiDemoRuntime';
 import { CHART_FILENAME, CHART_IMAGE } from '../ui/demoScripts';
 import { ElementPage, PropRow, PropToggle } from '../ui/Playground';
-import { ThreadFrame } from '../ui/ThreadFrame';
 
 const ASK = 'Grafica los anticipos por responsable.';
 type Status = 'complete' | 'broken' | 'running' | 'blocked';

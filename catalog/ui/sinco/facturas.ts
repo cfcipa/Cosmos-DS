@@ -1,7 +1,7 @@
 // Las facturas de los tableros «Selection as context» y «Ask AI on selection», y el modelo que responde con lo que
 // llega seleccionado en su contexto.
-import type { ChatModelAdapter } from '@assistant-ui/react';
 import type { AuiSelection } from '../../../src/ai/aui';
+import { textModel } from '../demoStream';
 
 export const FACTURAS = [
   { id: 'FV-0932', prov: 'Ferretería El Roble', total: '$ 4.250.000' },
@@ -27,19 +27,4 @@ function answer(system: string | undefined) {
   return `Las ${ids.length} filas seleccionadas son facturas pendientes por $ 12.480.000: FV-0932 de Ferretería El Roble ($ 4.250.000), FV-0935 de Transportes Andinos ($ 3.180.000) y FV-0941 de Suministros Andes ($ 5.050.000). FV-0932 vence primero, el 30 de septiembre.`;
 }
 
-const wait = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
-const STEP = 4;
-const TICK_MS = 30;
-const FIRST_TOKEN_MS = 320;
-
-export const facturasModel: ChatModelAdapter = {
-  async *run({ abortSignal, context }) {
-    await wait(FIRST_TOKEN_MS);
-    const text = answer(context?.system);
-    for (let n = STEP; n < text.length + STEP; n += STEP) {
-      if (abortSignal.aborted) return;
-      await wait(TICK_MS);
-      yield { content: [{ type: 'text', text: text.slice(0, n) }] };
-    }
-  },
-};
+export const facturasModel = textModel(({ context }) => answer(context?.system));

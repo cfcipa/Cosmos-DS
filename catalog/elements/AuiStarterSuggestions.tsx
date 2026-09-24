@@ -5,7 +5,7 @@ import { AuiStarterSuggestions, AuiThread } from '../../src/ai/aui';
 import { AuiDemoRuntime } from '../ui/AuiDemoRuntime';
 import { ElementPage, PropRow, PropToggle } from '../ui/Playground';
 import { ThreadFrame } from '../ui/ThreadFrame';
-import { SincoAssistantDemo } from '../ui/sinco/SincoAssistantDemo';
+import { SincoAssistant } from '../ui/sinco/SincoAssistant';
 import { STARTERS, makeObligacionesModel } from '../ui/sinco/obligaciones';
 import { SINCO_DEMO_HEIGHT, SINCO_PAGE_WIDTH } from './AuiAssistantPanel';
 
@@ -19,7 +19,7 @@ export function AuiStarterSuggestionsDoc() {
     <Box sx={{ maxWidth: SINCO_PAGE_WIDTH }}>
       <ElementPage
         demoHeight={SINCO_DEMO_HEIGHT}
-        demo={<SincoAssistantDemo resetKey={reset} defaultSurface="float" starters={starters} />}
+        demo={<SincoAssistant resetKey={reset} defaultSurface="float" starters={starters} />}
         properties={
           <>
             <PropRow label="count"><PropToggle label="count" value={count} onChange={setCount} options={[['2', '2'], ['4', '4']]} /></PropRow>

@@ -25,6 +25,7 @@ import {
 } from '@assistant-ui/react';
 import { demoMcpManager, installMockMcp } from './mcpDemo';
 import { SCRIPTS, type DemoScript } from './demoScripts';
+import { FIRST_TOKEN_MS, STREAM_STEP, STREAM_TICK_MS, wait } from './demoStream';
 
 // Runtime de las demos AUI connected: el mismo @assistant-ui/react de producción, con un modelo de ejemplo, una lista
 // de hilos en memoria (sembrada con los hilos del tablero) y una sesión de voz simulada.
@@ -51,16 +52,14 @@ const SEED: Array<{ id: string; title: string; ago: number; q: string; a: string
 /** El razonamiento del tablero «Reasoning». */
 export const DEMO_REASONING = 'La pregunta es cuál anticipo vence primero.\n\nConsulto los anticipos pendientes: CE-4471, CE-4480 y CE-4492.\n\nFechas de vencimiento: CE-4471 el 15 de octubre, CE-4480 el 8 de octubre, CE-4492 el 30 de septiembre.\n\nOrdeno de la más cercana a la más lejana. El primero es CE-4492.\n\nVerifico el responsable: Nubia Rojas, por gastos de viaje.\n\nRespondo con el anticipo, el responsable y la fecha.';
 /** Streaming del tablero: 4 caracteres cada 30 ms, tras ~320 ms hasta el primer token; el razonamiento va de a 2. */
-const STEP = 4;
+const STEP = STREAM_STEP;
 const REASONING_STEP = 2;
-const TICK_MS = 30;
-const FIRST_TOKEN_MS = 320;
+const TICK_MS = STREAM_TICK_MS;
 const CHARS_PER_TOKEN = 4;
 /** Uso de contexto de ejemplo: una base y lo que suma cada turno (tablero «Context display»). */
 const USAGE_BASE = { inputTokens: 23600, cachedInputTokens: 20100, outputTokens: 7200, reasoningTokens: 2900 };
 const USAGE_TURN = { inputTokens: 3200, cachedInputTokens: 3900, outputTokens: 1500, reasoningTokens: 400 };
 
-const wait = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
 
 function usageFor(messages: readonly ThreadMessage[], reasoning: boolean) {
   const turns = messages.filter((m) => m.role === 'user').length - 1;

@@ -5,13 +5,12 @@ import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { Play } from 'lucide-react';
-import { AuiThread, AuiToolFallback, TOOL_APPROVED_RESULT } from '../../src/ai/aui';
+import { AuiToolFallback, TOOL_APPROVED_RESULT } from '../../src/ai/aui';
 import { riseSx, userBubbleSx } from '../../src/ai/lib/thread';
-import { AuiAsk } from '../ui/AuiAsk';
 import { AuiDemoRuntime } from '../ui/AuiDemoRuntime';
 import { APPROVAL_OK_RESULT, APPROVAL_TOOL } from '../ui/demoScripts';
 import { ElementPage, PropRow, PropToggle } from '../ui/Playground';
-import { ThreadFrame } from '../ui/ThreadFrame';
+import { wait } from '../ui/demoStream';
 
 const ASK = 'Envía el recordatorio de legalización a los responsables de anticipos vencidos.';
 const INTRO = 'Busco los responsables y preparo el envío.';
@@ -44,7 +43,6 @@ const statusOf = (s: Status): ToolCallMessagePartStatus => {
 const approvalFor = (mode: Mode): ToolCallMessagePart['approval'] => (mode === 'plain' ? undefined
   : mode === 'options' ? { id: 'call-1', prompt: '¿Envío el recordatorio de legalización a 3 responsables?', options: OPTIONS }
     : { id: 'call-1', prompt: '¿Qué nota agrego al recordatorio?', display: 'text', dismissible: true });
-const wait = (ms: number) => new Promise((r) => window.setTimeout(r, ms));
 
 function useToolMachine(mode: Mode) {
   const [state, setState] = React.useState<State>({ status: { type: 'running' }, outcome: null, key: 0 });
