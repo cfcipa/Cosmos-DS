@@ -25,6 +25,8 @@ export interface AuiComposerPillProps {
 
 /** Medidas del tablero: 48px de alto, botones de 34px, íconos de 20px (detener, 14px). */
 const HEIGHT = 6;
+/** El alto de la píldora (en unidades de spacing): la pestaña de la vista previa se apoya en su tramo recto. */
+export const AUI_PILL_HEIGHT = HEIGHT;
 const BUTTON = 4.25;
 const ICON = 20;
 const STOP = 14;

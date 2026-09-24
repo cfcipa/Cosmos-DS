@@ -14,6 +14,7 @@ import { MoonStar, X } from 'lucide-react';
 import { REDUCED_MOTION } from '../lib/shimmerText';
 import { AuiIconButton } from './AuiIconButton';
 import { useAuiAssistant } from './AssistantPanel';
+import { AUI_PILL_HEIGHT } from './ComposerPill';
 
 type Peek = 'card' | 'tab' | null;
 type ToolCallInfo = { toolName: string; args: unknown };
@@ -29,7 +30,8 @@ export interface AuiResponsePreviewProps {
 
 /** Medidas del tablero: 8px sobre la píldora, pestaña de 12px, asa de 32 × 4, avatar de 24px, 2 líneas de texto. */
 const GAP = 1;
-const TAB = 12;
+/** Recogida, la tarjeta baja detrás de la píldora y deja ver su borde superior: lo que había de separación más 2px. */
+const TAB_OVERLAP = 2;
 const HANDLE_W = 4;
 const HANDLE_H = 0.5;
 const AVATAR = 3;
@@ -126,7 +128,7 @@ export function AuiResponsePreview({ autoTuck = 4000, approvalText = DEFAULT_APP
   return (
     <Box data-slot="aui-response-preview-dock" sx={{ position: 'absolute', left: 0, right: 0, bottom: '100%', zIndex: 1, pointerEvents: 'none' }}>
       <Paper
-        elevation={tab ? 1 : 8}
+        elevation={tab ? 0 : 8}
         data-slot="aui-response-preview"
         data-peek={peek}
         onMouseEnter={() => { hover.current = true; window.clearTimeout(timer.current); setPeek('card'); }}
@@ -138,7 +140,9 @@ export function AuiResponsePreview({ autoTuck = 4000, approvalText = DEFAULT_APP
           transition: `transform 320ms ${EASE_OUT}, clip-path 320ms ${EASE_OUT}, box-shadow 320ms ease`,
           animation: `${cardIn} ${t.transitions.duration.enteringScreen}ms ${EASE_OUT} backwards`,
           '&[data-peek="tab"]': {
-            transform: 'translateY(calc(100% - 2px)) scaleX(.94)', clipPath: `inset(0 0 calc(100% - ${TAB}px) 0 round ${t.shape.borderRadius}px)`, cursor: 'pointer',
+            // Solo asoma sobre el tramo recto de la píldora: se recorta su radio a cada lado y termina justo en su borde.
+            transform: `translateY(calc(100% - ${TAB_OVERLAP}px))`, cursor: 'pointer',
+            clipPath: `inset(0 ${t.spacing(AUI_PILL_HEIGHT / 2)} calc(100% - ${t.spacing(GAP)} - ${TAB_OVERLAP}px) ${t.spacing(AUI_PILL_HEIGHT / 2)} round ${t.shape.borderRadius}px ${t.shape.borderRadius}px 0 0)`,
             transition: `transform 260ms ${EASE_IN}, clip-path 260ms ${EASE_IN}, box-shadow 200ms ease`,
           },
           '& [data-slot="aui-response-preview-body"]': { transition: 'opacity 220ms ease-in 80ms' },
