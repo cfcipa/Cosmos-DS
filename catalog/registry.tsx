@@ -38,6 +38,12 @@ import { PromptLibraryDoc, PromptLibraryCard } from './elements/PromptLibrary';
 import { CommandPaletteDoc, CommandPaletteCard } from './elements/CommandPalette';
 import { VoiceConversationDoc, VoiceConversationCard } from './elements/VoiceConversation';
 import { ReadAloudDoc, ReadAloudCard } from './elements/ReadAloud';
+import { ChatPanelDoc, ChatPanelCard } from './elements/ChatPanel';
+import { EmptyStateDoc, EmptyStateCard } from './elements/EmptyState';
+import { ScrollAnchorDoc, ScrollAnchorCard } from './elements/ScrollAnchor';
+import { CanvasSplitDoc, CanvasSplitCard } from './elements/CanvasSplit';
+import { ConnectionStateDoc, ConnectionStateCard } from './elements/ConnectionState';
+import { SharedConversationDoc, SharedConversationCard } from './elements/SharedConversation';
 import { ToolApprovalDoc, ToolApprovalCard } from './elements/ToolApproval';
 
 export interface ElementEntry {
@@ -110,6 +116,16 @@ export const SECTIONS: Section[] = [
     id: 'voice', title: 'Voice', elements: [
       { slug: 'voice-conversation', title: 'Voice conversation', description: 'Una llamada en vivo: el orbe sigue tu voz, el rótulo nombra el turno y la transcripción lo acompaña.', Card: VoiceConversationCard, Doc: VoiceConversationDoc },
       { slug: 'read-aloud', title: 'Read aloud', description: 'Una respuesta leída en voz alta, con la palabra que suena iluminada y la velocidad a tu alcance.', Card: ReadAloudCard, Doc: ReadAloudDoc },
+    ],
+  },
+  {
+    id: 'thread', title: 'Thread', elements: [
+      { slug: 'chat-panel', title: 'Chat panel', description: 'Toda la familia trabajando junta: un mensaje, una pausa y una respuesta que llega en vivo.', Card: ChatPanelCard, Doc: ChatPanelDoc },
+      { slug: 'empty-state', title: 'Empty state', description: 'Un saludo, tres maneras de empezar y el composer al frente.', Card: EmptyStateCard, Doc: EmptyStateDoc },
+      { slug: 'scroll-anchor', title: 'Scroll anchor', description: 'El streaming nunca te roba la posición; un botón ofrece el camino de vuelta.', Card: ScrollAnchorCard, Doc: ScrollAnchorDoc },
+      { slug: 'canvas', title: 'Canvas', description: 'El hilo se hace a un lado y el documento ocupa el espacio, todavía escribiéndose mientras lo lees.', Card: CanvasSplitCard, Doc: CanvasSplitDoc },
+      { slug: 'connection-state', title: 'Connection state', description: 'Se cae la conexión, la ejecución sigue en el servidor y el stream se retoma.', Card: ConnectionStateCard, Doc: ConnectionStateDoc },
+      { slug: 'shared-conversation', title: 'Shared conversation', description: 'Una transcripción de solo lectura que alguien te envió, con una forma de seguirla tú.', Card: SharedConversationCard, Doc: SharedConversationDoc },
     ],
   },
   {

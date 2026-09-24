@@ -43,5 +43,11 @@ export * from './ai/prompt-library';
 export * from './ai/command-palette';
 export * from './ai/voice-conversation';
 export * from './ai/read-aloud';
+export * from './ai/chat-panel';
+export * from './ai/empty-state';
+export * from './ai/scroll-anchor';
+export * from './ai/canvas-split';
+export * from './ai/connection-state';
+export * from './ai/shared-conversation';
 // 3 · Tool use
 export * from './ai/tool-call';
