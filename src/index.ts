@@ -41,5 +41,7 @@ export * from './ai/draft-restore';
 export * from './ai/context-breakdown';
 export * from './ai/prompt-library';
 export * from './ai/command-palette';
+export * from './ai/voice-conversation';
+export * from './ai/read-aloud';
 // 3 · Tool use
 export * from './ai/tool-call';

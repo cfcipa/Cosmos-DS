@@ -36,6 +36,8 @@ import { DraftRestoreDoc, DraftRestoreCard } from './elements/DraftRestore';
 import { ContextBreakdownDoc, ContextBreakdownCard } from './elements/ContextBreakdown';
 import { PromptLibraryDoc, PromptLibraryCard } from './elements/PromptLibrary';
 import { CommandPaletteDoc, CommandPaletteCard } from './elements/CommandPalette';
+import { VoiceConversationDoc, VoiceConversationCard } from './elements/VoiceConversation';
+import { ReadAloudDoc, ReadAloudCard } from './elements/ReadAloud';
 import { ToolApprovalDoc, ToolApprovalCard } from './elements/ToolApproval';
 
 export interface ElementEntry {
@@ -102,6 +104,12 @@ export const SECTIONS: Section[] = [
       { slug: 'context-breakdown', title: 'Context breakdown', description: 'A dónde se fue la ventana: prompt, herramientas, archivos, conversación y lo que queda.', Card: ContextBreakdownCard, Doc: ContextBreakdownDoc },
       { slug: 'prompt-library', title: 'Prompt library', description: 'Los prompts que guardaste, con búsqueda, y sus variables a la vista antes de insertar uno.', Card: PromptLibraryCard, Doc: PromptLibraryDoc },
       { slug: 'command-palette', title: 'Command palette', description: 'Todo lo que la aplicación puede hacer, a una tecla, agrupado por dónde actúa.', Card: CommandPaletteCard, Doc: CommandPaletteDoc },
+    ],
+  },
+  {
+    id: 'voice', title: 'Voice', elements: [
+      { slug: 'voice-conversation', title: 'Voice conversation', description: 'Una llamada en vivo: el orbe sigue tu voz, el rótulo nombra el turno y la transcripción lo acompaña.', Card: VoiceConversationCard, Doc: VoiceConversationDoc },
+      { slug: 'read-aloud', title: 'Read aloud', description: 'Una respuesta leída en voz alta, con la palabra que suena iluminada y la velocidad a tu alcance.', Card: ReadAloudCard, Doc: ReadAloudDoc },
     ],
   },
   {
