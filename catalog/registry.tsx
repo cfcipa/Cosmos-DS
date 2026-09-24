@@ -25,6 +25,17 @@ import { DocumentReferenceDoc, DocumentReferenceCard } from './elements/Document
 import { MemoryChipsDoc, MemoryChipsCard } from './elements/MemoryChips';
 import { ResearchReportDoc, ResearchReportCard } from './elements/ResearchReport';
 import { MapAnswerDoc, MapAnswerCard } from './elements/MapAnswer';
+import { ComposerDoc, ComposerCard } from './elements/Composer';
+import { SlashCommandsDoc, SlashCommandsCard } from './elements/SlashCommands';
+import { MentionsDoc, MentionsCard } from './elements/Mentions';
+import { AttachmentsDoc, AttachmentsCard } from './elements/Attachments';
+import { ModelPickerDoc, ModelPickerCard } from './elements/ModelPicker';
+import { DictationDoc, DictationCard } from './elements/Dictation';
+import { ComposerContextDoc, ComposerContextCard } from './elements/ComposerContext';
+import { DraftRestoreDoc, DraftRestoreCard } from './elements/DraftRestore';
+import { ContextBreakdownDoc, ContextBreakdownCard } from './elements/ContextBreakdown';
+import { PromptLibraryDoc, PromptLibraryCard } from './elements/PromptLibrary';
+import { CommandPaletteDoc, CommandPaletteCard } from './elements/CommandPalette';
 import { ToolApprovalDoc, ToolApprovalCard } from './elements/ToolApproval';
 
 export interface ElementEntry {
@@ -76,6 +87,21 @@ export const SECTIONS: Section[] = [
       { slug: 'memory', title: 'Memory', description: 'Lo que ahora recuerda de ti, escrito durante el turno y que puedes quitar.', Card: MemoryChipsCard, Doc: MemoryChipsDoc },
       { slug: 'research-report', title: 'Research report', description: 'Un esquema que se llena sección por sección, cada una con las fuentes que la respaldan.', Card: ResearchReportCard, Doc: ResearchReportDoc },
       { slug: 'map', title: 'Map', description: 'Una respuesta de ubicación: pines, una ruta entre ellos y la lista de donde salen.', Card: MapAnswerCard, Doc: MapAnswerDoc },
+    ],
+  },
+  {
+    id: 'composer', title: 'Composer', elements: [
+      { slug: 'composer', title: 'Composer', description: 'La entrada unificada: adjuntos, comandos, menciones, modelos, voz y contexto en una sola superficie.', Card: ComposerCard, Doc: ComposerDoc },
+      { slug: 'slash-commands', title: 'Slash commands', description: 'Escribe una barra y el menú de comandos flota sobre la entrada, filtrando mientras sigues escribiendo.', Card: SlashCommandsCard, Doc: SlashCommandsDoc },
+      { slug: 'mentions', title: 'Mentions', description: 'Escribe @ para traer personas y agentes a la conversación, filtrando mientras escribes.', Card: MentionsCard, Doc: MentionsDoc },
+      { slug: 'attachments', title: 'Attachments', description: 'Los archivos esperan dentro del composer, con el progreso de cada uno, antes de enviar el mensaje.', Card: AttachmentsCard, Doc: AttachmentsDoc },
+      { slug: 'models', title: 'Models', description: 'El modelo vive en el riel del composer, a un toque, con su contexto a la vista.', Card: ModelPickerCard, Doc: ModelPickerDoc },
+      { slug: 'dictation', title: 'Dictation', description: 'El micrófono convierte la entrada en una onda en vivo y luego deja la transcripción como texto.', Card: DictationCard, Doc: DictationDoc },
+      { slug: 'context', title: 'Context', description: 'Un anillo en el riel se llena a medida que crece la conversación y avisa cerca del límite.', Card: ComposerContextCard, Doc: ComposerContextDoc },
+      { slug: 'draft-restore', title: 'Draft restore', description: 'Vuelves a un hilo y la frase que nunca enviaste sigue esperando.', Card: DraftRestoreCard, Doc: DraftRestoreDoc },
+      { slug: 'context-breakdown', title: 'Context breakdown', description: 'A dónde se fue la ventana: prompt, herramientas, archivos, conversación y lo que queda.', Card: ContextBreakdownCard, Doc: ContextBreakdownDoc },
+      { slug: 'prompt-library', title: 'Prompt library', description: 'Los prompts que guardaste, con búsqueda, y sus variables a la vista antes de insertar uno.', Card: PromptLibraryCard, Doc: PromptLibraryDoc },
+      { slug: 'command-palette', title: 'Command palette', description: 'Todo lo que la aplicación puede hacer, a una tecla, agrupado por dónde actúa.', Card: CommandPaletteCard, Doc: CommandPaletteDoc },
     ],
   },
   {

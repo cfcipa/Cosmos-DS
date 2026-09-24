@@ -36,5 +36,10 @@ export * from './ai/document-reference';
 export * from './ai/memory-chips';
 export * from './ai/research-report';
 export * from './ai/map-answer';
+export * from './ai/composer';
+export * from './ai/draft-restore';
+export * from './ai/context-breakdown';
+export * from './ai/prompt-library';
+export * from './ai/command-palette';
 // 3 · Tool use
 export * from './ai/tool-call';
