@@ -8,5 +8,7 @@ export { withAiKit, aiPaletteFrom } from './ai/theme/aiPalette';
 export type { AiPalette } from './ai/theme/aiPalette';
 
 // Kit IA — en el orden del catálogo de assistant-ui
+// Reasoning
+export * from './ai/loader';
 // 3 · Tool use
 export * from './ai/tool-call';

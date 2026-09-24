@@ -1,5 +1,5 @@
 node_modules
 dist
-storybook-static
 *.log
 .DS_Store
+catalog-dist

@@ -4,13 +4,13 @@ Tema MUI de Cosmos y kit de componentes de IA sobre **MUI Material**.
 
 - `src/ThemeCOSMOS.json` + `src/theme/*` — paquete **Azul** (tokens de Figma `COSMOS-MUI-2026`, primary `#1053b7` / `#81b4ff`, Inter + Schibsted Grotesk). Ver `docs/theme-azul-INSTRUCTIONS.md`.
 - `src/ai/*` — kit IA. Solo lee el tema; `withAiKit()` deriva `palette.ai` de la marca.
-- Storybook ordenado como el catálogo *Elements* de assistant-ui.
+- `catalog/` — sitio del catálogo, como *Elements* de assistant-ui (prueba: solo Loader).
 
 ## Empezar
 
 ```bash
 npm install
-npm run storybook      # http://localhost:6006
+npm run dev            # catálogo en http://localhost:5173
 npm run typecheck
 npm run build          # dist/ (ESM + tipos)
 ```

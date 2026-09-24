@@ -6,20 +6,20 @@ import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 
 /**
- * Página de elemento, igual a los tableros aprobados del lienzo (formato del catálogo de assistant-ui):
- * sección · título · descripción → demo en contexto → Properties → código.
+ * Playground de un elemento, igual a los tableros aprobados del lienzo:
+ * (sección · título · descripción) → demo en contexto → Properties → código.
  */
 export function ElementPage({ section, title, description, demoHeight = 440, demo, properties, code }: {
-  section: string; title: string; description: string; demoHeight?: number;
+  section?: string; title?: string; description?: string; demoHeight?: number;
   demo: React.ReactNode; properties?: React.ReactNode; code?: string;
 }) {
   return (
-    <Stack spacing={2} sx={{ width: 600, maxWidth: '100%', mx: 'auto', p: 3, bgcolor: 'background.paper', boxSizing: 'border-box' }}>
-      <Stack spacing={0.5}>
+    <Stack spacing={2} sx={{ width: '100%' }}>
+      {title ? <Stack spacing={0.5}>
         <Typography variant="overline" sx={{ color: 'primary.main', lineHeight: '24px' }}>{section}</Typography>
         <Typography component="h1" variant="h5" sx={{ m: 0 }}>{title}</Typography>
         <Typography variant="body2" color="text.secondary">{description}</Typography>
-      </Stack>
+      </Stack> : null}
       <Box sx={{ position: 'relative', height: demoHeight, flexShrink: 0, border: 1, borderColor: 'divider', borderRadius: 1, bgcolor: 'background.paper', overflow: 'hidden' }}>
         {demo}
       </Box>

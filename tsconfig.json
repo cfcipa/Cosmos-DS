@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2020",
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2020",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "jsx": "react-jsx",
@@ -12,5 +16,11 @@
     "isolatedModules": true,
     "noEmit": true
   },
-  "include": ["src", ".storybook"]
+  "include": [
+    "src",
+    "catalog"
+  ],
+  "exclude": [
+    "catalog/vite.config.ts"
+  ]
 }
