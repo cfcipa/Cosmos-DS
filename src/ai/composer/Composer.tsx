@@ -66,6 +66,8 @@ export interface ComposerProps {
 }
 
 const PLACEHOLDER_MS = 4800;
+/** El modo compacto se mantiene mientras el texto sea corto (tablero: menos de 48 caracteres, sin saltos de línea). */
+const COMPACT_MAX_CHARS = 48;
 const ICON_SIZE = 18;
 /** Placeholder que entra (el tablero alterna dos animaciones iguales para poder reiniciarla). */
 const phInA = keyframes`from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; }`;
@@ -138,7 +140,7 @@ export function Composer({
 
   const sendable = (canSubmit ?? value.trim().length > 0) && !running && !disabled;
   const submit = () => { if (sendable) onSubmit?.(); };
-  const isCompact = compact && !attachments && !value.includes('\n') && !voice;
+  const isCompact = compact && !attachments && !voice && !value.includes('\n') && value.length < COMPACT_MAX_CHARS;
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     onKeyDown?.(event);
@@ -212,7 +214,8 @@ export function Composer({
           px: 1.75,
           '& .MuiInputBase-input': {
             width: isCompact ? 'auto' : '100%',
-            ...(isCompact ? { flexGrow: 1, minWidth: 0 } : null),
+            // En compacto el texto (y el placeholder) va en una sola línea; el alto automático también la mide así.
+            ...(isCompact ? { flexGrow: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } : null),
             p: 0,
             ...(voice ? { display: 'none' } : null),
             '&::placeholder': {
