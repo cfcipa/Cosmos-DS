@@ -14,6 +14,7 @@ export * from './ai/thinking-indicator';
 export * from './ai/streaming-text';
 export * from './ai/typing-indicator';
 export * from './ai/reasoning-effort';
+export * from './ai/guardrail-notice';
 // Messages
 export * from './ai/message-pair';
 // 3 · Tool use
