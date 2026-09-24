@@ -77,7 +77,7 @@ export function withAiKit(brandTheme: Theme): Theme {
         fontFamily: '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace',
         fontSize: '0.8125rem',
         lineHeight: '1.25rem',
-        fontWeight: 400,
+        fontWeight: brandTheme.typography.fontWeightRegular,
       },
     },
   });

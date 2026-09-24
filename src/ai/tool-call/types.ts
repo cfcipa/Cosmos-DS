@@ -104,8 +104,8 @@ export interface ToolGroupProps {
 /** «<1s», «1,2s», «12s», «1m 5s». */
 export function formatToolDuration(ms: number): string {
   if (ms < 1000) return '<1s';
-  const s = ms / 1000;
-  if (s < 10) return (Math.floor(s * 10) / 10).toFixed(1).replace('.', ',') + 's';
-  if (s < 60) return Math.floor(s) + 's';
-  return Math.floor(s / 60) + 'm ' + Math.floor(s % 60) + 's';
+  const seconds = ms / 1000;
+  if (seconds < 10) return `${(Math.floor(seconds * 10) / 10).toFixed(1).replace('.', ',')}s`;
+  if (seconds < 60) return `${Math.floor(seconds)}s`;
+  return `${Math.floor(seconds / 60)}m ${Math.floor(seconds % 60)}s`;
 }

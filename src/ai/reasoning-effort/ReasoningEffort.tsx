@@ -35,7 +35,8 @@ export interface ReasoningEffortProps {
 /** Medidas del tablero. */
 const LEVEL_HEIGHT = 36;
 const BAR_HEIGHT = 4;
-const BAR_TRANSITION = 'transform 200ms linear';
+/** MUI no tiene un valor de easing 'linear' en el tema (solo easeInOut/easeOut/easeIn/sharp); la duración sí sale de la escala. */
+const barTransition = (t: Theme) => `transform ${t.transitions.duration.shorter}ms linear`;
 
 const formatTokens = (tokens: number) => Math.round(tokens).toLocaleString('es-CO');
 
@@ -103,7 +104,7 @@ export function ReasoningEffort({
           height: BAR_HEIGHT,
           borderRadius: BAR_HEIGHT / 2,
           bgcolor: trackColor(t),
-          '& .MuiLinearProgress-bar': { transition: BAR_TRANSITION, [REDUCED_MOTION]: { transition: 'none' } },
+          '& .MuiLinearProgress-bar': { transition: barTransition(t), [REDUCED_MOTION]: { transition: 'none' } },
         })}
       />
     </Stack>

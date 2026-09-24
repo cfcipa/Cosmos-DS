@@ -3,6 +3,8 @@
 import * as React from 'react';
 import Box from '@mui/material/Box';
 import { keyframes } from '@mui/material/styles';
+import type { Theme } from '@mui/material/styles';
+import { REDUCED_MOTION as REDUCED } from '../lib/shimmerText';
 
 export interface StreamingSegment {
   text: string;
@@ -20,7 +22,8 @@ export interface StreamingTextProps {
 }
 
 const blink = keyframes`0%, 100% { opacity: 1; } 50% { opacity: 0; }`;
-const REDUCED = '@media (prefers-reduced-motion: reduce)';
+/** Lo que tarda una palabra nueva en pasar de azul a tinta (tablero y referencia; igual que en Message pair). */
+const SETTLE_MS = 700;
 
 /** Palabras en orden, con la marca mono de su segmento. */
 export function streamingWords(segments: StreamingSegment[]) {
@@ -37,13 +40,13 @@ export function StreamingText({ segments, count, streaming = false, className }:
       {words.slice(0, n).map((w, i) => {
         const fresh = streaming && i >= n - 2;
         const color = fresh ? 'primary.main' : 'text.primary';
-        const tr = { transition: 'color 700ms ease-out', [REDUCED]: { transition: 'none' } };
+        const tr = (t: Theme) => ({ transition: t.transitions.create('color', { duration: SETTLE_MS, easing: t.transitions.easing.easeOut }), [REDUCED]: { transition: 'none' } });
         return w.mono ? (
           <span key={i}>
-            <Box component="code" sx={(t) => ({ px: '4px', py: '1px', borderRadius: 1, bgcolor: 'ai.surfaceMuted', ...t.aiKit.code, fontSize: 13, fontWeight: 500, color, ...tr })}>{w.word}</Box>{' '}
+            <Box component="code" sx={(t) => ({ px: '4px', py: '1px', borderRadius: 1, bgcolor: 'ai.surfaceMuted', ...t.aiKit.code, fontSize: 13, fontWeight: t.typography.fontWeightMedium, color, ...tr(t) })}>{w.word}</Box>{' '}
           </span>
         ) : (
-          <Box key={i} component="span" sx={{ color, ...tr }}>{w.word + ' '}</Box>
+          <Box key={i} component="span" sx={(t) => ({ color, ...tr(t) })}>{w.word + ' '}</Box>
         );
       })}
       {streaming && n > 0 ? (

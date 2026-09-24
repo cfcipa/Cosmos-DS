@@ -3,13 +3,15 @@ import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import InputBase from '@mui/material/InputBase';
 import Tooltip from '@mui/material/Tooltip';
 import ButtonBase from '@mui/material/ButtonBase';
-import { Sun, Moon, ChevronRight } from 'lucide-react';
+import { Sun, Moon, ChevronRight, Search } from 'lucide-react';
 import { CosmosProvider } from '../src/CosmosProvider';
 import { SECTIONS, findElement } from './registry';
 import type { ElementEntry, Section } from './registry';
 import { McpAuthorizePage, McpCallbackPage } from './elements/AuiMcpConfig';
+import { DesignPage } from './DesignPage';
 
 type Mode = 'light' | 'dark';
 const load = (): Mode => { try { return localStorage.getItem('cds-mode') === 'dark' ? 'dark' : 'light'; } catch { return 'light'; } };
@@ -29,7 +31,7 @@ export function App() {
   return (
     <CosmosProvider mode={mode}>
       <Box sx={{ minHeight: '100vh', bgcolor: 'background.paper', color: 'text.primary' }}>
-        <TopBar mode={mode} onToggle={toggle} />
+        <TopBar mode={mode} onToggle={toggle} path={path} />
         <Box sx={{ display: 'flex', maxWidth: 1360, mx: 'auto' }}>
           <Sidebar path={path} />
           <Box component="main" sx={{ flex: 1, minWidth: 0, px: { xs: 2, md: 6 }, py: 5 }}>
@@ -41,13 +43,20 @@ export function App() {
   );
 }
 
-function TopBar({ mode, onToggle }: { mode: Mode; onToggle: () => void }) {
+function TopBar({ mode, onToggle, path }: { mode: Mode; onToggle: () => void; path: string }) {
+  const onDesign = path.split('/')[1] === 'design';
   return (
-    <Stack direction="row" alignItems="center" sx={{ position: 'sticky', top: 0, zIndex: 10, height: 56, px: 3, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
+    <Stack direction="row" alignItems="center" sx={{ position: 'sticky', top: 0, zIndex: 10, height: 56, px: 3, gap: 3, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
       <ButtonBase onClick={() => go('/elements')} sx={{ gap: 1, borderRadius: 1 }}>
         <Box sx={(t) => ({ width: 22, height: 22, borderRadius: '6px', background: `linear-gradient(135deg, ${t.palette.ai.markStart}, ${t.palette.ai.markEnd})` })} />
         <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>Cosmos DS</Typography>
         <Typography variant="caption" color="text.secondary">MUI · Kit IA</Typography>
+      </ButtonBase>
+      <ButtonBase onClick={() => go('/design')} sx={{
+        px: 1, py: 0.5, borderRadius: 1, typography: 'body2', color: onDesign ? 'primary.main' : 'text.secondary',
+        fontWeight: onDesign ? 'fontWeightMedium' : 'fontWeightRegular', '&:hover': { color: 'text.primary' },
+      }}>
+        Diseño
       </ButtonBase>
       <Box sx={{ flex: 1 }} />
       <Tooltip title={mode === 'light' ? 'Modo oscuro' : 'Modo claro'}>
@@ -74,17 +83,55 @@ function NavGroup({ title, children }: { title: string; children: React.ReactNod
     </Box>
   );
 }
+/** Cuántos elementos hay en total, para el contador junto a «Elements» (como en assistant-ui/elements). */
+const TOTAL_ELEMENTS = SECTIONS.reduce((n, s) => n + s.elements.length, 0);
+
+function SidebarSearch({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  return (
+    <Box sx={{ px: 1.5, mb: 1 }}>
+      <Stack
+        direction="row"
+        alignItems="center"
+        spacing={1}
+        sx={{ px: 1.5, py: 0.75, borderRadius: 1, bgcolor: 'action.hover', color: 'text.secondary', '&:focus-within': { bgcolor: 'action.selected' } }}
+      >
+        <Search size={16} aria-hidden="true" />
+        <InputBase
+          fullWidth
+          type="search"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder="Buscar"
+          inputProps={{ 'aria-label': 'Buscar elementos' }}
+          sx={{ typography: 'body2', color: 'text.primary' }}
+        />
+      </Stack>
+    </Box>
+  );
+}
+
 function Sidebar({ path }: { path: string }) {
+  const [filter, setFilter] = React.useState('');
+  const query = filter.trim().toLowerCase();
+  const groups = query
+    ? SECTIONS.map((s) => ({ ...s, elements: s.elements.filter((e) => e.title.toLowerCase().includes(query)) })).filter((s) => s.elements.length > 0)
+    : SECTIONS;
   return (
     <Box component="nav" sx={{ display: { xs: 'none', md: 'block' }, width: 248, flexShrink: 0, position: 'sticky', top: 56, alignSelf: 'flex-start', height: 'calc(100vh - 56px)', overflowY: 'auto', py: 4, px: 2, borderRight: 1, borderColor: 'divider' }}>
-      <NavGroup title="Elements">
-        <NavItem label="Catálogo" href="/elements" active={path === '/elements'} />
-      </NavGroup>
-      {SECTIONS.map((s) => (
-        <NavGroup key={s.id} title={s.title}>
-          {s.elements.map((e) => <NavItem key={e.slug} label={e.title} href={'/elements/' + e.slug} active={path === '/elements/' + e.slug} />)}
-        </NavGroup>
-      ))}
+      <Stack direction="row" alignItems="baseline" justifyContent="space-between" sx={{ px: 1.5, mb: 1 }}>
+        <ButtonBase onClick={() => go('/elements')} sx={{ typography: 'caption', fontWeight: 600, color: 'text.primary', borderRadius: 0.5 }}>Elements</ButtonBase>
+        <Typography variant="caption" color="text.secondary">{TOTAL_ELEMENTS}</Typography>
+      </Stack>
+      <SidebarSearch value={filter} onChange={setFilter} />
+      {groups.length === 0 ? (
+        <Typography variant="body2" color="text.secondary" sx={{ px: 1.5 }}>Ningún elemento coincide.</Typography>
+      ) : (
+        groups.map((s) => (
+          <NavGroup key={s.id} title={s.title}>
+            {s.elements.map((e) => <NavItem key={e.slug} label={e.title} href={'/elements/' + e.slug} active={path === '/elements/' + e.slug} />)}
+          </NavGroup>
+        ))
+      )}
     </Box>
   );
 }
@@ -93,6 +140,7 @@ function Route({ path }: { path: string }) {
   const [, root, slug] = path.split('/');
   if (root === 'mcp-autorizar') return <McpAuthorizePage />;
   if (root === 'mcp-callback') return <McpCallbackPage />;
+  if (root === 'design') return <DesignPage />;
   if (root === 'elements' && slug) {
     const hit = findElement(slug);
     if (hit) return <ElementDetail section={hit.section} element={hit.element} />;
@@ -100,9 +148,9 @@ function Route({ path }: { path: string }) {
   return <ElementsIndex />;
 }
 
-function PageHead({ overline, title, description, children }: { overline?: string; title: string; description: string; children: React.ReactNode }) {
+function PageHead({ overline, title, description, maxWidth = 880, children }: { overline?: string; title: string; description: string; maxWidth?: number; children: React.ReactNode }) {
   return (
-    <Box sx={{ maxWidth: 880 }}>
+    <Box sx={{ maxWidth }}>
       {overline ? <Typography variant="overline" sx={{ color: 'primary.main' }}>{overline}</Typography> : null}
       <Typography component="h1" variant="h4" sx={{ mb: 1 }}>{title}</Typography>
       <Typography variant="body1" color="text.secondary" sx={{ mb: 5, maxWidth: 680 }}>{description}</Typography>
@@ -113,11 +161,11 @@ function PageHead({ overline, title, description, children }: { overline?: strin
 
 function ElementsIndex() {
   return (
-    <PageHead title="Elements" description="Componentes del asistente, construidos con MUI y el tema Cosmos. Cada tarjeta es una demo en vivo.">
+    <PageHead maxWidth={1040} title="Elements" description="Componentes del asistente, construidos con MUI y el tema Cosmos. Cada tarjeta es una demo en vivo.">
       {SECTIONS.map((s) => (
         <Box key={s.id} component="section" sx={{ mb: 6 }}>
           <Typography component="h2" variant="h6" sx={{ mb: 2 }}>{s.title}</Typography>
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 2 }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }, gap: 2 }}>
             {s.elements.map((e) => <ElementCard key={e.slug} element={e} />)}
           </Box>
         </Box>

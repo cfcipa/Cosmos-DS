@@ -15,6 +15,7 @@ import Popover from '@mui/material/Popover';
 import Typography from '@mui/material/Typography';
 import type { Theme } from '@mui/material/styles';
 import type { SxProps, SystemStyleObject } from '@mui/system';
+import { visuallyHidden } from '@mui/utils';
 import { Check, ChevronDown, Search } from 'lucide-react';
 
 export type AuiModelEffortOption = { id: string; name: string };
@@ -257,7 +258,7 @@ function FocusAnchor() {
   const { listId, highlight } = useModelSelectorContext();
   const ref = React.useRef<HTMLDivElement>(null);
   React.useEffect(() => { ref.current?.focus(); }, []);
-  return <Box ref={ref} tabIndex={0} aria-label="Modelo" aria-controls={listId} aria-activedescendant={highlight ? `${listId}-${highlight}` : undefined} sx={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' }} />;
+  return <Box ref={ref} tabIndex={0} aria-label="Modelo" aria-controls={listId} aria-activedescendant={highlight ? `${listId}-${highlight}` : undefined} sx={visuallyHidden} />;
 }
 
 export function AuiModelSelectorSearch({ placeholder = 'Buscar modelos…' }: { placeholder?: string }) {

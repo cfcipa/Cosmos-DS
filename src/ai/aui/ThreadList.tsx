@@ -22,6 +22,7 @@ import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { alpha, styled } from '@mui/material/styles';
+import { visuallyHidden } from '@mui/utils';
 import { Archive, MoreHorizontal, Pencil, Plus, Search, Trash } from 'lucide-react';
 import { AuiIconButton } from './AuiIconButton';
 import { auiMenuContent, auiMenuItem } from './menu';
@@ -195,7 +196,7 @@ export function AuiThreadListItem() {
           <Box component="span" sx={{ minWidth: 0, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             <ThreadListItemPrimitive.Title fallback={AUI_NEW_CHAT} />
           </Box>
-          {isRunning ? <Box component="span" sx={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>En ejecución</Box> : null}
+          {isRunning ? <Box component="span" sx={visuallyHidden}>En ejecución</Box> : null}
         </ItemTrigger>
       )}
       <ItemMore onRename={() => setRenaming(true)} />

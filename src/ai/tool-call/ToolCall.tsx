@@ -14,13 +14,9 @@ import type { Theme, SxProps } from '@mui/material/styles';
 import { Check, CircleX, CircleAlert, ChevronDown } from 'lucide-react';
 import { useControllable } from '../lib/useControllable';
 import { font } from '../lib/font';
+import { COLLAPSE_EASE, REDUCED_MOTION as REDUCED, shimmerTextSx } from '../lib/shimmerText';
 import { formatToolDuration } from './types';
 import type { ToolCallProps, ToolCallStatus, ToolApprovalProps, ToolApprovalOption, ToolGroupProps } from './types';
-
-
-const EASE = 'cubic-bezier(.32, .72, 0, 1)';
-const shimmer = keyframes`from { background-position: 100% 0; } to { background-position: -100% 0; }`;
-const REDUCED = '@media (prefers-reduced-motion: reduce)';
 
 // Íconos: Lucide (lucide-react), 16px, trazo 2 — el set de los tableros y de assistant-ui.
 const ICONS = { check: Check, 'circle-x': CircleX, 'circle-alert': CircleAlert, 'chevron-down': ChevronDown } as const;
@@ -44,17 +40,41 @@ const pSx = { m: 0, font: 'inherit' } as const;
 
 /** The human-in-the-loop block inside a ToolCall in requires-action (MUI): prompt, options (with an optional confirmation step) or a text answer. */
 export function ToolApproval({
-  prompt, options = DEFAULT_OPTIONS, mode = 'buttons', onRespond, disabled = false, error,
-  answer, defaultAnswer = '', onAnswerChange, fieldLabel = 'Respuesta', placeholder = 'Escribe tu respuesta',
-  submitLabel = 'Enviar', dismissLabel = 'Descartar', confirmLabel = 'Confirmar', backLabel = 'Volver',
+  prompt,
+  options = DEFAULT_OPTIONS,
+  mode = 'buttons',
+  onRespond,
+  disabled = false,
+  error,
+  answer,
+  defaultAnswer = '',
+  onAnswerChange,
+  fieldLabel = 'Respuesta',
+  placeholder = 'Escribe tu respuesta',
+  submitLabel = 'Enviar',
+  dismissLabel = 'Descartar',
+  confirmLabel = 'Confirmar',
+  backLabel = 'Volver',
   emptyError = 'La respuesta no puede estar vacía.',
 }: ToolApprovalProps) {
   const [confirming, setConfirming] = React.useState<string | null>(null);
   const [text, setText] = useControllable(answer, defaultAnswer, onAnswerChange);
   const [localErr, setLocalErr] = React.useState('');
   const conf = confirming ? options.find((o) => o.id === confirming) : undefined;
-  const respond = (oid: string, a?: string) => { setConfirming(null); if (onRespond) onRespond(oid, a); };
   const err = error || localErr;
+
+  const respond = (optionId: string, textAnswer?: string) => {
+    setConfirming(null);
+    onRespond?.(optionId, textAnswer);
+  };
+  const chooseOption = (option: ToolApprovalOption) => {
+    if (option.confirm && option.kind !== 'reject') setConfirming(option.id);
+    else respond(option.id);
+  };
+  const submitAnswer = () => {
+    if (!text.trim()) { setLocalErr(emptyError); return; }
+    respond('submit', text.trim());
+  };
   return (
     <Stack data-slot={conf ? 'approval-confirm' : 'approval'} useFlexGap
       sx={{ alignItems: 'flex-start', gap: 1, pt: '4px', alignSelf: mode === 'text' ? 'stretch' : undefined }}>
@@ -64,8 +84,13 @@ export function ToolApproval({
           {conf.confirm.description ? <Typography component="p" sx={{ ...pSx, color: 'text.secondary' }}>{conf.confirm.description}</Typography> : null}
           {conf.confirm.grants && conf.confirm.grants.length ? (
             <Stack component="ul" useFlexGap sx={{ listStyle: 'none', m: 0, p: 0, gap: '4px' }}>
-              {conf.confirm.grants.map((g) => (
-                <li key={g}><Box component="code" sx={(t) => ({ ...t.aiKit.code, fontSize: t.typography.caption.fontSize, lineHeight: t.typography.caption.lineHeight, display: 'inline-block', px: '6px', py: '2px', borderRadius: 1, bgcolor: 'ai.surfaceMuted' })}>{g}</Box></li>
+              {conf.confirm.grants.map((grant) => (
+                <li key={grant}>
+                  <Box component="code" sx={(t) => ({
+                    ...t.aiKit.code, fontSize: t.typography.caption.fontSize, lineHeight: t.typography.caption.lineHeight,
+                    display: 'inline-block', px: '6px', py: '2px', borderRadius: 1, bgcolor: 'ai.surfaceMuted',
+                  })}>{grant}</Box>
+                </li>
               ))}
             </Stack>
           ) : null}
@@ -79,9 +104,9 @@ export function ToolApproval({
           {prompt ? <Typography component="p" sx={{ ...pSx, color: 'text.primary', whiteSpace: 'pre-line' }}>{prompt}</Typography> : null}
           {mode === 'buttons' ? (
             <Actions>
-              {options.map((o, i) => (
-                <Button key={o.id} variant={i === 0 ? 'contained' : 'outlined'} disabled={disabled}
-                  onClick={() => { if (o.confirm && o.kind !== 'reject') setConfirming(o.id); else respond(o.id); }}>{o.label}</Button>
+              {options.map((option, i) => (
+                <Button key={option.id} variant={i === 0 ? 'contained' : 'outlined'} disabled={disabled}
+                  onClick={() => chooseOption(option)}>{option.label}</Button>
               ))}
             </Actions>
           ) : (
@@ -91,7 +116,7 @@ export function ToolApproval({
                 InputLabelProps={{ shrink: true }}
                 sx={{ mt: '4px', '& .MuiOutlinedInput-root': { p: '12px 14px' }, '& textarea': { minHeight: 32 } }} />
               <Actions>
-                <Button variant="contained" disabled={disabled} onClick={() => { if (!text.trim()) { setLocalErr(emptyError); return; } respond('submit', text.trim()); }}>{submitLabel}</Button>
+                <Button variant="contained" disabled={disabled} onClick={submitAnswer}>{submitLabel}</Button>
                 <Button variant="outlined" disabled={disabled} onClick={() => respond('dismiss')}>{dismissLabel}</Button>
               </Actions>
             </>
@@ -107,66 +132,86 @@ const STATUS_COLOR: Record<ToolCallStatus, string> = {
   running: 'ai.toolStatus.running', complete: 'ai.toolStatus.complete', error: 'ai.toolStatus.error',
   cancelled: 'ai.toolStatus.cancelled', 'requires-action': 'ai.toolStatus.requiresAction',
 };
-/** Pretty JSON with arrays of scalars kept on one line (the board's look). */
-const show = (v: string | object) => (typeof v === 'string' ? v
-  : JSON.stringify(v, null, 2).replace(/\[\s+([^\[\]{}]*?)\s+\]/g, (_m, items: string) => '[' + items.split(/,\s+/).join(', ') + ']'));
+/** Pretty JSON, but arrays of scalars stay on one line (the board's look): `[1, 2, 3]` instead of one item per line. */
+function show(value: string | object): string {
+  if (typeof value === 'string') return value;
+  const scalarArray = /\[\s+([^[\]{}]*?)\s+\]/g;
+  return JSON.stringify(value, null, 2).replace(scalarArray, (_match, items: string) => `[${items.split(/,\s+/).join(', ')}]`);
+}
 
 const rise = keyframes`from { opacity: 0; translate: 0 4px; } to { opacity: 1; translate: 0 0; }`;
-/** Running label: the secondary text with a moving highlight (plain secondary text under reduced motion). */
-const shimmerSx = (t: Theme) => ({
-  color: 'transparent', backgroundSize: '200% 100%', WebkitBackgroundClip: 'text', backgroundClip: 'text', animation: shimmer + ' 2s linear infinite',
-  backgroundImage: 'linear-gradient(90deg, ' + ([[t.palette.text.secondary, 0], [t.palette.text.secondary, 35], [t.palette.ai.iconDisabled, 50], [t.palette.text.secondary, 65], [t.palette.text.secondary, 100]] as Array<[string, number]>).map(([c, p]) => c + ' ' + p + '%').join(', ') + ')',
-  [REDUCED]: { color: 'text.secondary', backgroundImage: 'none', animation: 'none' },
-});
+
 const triggerSx = (t: Theme) => ({
   width: 'fit-content', maxWidth: '100%', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 1, py: '6px', px: 0,
   borderRadius: 1, textAlign: 'left', ...font(t.typography.body1), color: 'text.secondary', transformOrigin: 'left',
-  transition: 'color .15s, transform .1s', '&:hover': { color: 'text.primary' }, '&:active': { transform: 'scale(.98)' },
-  '&.Mui-focusVisible': { outline: '2px solid ' + t.palette.ai.focusRing, outlineOffset: 2 },
+  transition: t.transitions.create(['color', 'transform'], { duration: t.transitions.duration.shortest }),
+  '&:hover': { color: 'text.primary' },
+  '&:active': { transform: 'scale(.98)' },
+  '&.Mui-focusVisible': { outline: `2px solid ${t.palette.ai.focusRing}`, outlineOffset: 2 },
 });
-const chevronSx = (open: boolean) => ({ flexShrink: 0, transform: open ? 'none' : 'rotate(-90deg)', transition: 'transform .2s ' + EASE });
+const chevronSx = (open: boolean) => ({ flexShrink: 0, transform: open ? 'none' : 'rotate(-90deg)', transition: `transform .2s ${COLLAPSE_EASE}` });
 const preSx = (dim?: boolean) => (t: Theme) => ({
   m: 0, p: '10px', borderRadius: 1, bgcolor: 'ai.surfaceMuted', ...t.aiKit.code, color: 'text.primary',
   whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', opacity: dim ? 0.6 : 1,
 });
 const bodySx = (open: boolean) => (t: Theme) => ({
   display: 'flex', flexDirection: 'column', gap: 1, p: '4px 0 8px 24px', ...font(t.typography.body1),
-  transition: ['opacity', 'transform', 'filter'].map((p) => p + ' .2s ' + EASE).join(', '),
+  transition: `opacity .2s ${COLLAPSE_EASE}, transform .2s ${COLLAPSE_EASE}, filter .2s ${COLLAPSE_EASE}`,
   ...(open ? null : { opacity: 0, transform: 'translateY(-4px)', filter: 'blur(2px)' }),
 });
 
 /** A tool call inside an assistant message (ToolFallback) on MUI: status icon, name, duration, collapsible args/result, and the approval when it requires action. */
 export function ToolCall({
-  toolName, status = 'complete', args, result, error, durationMs, startedAt, open, defaultOpen = false, onOpenChange,
-  approval, children, usedLabel = 'Herramienta usada', cancelledLabel = 'Herramienta cancelada', requiresActionLabel = 'Herramienta usada',
-  errorTitle = 'Error:', cancelTitle = 'Motivo de la cancelación:', resultLabel = 'Resultado:', className,
+  toolName,
+  status = 'complete',
+  args,
+  result,
+  error,
+  durationMs,
+  startedAt,
+  open,
+  defaultOpen = false,
+  onOpenChange,
+  approval,
+  children,
+  usedLabel = 'Herramienta usada',
+  cancelledLabel = 'Herramienta cancelada',
+  requiresActionLabel = 'Herramienta usada',
+  errorTitle = 'Error:',
+  cancelTitle = 'Motivo de la cancelación:',
+  resultLabel = 'Resultado:',
+  className,
 }: ToolCallProps) {
   const [isOpen, setOpen] = useControllable(open, defaultOpen, onOpenChange);
-  const [, tick] = React.useState(0);
+  const [, forceTick] = React.useState(0);
+
+  // While running without a known durationMs, re-render every 100ms so the live elapsed time ticks up.
   const live = status === 'running' && durationMs === undefined && startedAt !== undefined;
   React.useEffect(() => {
     if (!live) return undefined;
-    const t = window.setInterval(() => tick((n) => n + 1), 100);
-    return () => clearInterval(t);
+    const id = window.setInterval(() => forceTick((n) => n + 1), 100);
+    return () => clearInterval(id);
   }, [live]);
-  const ra = status === 'requires-action';
-  const expanded = ra || isOpen;
-  const ms = durationMs !== undefined ? durationMs : live ? Date.now() - (startedAt as number) : undefined;
-  const verb = status === 'cancelled' ? cancelledLabel : ra ? requiresActionLabel : usedLabel;
-  const hasErr = (status === 'error' || status === 'cancelled') && !!error;
+
+  const requiresAction = status === 'requires-action';
   const running = status === 'running';
   const cancelled = status === 'cancelled';
+  const expanded = requiresAction || isOpen;
+  const hasErr = (status === 'error' || cancelled) && !!error;
+  const verb = cancelled ? cancelledLabel : requiresAction ? requiresActionLabel : usedLabel;
+  let ms: number | undefined = durationMs;
+  if (ms === undefined && live) ms = Date.now() - (startedAt as number);
   return (
     <Box className={className} data-status={status} sx={{ width: '100%', fontFamily: 'fontFamily' }}>
-      <ButtonBase disableRipple aria-expanded={expanded} onClick={() => { if (!ra) setOpen(!isOpen); }} sx={triggerSx}>
+      <ButtonBase disableRipple aria-expanded={expanded} onClick={() => { if (!requiresAction) setOpen(!isOpen); }} sx={triggerSx}>
         <Box component="span" sx={{ display: 'inline-flex', flexShrink: 0, width: 16, height: 16, alignItems: 'center', justifyContent: 'center', color: STATUS_COLOR[status] }}>
           {running ? <CircularProgress size={13} thickness={4.4} disableShrink aria-hidden="true" sx={{ animationDuration: '.6s' }} />
-            : <Lucide name={status === 'complete' ? 'check' : ra ? 'circle-alert' : 'circle-x'} />}
+            : <Lucide name={status === 'complete' ? 'check' : requiresAction ? 'circle-alert' : 'circle-x'} />}
         </Box>
         <Box component="span" sx={(t) => ({
           minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
           ...(cancelled ? { textDecoration: 'line-through', color: 'ai.toolStatus.cancelled' } : null),
-          ...(running ? shimmerSx(t) : null),
+          ...(running ? shimmerTextSx(t) : null),
         })}>
           {verb}: <Box component="b" sx={{ fontWeight: 'fontWeightBold' }}>{toolName}</Box>
         </Box>
@@ -183,10 +228,10 @@ export function ToolCall({
           ) : null}
           {args !== undefined ? <Box component="pre" data-dim={cancelled || undefined} sx={preSx(cancelled)}>{show(args)}</Box> : null}
           {children}
-          {ra && approval ? <ToolApproval {...approval} /> : null}
-          {result !== undefined && !ra ? (
+          {requiresAction && approval ? <ToolApproval {...approval} /> : null}
+          {result !== undefined && !requiresAction ? (
             <div>
-              <Typography variant="caption" component="p" sx={{ m: '0 0 4px', fontWeight: 500, color: 'text.secondary' }}>{resultLabel}</Typography>
+              <Typography variant="caption" component="p" sx={{ m: '0 0 4px', fontWeight: 'fontWeightMedium', color: 'text.secondary' }}>{resultLabel}</Typography>
               <Box component="pre" sx={preSx()}>{show(result)}</Box>
             </div>
           ) : null}
@@ -196,15 +241,30 @@ export function ToolCall({
   );
 }
 
-/** Children rise in one after another when the group opens (40ms stagger, like the kit). */
-const RISE: Record<string, object> = { '& > *': { animation: rise + ' .2s ' + EASE + ' both' }, '& > *:nth-of-type(n+5)': { animationDelay: '160ms' }, [REDUCED]: { '& > *': { animation: 'none' } } };
-[2, 3, 4].forEach((n) => { RISE['& > *:nth-of-type(' + n + ')'] = { animationDelay: (n - 1) * 40 + 'ms' }; });
+// Children rise in one after another when the group opens: 40ms stagger for the first 4, then all together after that.
+const RISE_STAGGER_MS = 40;
+const RISE = {
+  '& > *': { animation: `${rise} .2s ${COLLAPSE_EASE} both` },
+  '& > *:nth-of-type(2)': { animationDelay: `${RISE_STAGGER_MS}ms` },
+  '& > *:nth-of-type(3)': { animationDelay: `${RISE_STAGGER_MS * 2}ms` },
+  '& > *:nth-of-type(4)': { animationDelay: `${RISE_STAGGER_MS * 3}ms` },
+  '& > *:nth-of-type(n+5)': { animationDelay: `${RISE_STAGGER_MS * 4}ms` },
+  [REDUCED]: { '& > *': { animation: 'none' } },
+};
 
-const groupLabel = (n: number) => n + (n === 1 ? ' llamada a herramienta' : ' llamadas a herramientas');
+const groupLabel = (n: number) => `${n} ${n === 1 ? 'llamada a herramienta' : 'llamadas a herramientas'}`;
 
 /** Consecutive tool calls of one turn folded under a single trigger (MUI). Same props as the kit's ToolGroup. */
 export function ToolGroup({
-  count, active = false, variant = 'outline', open, defaultOpen = false, onOpenChange, label = groupLabel, children, className,
+  count,
+  active = false,
+  variant = 'outline',
+  open,
+  defaultOpen = false,
+  onOpenChange,
+  label = groupLabel,
+  children,
+  className,
 }: ToolGroupProps) {
   const [isOpen, setOpen] = useControllable(open, defaultOpen, onOpenChange);
   const id = React.useId();
@@ -219,7 +279,10 @@ export function ToolGroup({
         sx={(t) => ({ ...triggerSx(t), ...(framed ? { width: '100%', px: 2, py: 0, color: 'text.primary' } : null) })}>
         {active ? <Box component="span" sx={{ display: 'inline-flex', color: 'ai.toolStatus.running' }}><CircularProgress size={10} thickness={4.4} disableShrink aria-hidden="true" sx={{ animationDuration: '.6s' }} /></Box> : null}
         <Typography variant="caption" component="span" data-active={active || undefined}
-          sx={(t) => ({ display: 'inline-block', fontWeight: framed ? 500 : 400, flex: framed ? 1 : undefined, ...(active ? shimmerSx(t) : null) })}>{label(count)}</Typography>
+          sx={(t) => ({
+            display: 'inline-block', fontWeight: framed ? t.typography.fontWeightMedium : t.typography.fontWeightRegular,
+            flex: framed ? 1 : undefined, ...(active ? shimmerTextSx(t) : null),
+          })}>{label(count)}</Typography>
         <Lucide name="chevron-down" size={12} sx={chevronSx(isOpen)} />
       </ButtonBase>
       <Collapse in={isOpen} id={id} sx={isOpen ? undefined : { pointerEvents: 'none' }}>

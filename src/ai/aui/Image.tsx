@@ -7,6 +7,7 @@
 import * as React from 'react';
 import type { ImageMessagePart, ImageMessagePartComponent } from '@assistant-ui/react';
 import Box from '@mui/material/Box';
+import ButtonBase from '@mui/material/ButtonBase';
 import Fade from '@mui/material/Fade';
 import Modal from '@mui/material/Modal';
 import Stack from '@mui/material/Stack';
@@ -183,18 +184,18 @@ export function AuiImageZoom({ src, alt = 'Vista previa de la imagen', enabled =
   const show = () => { if (enabled) setOpen(true); };
   return (
     <>
-      <Box
-        role="button"
-        tabIndex={0}
+      <ButtonBase
+        disableRipple
         aria-label="Ampliar la imagen"
         data-slot="aui-image-zoom-trigger"
         onClick={show}
-        onKeyDown={(e: React.KeyboardEvent) => { if (e.key === 'Enter') { e.preventDefault(); show(); } else if (e.key === ' ') e.preventDefault(); }}
-        onKeyUp={(e: React.KeyboardEvent) => { if (e.key === ' ') show(); }}
-        sx={(t) => ({ cursor: enabled ? 'zoom-in' : 'default', '&:focus-visible': { outline: `2px solid ${t.palette.ai.focusRing}`, outlineOffset: -2 } })}
+        sx={(t) => ({
+          display: 'block', width: '100%', textAlign: 'inherit', cursor: enabled ? 'zoom-in' : 'default',
+          '&.Mui-focusVisible': { outline: `2px solid ${t.palette.ai.focusRing}`, outlineOffset: -2 },
+        })}
       >
         {children}
-      </Box>
+      </ButtonBase>
       <Modal
         open={open}
         onClose={() => setOpen(false)}

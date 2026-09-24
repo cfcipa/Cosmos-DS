@@ -18,7 +18,7 @@ import Typography from '@mui/material/Typography';
 import { alpha } from '@mui/material/styles';
 import type { Theme } from '@mui/material/styles';
 import { primaryTint } from '../lib/primaryTint';
-import { REDUCED_MOTION } from '../lib/shimmerText';
+import { COLLAPSE_EASE, REDUCED_MOTION } from '../lib/shimmerText';
 
 export interface MapPin {
   id: string;
@@ -46,7 +46,6 @@ const MAP_H = 160;
 const PIN_HIT = 3.5;
 const BADGE = 2.5;
 const BADGE_ACTIVE = 3.25;
-const EASE = 'cubic-bezier(.32, .72, 0, 1)';
 
 /** El fondo del mapa del tablero (agua, parques y calles), con colores del tema. */
 function MapArt({ points, showRoute }: { points: string; showRoute: boolean }) {
@@ -111,7 +110,7 @@ const badgeSx = (active: boolean) => (t: Theme) => ({
   fontWeight: t.typography.fontWeightBold,
   fontVariantNumeric: 'tabular-nums',
   boxShadow: active ? t.shadows[2] : t.shadows[1],
-  transition: t.transitions.create(['width', 'height', 'background-color', 'color', 'box-shadow'], { duration: t.transitions.duration.shorter, easing: EASE }),
+  transition: t.transitions.create(['width', 'height', 'background-color', 'color', 'box-shadow'], { duration: t.transitions.duration.shorter, easing: COLLAPSE_EASE }),
   [REDUCED_MOTION]: { transition: 'none' },
 });
 

@@ -21,14 +21,12 @@ import { keyframes, useTheme, type Theme } from '@mui/material/styles';
 import type { SxProps, SystemStyleObject } from '@mui/system';
 import { AlertCircle, Check, ChevronDown, Loader, XCircle } from 'lucide-react';
 import { COLLAPSE_EASE, REDUCED_MOTION, shimmerTextSx } from '../lib/shimmerText';
+import { formatToolDuration } from '../tool-call';
 
 /** Medidas de assistant-ui: íconos de 16px, contenido con sangría de 24px, giro de 0,6 s. */
 const ICON_SIZE = 16;
 const CONTENT_INDENT = 3;
 const SPIN_MS = 600;
-const SECOND = 1000;
-const MINUTE = 60;
-const TENTHS = 10;
 /** Alto mínimo del campo de respuesta (el Textarea de assistant-ui, min-h-16). */
 const ANSWER_MIN_ROWS = 3;
 
@@ -43,15 +41,6 @@ const OPTION_LABELS: Record<string, string> = {
   'reject-once': 'Rechazar',
   'reject-always': 'Rechazar siempre',
 };
-
-/** «<1s», «2,4s», «14s», «1m 5s». */
-export function formatToolDuration(ms: number) {
-  if (ms < SECOND) return '<1s';
-  const seconds = ms / SECOND;
-  if (seconds < TENTHS) return `${(Math.floor(seconds * TENTHS) / TENTHS).toFixed(1).replace('.', ',')}s`;
-  if (seconds < MINUTE) return `${Math.floor(seconds)}s`;
-  return `${Math.floor(seconds / MINUTE)}m ${Math.floor(seconds % MINUTE)}s`;
-}
 
 /** Texto de un valor cualquiera (resultado, error): tal cual si es texto, si no JSON. */
 export function formatUnknownValue(value: unknown, space?: number): string {

@@ -94,7 +94,6 @@ export function MessageActions({
           aria-haspopup="menu"
           aria-expanded={moreOpen}
           onClick={(event) => onMore(event.currentTarget)}
-         
         >
           <Ellipsis size={ICON_SIZE} />
         </IconButton>

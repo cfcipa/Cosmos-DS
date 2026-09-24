@@ -3,7 +3,7 @@
 // el modelo todavía no tiene nada que mostrar. Colores y tipografía salen del tema.
 import * as React from 'react';
 import Box from '@mui/material/Box';
-import { keyframes } from '@mui/material/styles';
+import { REDUCED_MOTION, shimmerTextSx } from '../lib/shimmerText';
 
 export type LoaderAnimation = 'wave' | 'pulse';
 
@@ -23,7 +23,6 @@ const TOP = 'M209.382 58.0308C212.481 63.5926 209.709 70.4043 203.852 72.8996L16
 const BOTTOM = 'M140.125 167.426C140.111 169.276 140.473 171.157 141.238 172.971C144.247 180.032 152.416 183.334 159.492 180.312L198.663 163.626C203.541 161.548 208.109 166.475 205.199 170.907C185.162 201.421 150.519 221.466 111.291 221.176C80.9664 220.952 53.5571 208.611 33.6284 188.789C28.2918 183.48 30.5649 174.763 37.4897 171.813L208.47 98.9625C215.399 96.0104 223.261 100.415 223.389 107.945C223.405 108.865 223.41 109.787 223.403 110.711C223.388 112.666 223.323 114.608 223.208 116.537C222.964 120.651 220.278 124.166 216.487 125.781L148.58 154.717C143.332 156.96 140.164 162.056 140.125 167.426Z';
 const TICK_MS = 120;
 const EASE = '360ms ease-in-out';
-const shimmer = keyframes`from { background-position: 100% 0; } to { background-position: -100% 0; }`;
 
 /** Opacidades y escala del símbolo para un tick (misma fórmula que el tablero). */
 export function loaderFrame(animation: LoaderAnimation, tick: number) {
@@ -48,18 +47,18 @@ export function Loader({ animation = 'wave', label = 'Pensando', tick, size = 44
     <Box role="status" aria-live="polite" aria-label={label} className={className}
       sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
       <Box component="svg" aria-hidden="true" width={size} height={size} viewBox="0 0 225 222" fill="none"
-        sx={{ transform: `scale(${f.scale})`, transition: `transform ${EASE}`, color: 'primary.main',
-          '& path': { transition: `opacity ${EASE}` }, '@media (prefers-reduced-motion: reduce)': { transform: 'none', '& path': { opacity: '1 !important', transition: 'none' } } }}>
+        sx={{
+          transform: `scale(${f.scale})`, transition: `transform ${EASE}`, color: 'primary.main',
+          '& path': { transition: `opacity ${EASE}` },
+          [REDUCED_MOTION]: { transform: 'none', '& path': { opacity: '1 !important', transition: 'none' } },
+        }}>
         <path d={TOP} fill="currentColor" style={{ opacity: f.top }} />
         <path d={BOTTOM} fill="currentColor" style={{ opacity: f.bottom }} />
       </Box>
       {label ? (
         <Box component="span" sx={(t) => ({
-          fontSize: 13, lineHeight: '18px', fontWeight: 500, fontFamily: t.typography.fontFamily,
-          color: 'transparent', WebkitBackgroundClip: 'text', backgroundClip: 'text', backgroundSize: '200% 100%',
-          backgroundImage: `linear-gradient(90deg, ${t.palette.text.secondary} 0%, ${t.palette.text.secondary} 35%, ${t.palette.text.disabled} 50%, ${t.palette.text.secondary} 65%, ${t.palette.text.secondary} 100%)`,
-          animation: `${shimmer} 2s linear infinite`,
-          '@media (prefers-reduced-motion: reduce)': { color: t.palette.text.secondary, backgroundImage: 'none', animation: 'none' },
+          fontSize: 13, lineHeight: '18px', fontWeight: t.typography.fontWeightMedium, fontFamily: t.typography.fontFamily,
+          ...shimmerTextSx(t),
         })}>{label}</Box>
       ) : null}
     </Box>

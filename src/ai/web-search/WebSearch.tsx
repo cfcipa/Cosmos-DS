@@ -20,7 +20,7 @@ import { keyframes } from '@mui/material/styles';
 import type { Theme } from '@mui/material/styles';
 import { Check, ChevronDown, Search } from 'lucide-react';
 import { font } from '../lib/font';
-import { REDUCED_MOTION, shimmerTextSx } from '../lib/shimmerText';
+import { COLLAPSE_EASE, REDUCED_MOTION, shimmerTextSx } from '../lib/shimmerText';
 import { useControllable } from '../lib/useControllable';
 import { formatToolDuration } from '../tool-call';
 
@@ -62,7 +62,6 @@ export interface WebSearchProps {
 const ICON_SIZE = 16;
 /** Filas que reserva la lista (min-h de la referencia: tres resultados). */
 const RESERVED_ROWS = 3;
-const EASE = 'cubic-bezier(.32, .72, 0, 1)';
 
 const rise = keyframes`from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; }`;
 const defaultDoneLabel = (count: number) => `Leí ${count} ${count === 1 ? 'fuente' : 'fuentes'}`;
@@ -144,7 +143,7 @@ export function WebSearch({
         <Box
           component="span"
           aria-hidden="true"
-          sx={(t) => ({ display: 'inline-flex', transform: isOpen ? 'none' : 'rotate(-90deg)', transition: t.transitions.create('transform', { duration: t.transitions.duration.shorter, easing: EASE }) })}
+          sx={(t) => ({ display: 'inline-flex', transform: isOpen ? 'none' : 'rotate(-90deg)', transition: t.transitions.create('transform', { duration: t.transitions.duration.shorter, easing: COLLAPSE_EASE }) })}
         >
           <ChevronDown size={ICON_SIZE} />
         </Box>
