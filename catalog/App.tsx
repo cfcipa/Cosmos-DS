@@ -18,7 +18,7 @@ type Mode = 'light' | 'dark';
 const load = (): Mode => { try { return localStorage.getItem('cds-mode') === 'dark' ? 'dark' : 'light'; } catch { return 'light'; } };
 
 function useHash() {
-  const get = () => (window.location.hash.replace(/^#/, '') || '/elements');
+  const get = () => (window.location.hash.replace(/^#/, '') || '/');
   const [h, setH] = React.useState(get);
   React.useEffect(() => { const on = () => { setH(get()); window.scrollTo(0, 0); }; window.addEventListener('hashchange', on); return () => window.removeEventListener('hashchange', on); }, []);
   return h;
@@ -36,6 +36,9 @@ export function App() {
         {path.split('/')[1] === 'playground' ? (
           // El playground ocupa todo el ancho bajo la barra, sin la barra lateral del catálogo.
           <Box component="main" sx={{ height: 'calc(100vh - 56px)' }}><PlaygroundPage /></Box>
+        ) : path.split('/')[1] === '' ? (
+          // El inicio, por ahora vacío.
+          <Box component="main" />
         ) : (
           <Box sx={{ display: 'flex', maxWidth: 1360, mx: 'auto' }}>
             <Sidebar path={path} />
@@ -49,28 +52,29 @@ export function App() {
   );
 }
 
+const HEADER_LINKS = [
+  { label: 'Elementos', root: 'elements' },
+  { label: 'Diseño', root: 'design' },
+  { label: 'Playground', root: 'playground' },
+];
+
 function TopBar({ mode, onToggle, path }: { mode: Mode; onToggle: () => void; path: string }) {
-  const onDesign = path.split('/')[1] === 'design';
-  const onPlayground = path.split('/')[1] === 'playground';
+  const root = path.split('/')[1];
   return (
     <Stack direction="row" alignItems="center" sx={{ position: 'sticky', top: 0, zIndex: 10, height: 56, px: 3, gap: 3, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
-      <ButtonBase onClick={() => go('/elements')} sx={{ gap: 1, borderRadius: 1 }}>
+      <ButtonBase onClick={() => go('/')} sx={{ gap: 1, borderRadius: 1 }}>
         <Box sx={(t) => ({ width: 22, height: 22, borderRadius: '6px', background: `linear-gradient(135deg, ${t.palette.ai.markStart}, ${t.palette.ai.markEnd})` })} />
         <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>Cosmos DS</Typography>
         <Typography variant="caption" color="text.secondary">MUI · Kit IA</Typography>
       </ButtonBase>
-      <ButtonBase onClick={() => go('/design')} sx={{
-        px: 1, py: 0.5, borderRadius: 1, typography: 'body2', color: onDesign ? 'primary.main' : 'text.secondary',
-        fontWeight: onDesign ? 'fontWeightMedium' : 'fontWeightRegular', '&:hover': { color: 'text.primary' },
-      }}>
-        Diseño
-      </ButtonBase>
-      <ButtonBase onClick={() => go('/playground')} sx={{
-        px: 1, py: 0.5, borderRadius: 1, typography: 'body2', color: onPlayground ? 'primary.main' : 'text.secondary',
-        fontWeight: onPlayground ? 'fontWeightMedium' : 'fontWeightRegular', '&:hover': { color: 'text.primary' },
-      }}>
-        Playground
-      </ButtonBase>
+      {HEADER_LINKS.map((l) => (
+        <ButtonBase key={l.root} onClick={() => go('/' + l.root)} aria-current={root === l.root ? 'page' : undefined} sx={{
+          px: 1, py: 0.5, borderRadius: 1, typography: 'body2', color: root === l.root ? 'primary.main' : 'text.secondary',
+          fontWeight: root === l.root ? 'fontWeightMedium' : 'fontWeightRegular', '&:hover': { color: 'text.primary' },
+        }}>
+          {l.label}
+        </ButtonBase>
+      ))}
       <Box sx={{ flex: 1 }} />
       <Tooltip title={mode === 'light' ? 'Modo oscuro' : 'Modo claro'}>
         <IconButton size="small" onClick={onToggle} aria-label="Cambiar modo">{mode === 'light' ? <Moon size={18} /> : <Sun size={18} />}</IconButton>
