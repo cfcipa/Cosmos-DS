@@ -25,5 +25,8 @@ export * from './ai/edit-message';
 export * from './ai/feedback-dialog';
 export * from './ai/stopped-run';
 export * from './ai/day-separator';
+export * from './ai/speaker-identity';
+export * from './ai/regenerate-menu';
+export * from './ai/confidence-marker';
 // 3 · Tool use
 export * from './ai/tool-call';

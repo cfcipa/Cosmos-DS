@@ -14,6 +14,9 @@ import { EditMessageDoc, EditMessageCard } from './elements/EditMessage';
 import { FeedbackDialogDoc, FeedbackDialogCard } from './elements/FeedbackDialog';
 import { StoppedRunDoc, StoppedRunCard } from './elements/StoppedRun';
 import { TimestampsDoc, TimestampsCard } from './elements/Timestamps';
+import { SpeakerIdentityDoc, SpeakerIdentityCard } from './elements/SpeakerIdentity';
+import { RegenerateMenuDoc, RegenerateMenuCard } from './elements/RegenerateMenu';
+import { ConfidenceDoc, ConfidenceCard } from './elements/Confidence';
 
 export interface ElementEntry {
   slug: string;
@@ -49,6 +52,9 @@ export const SECTIONS: Section[] = [
       { slug: 'feedback-dialog', title: 'Feedback dialog', description: 'Un pulgar abajo que pregunta por qué, para que la señal llegue con su razón.', Card: FeedbackDialogCard, Doc: FeedbackDialogDoc },
       { slug: 'stopped-run', title: 'Stopped run', description: 'Pulsaste detener. La respuesta a medias se queda, y seguir está a un toque.', Card: StoppedRunCard, Doc: StoppedRunDoc },
       { slug: 'timestamps', title: 'Timestamps', description: 'Cronología en un hilo largo: los días marcados y la hora al pasar el cursor.', Card: TimestampsCard, Doc: TimestampsDoc },
+      { slug: 'speaker-identity', title: 'Speaker identity', description: 'Quién habla, cuando un hilo tiene más voces que la persona y un modelo.', Card: SpeakerIdentityCard, Doc: SpeakerIdentityDoc },
+      { slug: 'regenerate-with', title: 'Regenerate with', description: 'Bifurca el mismo turno hacia otro modelo en lugar de volver a tirar los mismos dados.', Card: RegenerateMenuCard, Doc: RegenerateMenuDoc },
+      { slug: 'confidence', title: 'Confidence', description: 'Qué afirmaciones vienen de una fuente, cuáles se infirieron y cuáles son suposiciones.', Card: ConfidenceCard, Doc: ConfidenceDoc },
     ],
   },
 ];
