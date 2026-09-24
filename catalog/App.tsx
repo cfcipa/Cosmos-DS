@@ -110,7 +110,7 @@ function PageHead({ overline, title, description, children }: { overline?: strin
 
 function ElementsIndex() {
   return (
-    <PageHead title="Elements" description="Los componentes del asistente, en el orden del catálogo de assistant-ui, construidos con MUI y el tema Cosmos. Cada tarjeta es una demo en vivo; ábrela para probarla, ver cómo usarla en tu producto y cómo está hecha.">
+    <PageHead title="Elements" description="Componentes del asistente, construidos con MUI y el tema Cosmos. Cada tarjeta es una demo en vivo.">
       {SECTIONS.map((s) => (
         <Box key={s.id} component="section" sx={{ mb: 6 }}>
           <Typography component="h2" variant="h6" sx={{ mb: 2 }}>{s.title}</Typography>

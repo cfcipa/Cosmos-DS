@@ -1,6 +1,5 @@
 import * as React from 'react';
 import Box from '@mui/material/Box';
-import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -23,20 +22,6 @@ export function DocSection({ title, lead, children }: { title: string; lead?: st
 export function Code({ children }: { children: string }) {
   return (
     <Box component="pre" sx={(t) => ({ m: 0, p: 2, borderRadius: 1, bgcolor: t.palette.ai.surfaceMuted, ...t.aiKit.code, fontSize: 13, lineHeight: '20px', overflowX: 'auto', color: 'text.primary' })}>{children}</Box>
-  );
-}
-
-/** Filas etiqueta → contenido (guía, piezas). */
-export function Facts({ rows }: { rows: Array<[string, React.ReactNode]> }) {
-  return (
-    <Stack divider={<Box sx={{ borderTop: 1, borderColor: 'divider' }} />} sx={{ border: 1, borderColor: 'divider', borderRadius: 1 }}>
-      {rows.map(([k, v]) => (
-        <Stack key={k} direction={{ xs: 'column', sm: 'row' }} spacing={{ xs: 0.5, sm: 2 }} sx={{ px: 2, py: 1.5 }}>
-          <Typography variant="body2" sx={{ width: { sm: 180 }, flexShrink: 0, fontWeight: 500 }}>{k}</Typography>
-          <Box sx={{ typography: 'body2', color: 'text.secondary', minWidth: 0 }}>{v}</Box>
-        </Stack>
-      ))}
-    </Stack>
   );
 }
 
