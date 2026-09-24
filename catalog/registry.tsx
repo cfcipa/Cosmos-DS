@@ -62,6 +62,12 @@ import { AuiConversationMapDoc, AuiConversationMapCard } from './elements/AuiCon
 import { AuiContextDisplayDoc, AuiContextDisplayCard } from './elements/AuiContextDisplay';
 import { AuiMcpConfigDoc, AuiMcpConfigCard } from './elements/AuiMcpConfig';
 import { AuiAttachmentDoc, AuiAttachmentCard } from './elements/AuiAttachment';
+import { AuiFollowupsDoc, AuiFollowupsCard } from './elements/AuiFollowups';
+import { AuiToolFallbackDoc, AuiToolFallbackCard } from './elements/AuiToolFallback';
+import { AuiToolGroupDoc, AuiToolGroupPreview } from './elements/AuiToolGroup';
+import { AuiQuoteDoc, AuiQuoteCard } from './elements/AuiQuote';
+import { AuiSourcesDoc, AuiSourcesCard } from './elements/AuiSources';
+import { AuiImageDoc, AuiImageCard } from './elements/AuiImage';
 import { AuiOrbDoc, AuiOrbCard } from './elements/AuiOrb';
 
 export interface ElementEntry {
@@ -166,6 +172,12 @@ export const SECTIONS: Section[] = [
       { slug: 'aui-context-display', title: 'Context display', description: 'El uso del contexto del modelo como anillo, barra o texto, con una vista detallada al pasar el cursor.', Card: AuiContextDisplayCard, Doc: AuiContextDisplayDoc },
       { slug: 'aui-mcp-config', title: 'MCP config dialog', description: 'Un diálogo para conectores y servidores MCP propios, con autenticación y estado de conexión.', Card: AuiMcpConfigCard, Doc: AuiMcpConfigDoc },
       { slug: 'aui-attachment', title: 'Attachment', description: 'Adjuntos del runtime para el composer y los mensajes, con vista previa, progreso y opción de quitarlos.', Card: AuiAttachmentCard, Doc: AuiAttachmentDoc },
+      { slug: 'aui-followups', title: 'Follow-up suggestions', description: 'Fichas de prompt que se llenan con las sugerencias de seguimiento que genera el runtime.', Card: AuiFollowupsCard, Doc: AuiFollowupsDoc },
+      { slug: 'aui-tool-fallback', title: 'Tool fallback', description: 'El renderizador por defecto para llamadas a herramientas que no tienen una interfaz dedicada.', Card: AuiToolFallbackCard, Doc: AuiToolFallbackDoc },
+      { slug: 'aui-tool-group', title: 'Tool group', description: 'Un contenedor plegable para las llamadas a herramientas consecutivas de un mismo turno.', Card: AuiToolGroupPreview, Doc: AuiToolGroupDoc },
+      { slug: 'aui-quote', title: 'Quote', description: 'Selecciona texto de un mensaje, cítalo desde una barra flotante y llévalo al composer.', Card: AuiQuoteCard, Doc: AuiQuoteDoc },
+      { slug: 'aui-sources', title: 'Sources', description: 'Fuentes del runtime: enlaces con favicon e insignias para documentos.', Card: AuiSourcesCard, Doc: AuiSourcesDoc },
+      { slug: 'aui-image', title: 'Image', description: 'Partes de imagen del mensaje con vista previa, estados de carga, acciones y vista a pantalla completa.', Card: AuiImageCard, Doc: AuiImageDoc },
       { slug: 'tool-approval', title: 'Tool approval', description: 'Una herramienta que pide la aprobación de la persona antes de cambiar datos y sigue según su respuesta.', Card: ToolApprovalCard, Doc: ToolApprovalDoc },
     ],
   },

@@ -20,6 +20,7 @@ import {
   MessagePrimitive,
   SuggestionPrimitive,
   ThreadPrimitive,
+  type ImageMessagePartComponent,
   type ToolCallMessagePartComponent,
   useAuiState,
 } from '@assistant-ui/react';
@@ -36,7 +37,6 @@ import {
   ArrowDown, ArrowUp, Check, ChevronLeft, ChevronRight, Copy, Download, FileText, Mic,
   MoreHorizontal, Pencil, RefreshCw, Square, ThumbsDown, ThumbsUp,
 } from 'lucide-react';
-import { ToolCall, ToolGroup, type ToolCallStatus } from '../tool-call';
 import { REDUCED_MOTION } from '../lib/shimmerText';
 import { riseSx } from '../lib/thread';
 import { AuiIconButton } from './AuiIconButton';
@@ -48,6 +48,11 @@ import { AuiConversationMapRail } from './ConversationMap';
 import { AuiMarkdownText } from './MarkdownText';
 import { AuiMessageTiming, AuiMessageTimingFooter } from './MessageTiming';
 import { AuiReasoningGroup } from './Reasoning';
+import { AuiToolFallback } from './ToolFallback';
+import { AuiToolGroupContent, AuiToolGroupRoot, AuiToolGroupTrigger } from './ToolGroup';
+import { AuiComposerQuotePreview, AuiQuoteBlock, AuiSelectionToolbar, AUI_QUOTE_ACTIONS } from './Quote';
+import { AuiSources } from './Sources';
+import { AuiImage } from './Image';
 
 export type AuiThreadTiming = { design?: 'badge' | 'footer'; side?: 'top' | 'right' | 'bottom' | 'left' };
 
@@ -72,6 +77,10 @@ export interface AuiThreadProps {
   modelContextWindow?: number;
   /** Muestra el mapa de la conversación a un lado del hilo. `true` = izquierda. */
   conversationMap?: boolean | 'left' | 'right';
+  /** Barra para citar el texto seleccionado de un mensaje. `true` = solo «Citar»; `'actions'` suma Explicar y Reescribir. */
+  quotes?: boolean | 'actions';
+  /** Las sugerencias de seguimiento se envían al tocarlas (default) o solo llenan el composer. */
+  followupSend?: boolean;
 }
 
 /** Medidas de assistant-ui: columna de 44rem, composer con 8px de relleno, botones de 28px, íconos de 16px. */
@@ -110,7 +119,7 @@ const ViewportFooter = styled(ThreadPrimitive.ViewportFooter)(({ theme: t }) => 
 }));
 
 export function AuiThread({
-  components = {}, autoFocus = true, welcome = '¿En qué te ayudo hoy?', placeholder = 'Escribe un mensaje…', messageTiming = false, modelContextWindow, conversationMap,
+  components = {}, autoFocus = true, welcome = '¿En qué te ayudo hoy?', placeholder = 'Escribe un mensaje…', messageTiming = false, modelContextWindow, conversationMap, quotes = false, followupSend = true,
 }: AuiThreadProps) {
   const isEmpty = useAuiState(isNewChatView);
   const timingDesign = messageTiming === true ? 'badge' : messageTiming ? messageTiming.design ?? 'badge' : undefined;
@@ -135,11 +144,12 @@ export function AuiThread({
               </Stack>
               <ViewportFooter data-docked={!isEmpty}>
                 <ScrollToBottom />
-                <AuiFollowupSuggestions />
+                <AuiFollowupSuggestions send={followupSend} />
                 <Composer autoFocus={autoFocus} />
                 <AuiIf condition={(s) => isNewChatView(s) && s.composer.isEmpty}><WelcomeSuggestions /></AuiIf>
               </ViewportFooter>
             </Box>
+            {quotes ? <AuiSelectionToolbar actions={quotes === 'actions' ? AUI_QUOTE_ACTIONS : undefined} /> : null}
           </Viewport>
         </Root>
       </LabelsContext.Provider>
@@ -245,6 +255,7 @@ function Composer({ autoFocus }: { autoFocus: boolean }) {
       <ComposerPrimitive.AttachmentDropzone asChild>
         <ComposerShell variant="outlined">
           <AuiComposerAttachments />
+          <AuiComposerQuotePreview />
           <ComposerInput placeholder={placeholder} rows={1} autoFocus={autoFocus} enterKeyHint="send" aria-label="Mensaje" />
           <Stack direction="row" alignItems="center" justifyContent="space-between">
             <AuiComposerAddAttachment />
@@ -306,19 +317,24 @@ function TextPart() {
   return <Box sx={{ '& + &': { mt: 1.5 } }}><AuiMarkdownText /></Box>;
 }
 
-type ToolPart = React.ComponentProps<ToolCallMessagePartComponent>;
-function toolStatus(part: ToolPart): ToolCallStatus {
-  const s = part.status;
-  if (s.type === 'running') return 'running';
-  if (s.type === 'requires-action') return 'requires-action';
-  if (s.type === 'incomplete') return s.reason === 'cancelled' ? 'cancelled' : 'error';
-  return part.isError ? 'error' : 'complete';
+const DefaultToolFallback: ToolCallMessagePartComponent = (part) => <AuiToolFallback {...part} />;
+
+/** El grupo de herramientas del hilo (ghost). Se abre solo cuando una llamada espera a la persona, como la llamada misma. */
+function ToolGroupPart({ count, status, children }: { count: number; status: string; children: React.ReactNode }) {
+  const waiting = status === 'requires-action';
+  const [open, setOpen] = React.useState(waiting);
+  const [prev, setPrev] = React.useState(waiting);
+  if (waiting !== prev) {
+    setPrev(waiting);
+    if (waiting) setOpen(true);
+  }
+  return (
+    <AuiToolGroupRoot variant="ghost" open={open} onOpenChange={setOpen}>
+      <AuiToolGroupTrigger count={count} active={status === 'running'} />
+      <AuiToolGroupContent>{children}</AuiToolGroupContent>
+    </AuiToolGroupRoot>
+  );
 }
-const DefaultToolFallback: ToolCallMessagePartComponent = (part) => (
-  <Box sx={{ my: 1 }}>
-    <ToolCall toolName={part.toolName} status={toolStatus(part)} args={part.argsText || part.args} result={part.result as object | string | undefined} />
-  </Box>
-);
 
 function AssistantMessage() {
   const { ToolFallback = DefaultToolFallback } = React.useContext(ComponentsContext);
@@ -337,7 +353,7 @@ function AssistantMessage() {
               case 'group-chainOfThought':
                 return <div data-slot="aui-chain-of-thought">{children}</div>;
               case 'group-tool':
-                return <Box sx={{ my: 1 }}><ToolGroup count={part.indices.length} active={part.status.type === 'running'} variant="ghost">{children}</ToolGroup></Box>;
+                return <ToolGroupPart count={part.indices.length} status={part.status.type}>{children}</ToolGroupPart>;
               case 'group-reasoning':
                 return <AuiReasoningGroup streaming={part.status.type === 'running'}>{children}</AuiReasoningGroup>;
               case 'text':
@@ -349,7 +365,9 @@ function AssistantMessage() {
               case 'data':
                 return part.dataRendererUI;
               case 'image':
-                return <Box component="img" src={part.image} alt="" sx={{ display: 'block', maxWidth: '100%', borderRadius: 1, my: 0.5 }} />;
+                return <Box sx={{ py: 0.5 }} data-slot="aui-assistant-image"><AuiImage {...part} /></Box>;
+              case 'source':
+                return <AuiSources {...part} />;
               case 'file':
                 return (
                   <Stack direction="row" alignItems="center" spacing={1} sx={{ my: 0.5, color: 'text.secondary' }}>
@@ -422,6 +440,8 @@ function AssistantActionBar() {
   );
 }
 
+const UserImagePart: ImageMessagePartComponent = (part) => <Box sx={{ py: 0.5 }}><AuiImage {...part} /></Box>;
+
 function UserMessage() {
   return (
     <Box
@@ -433,7 +453,8 @@ function UserMessage() {
       <AuiUserMessageAttachments />
       <Box sx={{ position: 'relative', gridColumnStart: 2, minWidth: 0, '&:hover [data-slot="aui-user-actions"], &:focus-within [data-slot="aui-user-actions"]': { opacity: 1 } }}>
         <Typography variant="body1" component="div" sx={{ px: 2, py: 1, borderRadius: 1, bgcolor: 'ai.userBubble', color: 'ai.userBubbleText', overflowWrap: 'anywhere', '&:empty': { display: 'none' } }}>
-          <MessagePrimitive.Parts />
+          <MessagePrimitive.Quote>{(quote) => <AuiQuoteBlock {...quote} />}</MessagePrimitive.Quote>
+          <MessagePrimitive.Parts components={{ Image: UserImagePart }} />
         </Typography>
         <Box sx={{ position: 'absolute', left: 0, top: '50%', transform: 'translate(-100%, -50%)', pr: 1 }}>
           <ActionBarPrimitive.Root hideWhenRunning autohide="not-last" data-slot="aui-user-actions">

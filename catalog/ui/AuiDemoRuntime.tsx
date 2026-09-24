@@ -23,6 +23,7 @@ import {
   type ThreadMessageLike,
 } from '@assistant-ui/react';
 import { demoMcpManager, installMockMcp } from './mcpDemo';
+import { SCRIPTS, type DemoScript } from './demoScripts';
 
 // Runtime de las demos AUI connected: el mismo @assistant-ui/react de producción, con un modelo de ejemplo, una lista
 // de hilos en memoria (sembrada con los hilos del tablero) y una sesión de voz simulada.
@@ -66,10 +67,15 @@ function usageFor(messages: readonly ThreadMessage[], reasoning: boolean) {
   return { inputTokens: add('inputTokens'), cachedInputTokens: add('cachedInputTokens'), outputTokens: add('outputTokens'), reasoningTokens: reasoning ? add('reasoningTokens') : 0 };
 }
 
-function makeModel(reasoning: boolean): ChatModelAdapter {
+function makeModel(reasoning: boolean, script: DemoScript, failTools: boolean): ChatModelAdapter {
   let turn = 0;
   return {
-    async *run({ abortSignal, messages }) {
+    async *run({ abortSignal, messages, unstable_getMessage }) {
+      if (script !== 'answer') {
+        await wait(FIRST_TOKEN_MS);
+        yield* SCRIPTS[script]({ abortSignal, failTools, message: () => unstable_getMessage?.() });
+        return;
+      }
       const full = DEMO_ANSWERS[turn++ % DEMO_ANSWERS.length];
       const start = Date.now();
       let firstTokenTime: number | undefined;
@@ -114,6 +120,23 @@ function makeModel(reasoning: boolean): ChatModelAdapter {
   };
 }
 const suggestionAdapter: SuggestionAdapter = { async generate() { return FOLLOWUPS.map((prompt) => ({ prompt })); } };
+/** Las tandas de seguimiento del tablero «Follow-up suggestions», alternadas en cada respuesta. */
+export const FOLLOWUP_SETS = [
+  [{ title: 'Enviar recordatorio', label: 'a Nubia Rojas', prompt: 'Envía un recordatorio a Nubia Rojas para legalizar CE-4492' },
+    { prompt: '¿Qué vence en octubre?' },
+    { title: 'Historial', label: 'de CE-4471', prompt: 'Muéstrame el historial del anticipo CE-4471' },
+    { title: 'Legalizar', label: 'CE-4492', prompt: 'Inicia la legalización del anticipo CE-4492' },
+    { prompt: 'Exporta la cartera a Excel' }],
+  [{ title: 'Ver el correo', label: 'enviado', prompt: 'Muéstrame el correo que enviaste' },
+    { prompt: '¿Quién más tiene anticipos vencidos?' },
+    { title: 'Programar', label: 'otro recordatorio el lunes', prompt: 'Programa otro recordatorio para el lunes' },
+    { title: 'Conciliar', label: 'la cuenta 1110', prompt: 'Concilia la cuenta 1110 de agosto' }],
+];
+function followupSets(): SuggestionAdapter {
+  let k = 0;
+  return { async generate() { return FOLLOWUP_SETS[k++ % FOLLOWUP_SETS.length]; } };
+}
+const noFollowups: SuggestionAdapter = { async generate() { return []; } };
 /** Documentos de ejemplo (PDF): se adjuntan con su nombre; el modelo de la demo no los lee. */
 const documentAdapter: AttachmentAdapter = {
   accept: 'application/pdf',
@@ -209,6 +232,12 @@ export interface AuiDemoRuntimeProps {
   threads?: DemoThread[];
   /** Abre este hilo al montar. */
   startIn?: string;
+  /** Qué responde el modelo: la respuesta normal o un guion (herramientas, fuentes, imagen). */
+  script?: DemoScript;
+  /** En el guion `tools`, la segunda herramienta falla. */
+  failTools?: boolean;
+  /** Seguimientos: los dos del hilo (default), las tandas del tablero o ninguno. */
+  followups?: 'default' | 'sets' | 'none';
   /** Los adjuntos tardan en subir; `failNextUpload()` hace fallar la siguiente subida. */
   slowUploads?: boolean;
 }
@@ -258,10 +287,11 @@ export function AuiDemoRuntime(props: AuiDemoRuntimeProps) {
   return ready ? <DemoRuntime {...props} /> : null;
 }
 
-function DemoRuntime({ children, seed = false, voice = false, reasoning = false, mcp = false, threads, startIn, slowUploads = false }: AuiDemoRuntimeProps) {
+function DemoRuntime({ children, seed = false, voice = false, reasoning = false, mcp = false, threads, startIn, slowUploads = false, script = 'answer', failTools = false, followups = 'default' }: AuiDemoRuntimeProps) {
   const list = React.useMemo(() => makeThreadList([...(seed ? SEED_THREADS : []), ...(threads ?? [])]), [seed, threads]);
   const uploads = React.useMemo(() => (slowUploads ? slowAttachments(attachments) : attachments), [slowUploads]);
-  const model = React.useMemo(() => makeModel(reasoning), [reasoning]);
+  const model = React.useMemo(() => makeModel(reasoning, script, failTools), [reasoning, script, failTools]);
+  const suggestion = React.useMemo(() => (followups === 'sets' ? followupSets() : followups === 'none' ? noFollowups : suggestionAdapter), [followups]);
   if (mcp) installMockMcp();
   const adapter = React.useMemo<RemoteThreadListAdapter>(() => ({
     ...list,
@@ -272,7 +302,7 @@ function DemoRuntime({ children, seed = false, voice = false, reasoning = false,
   }), [list, uploads]);
   const runtime = useRemoteThreadListRuntime({
     runtimeHook: function useDemoThreadRuntime() {
-      return useLocalRuntime(model, { adapters: { suggestion: suggestionAdapter, attachments: uploads, ...(voice ? { voice: voiceAdapter } : {}) } });
+      return useLocalRuntime(model, { adapters: { suggestion, attachments: uploads, ...(voice ? { voice: voiceAdapter } : {}) } });
     },
     adapter,
   });

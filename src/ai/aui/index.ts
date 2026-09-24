@@ -13,3 +13,8 @@ export * from './MessageTiming';
 export * from './ConversationMap';
 export * from './ContextDisplay';
 export * from './McpConfig';
+export * from './ToolFallback';
+export * from './ToolGroup';
+export * from './Quote';
+export * from './Sources';
+export * from './Image';
