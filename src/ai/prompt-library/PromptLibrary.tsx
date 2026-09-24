@@ -60,7 +60,7 @@ export function PromptLibrary({ prompts, query, selectedId, onQueryChange, onSel
     >
       <Stack sx={{ borderRight: 1, borderColor: 'divider', minHeight: 0 }}>
         <Stack direction="row" alignItems="center" spacing={1} sx={(t) => ({ height: t.spacing(5.5), flexShrink: 0, px: 1.5, borderBottom: 1, borderColor: 'divider', color: 'action.active' })}>
-          <Search size={18} aria-hidden="true" />
+          <Search size={16} aria-hidden="true" />
           <InputBase
             fullWidth
             value={query}

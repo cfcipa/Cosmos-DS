@@ -62,7 +62,7 @@ export function CommandPalette({ commands, query, activeId, onQueryChange, onAct
   return (
     <Paper elevation={24} role="dialog" aria-label="Paleta de comandos" className={className} data-slot="command-palette" sx={{ overflow: 'hidden' }}>
       <Stack direction="row" alignItems="center" spacing={1} sx={(t) => ({ height: t.spacing(6), px: 2, borderBottom: 1, borderColor: 'divider', color: 'action.active' })}>
-        <Search size={18} aria-hidden="true" />
+        <Search size={16} aria-hidden="true" />
         <InputBase
           fullWidth
           autoFocus={autoFocus}

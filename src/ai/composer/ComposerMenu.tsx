@@ -12,9 +12,14 @@ import type { MenuItemProps } from '@mui/material/MenuItem';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import { keyframes } from '@mui/material/styles';
+import type { Theme } from '@mui/material/styles';
 import { Check } from 'lucide-react';
 import { REDUCED_MOTION } from '../lib/shimmerText';
 import type { ComposerCommand, ComposerPerson } from './matches';
+
+/** Íconos del kit: 16px, trazo 2 (el set de Tool call y de assistant-ui). */
+const ICON_SIZE = 16;
+const iconSx = { minWidth: (t: Theme) => t.spacing(3.5) };
 
 const pop = keyframes`from { opacity: 0; transform: scale(.96); } to { opacity: 1; transform: none; }`;
 
@@ -79,7 +84,7 @@ export function ComposerCommandItem({ command, active, ...props }: Omit<Composer
   const Icon = command.icon;
   return (
     <ComposerMenuItem active={active} {...props}>
-      <ListItemIcon aria-hidden="true"><Icon size={20} /></ListItemIcon>
+      <ListItemIcon aria-hidden="true" sx={iconSx}><Icon size={ICON_SIZE} /></ListItemIcon>
       <Typography variant="body1" sx={{ fontWeight: 'fontWeightMedium', whiteSpace: 'nowrap' }}>/{command.name}</Typography>
       <Typography variant="body2" color="text.secondary" noWrap sx={{ flex: '1 1 auto', minWidth: 0, ml: 1.5 }}>{command.description}</Typography>
       {active ? <Typography variant="body2" color="text.secondary" aria-hidden="true" sx={{ ml: 2 }}>↵</Typography> : null}
@@ -113,7 +118,7 @@ export interface ComposerModel {
 export function ComposerModelItem({ model, selected, ...props }: Omit<ComposerMenuItemProps, 'children' | 'role'> & { model: ComposerModel; selected: boolean }) {
   return (
     <ComposerMenuItem role="menuitemradio" aria-checked={selected} selected={selected} {...props}>
-      <ListItemIcon aria-hidden="true" sx={{ color: 'primary.main' }}>{selected ? <Check size={20} /> : null}</ListItemIcon>
+      <ListItemIcon aria-hidden="true" sx={{ ...iconSx, color: 'primary.main' }}>{selected ? <Check size={ICON_SIZE} /> : null}</ListItemIcon>
       <Typography variant="body1" sx={{ flexGrow: 1 }}>{model.name}</Typography>
       <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>{model.meta}</Typography>
     </ComposerMenuItem>
