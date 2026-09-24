@@ -3,6 +3,7 @@ import { LoaderDoc, LoaderCard } from './elements/Loader';
 import { ThinkingIndicatorDoc, ThinkingIndicatorCard } from './elements/ThinkingIndicator';
 import { StreamingTextDoc, StreamingTextCard } from './elements/StreamingText';
 import { TypingIndicatorDoc, TypingIndicatorCard } from './elements/TypingIndicator';
+import { ReasoningEffortDoc, ReasoningEffortCard } from './elements/ReasoningEffort';
 
 export interface ElementEntry {
   slug: string;
@@ -23,6 +24,7 @@ export const SECTIONS: Section[] = [
       { slug: 'thinking-indicator', title: 'Thinking indicator', description: 'Una línea viva que nombra lo que el asistente hace ahora mismo, con el tiempo transcurrido.', Card: ThinkingIndicatorCard, Doc: ThinkingIndicatorDoc },
       { slug: 'streaming-text', title: 'Streaming text', description: 'Las palabras llegan suave: las más nuevas entran en azul y se asientan en tinta.', Card: StreamingTextCard, Doc: StreamingTextDoc },
       { slug: 'typing-indicator', title: 'Typing indicator', description: 'Tres puntos que se leen como presencia, no como ruido, justo donde aparecerá la respuesta.', Card: TypingIndicatorCard, Doc: TypingIndicatorDoc },
+      { slug: 'reasoning-effort', title: 'Reasoning effort', description: 'Cuánto pensar, y cuánto de ese presupuesto gastó de verdad la ejecución.', Card: ReasoningEffortCard, Doc: ReasoningEffortDoc },
     ],
   },
 ];

@@ -13,5 +13,6 @@ export * from './ai/loader';
 export * from './ai/thinking-indicator';
 export * from './ai/streaming-text';
 export * from './ai/typing-indicator';
+export * from './ai/reasoning-effort';
 // 3 · Tool use
 export * from './ai/tool-call';
