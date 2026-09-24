@@ -14,5 +14,7 @@ export * from './ai/thinking-indicator';
 export * from './ai/streaming-text';
 export * from './ai/typing-indicator';
 export * from './ai/reasoning-effort';
+// Messages
+export * from './ai/message-pair';
 // 3 · Tool use
 export * from './ai/tool-call';
