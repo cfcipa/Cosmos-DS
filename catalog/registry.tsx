@@ -8,6 +8,9 @@ import { GuardrailNoticeDoc, GuardrailNoticeCard } from './elements/GuardrailNot
 import { MessagePairDoc, MessagePairCard } from './elements/MessagePair';
 import { MessageBranchesDoc, MessageBranchesCard } from './elements/MessageBranches';
 import { MessageActionsDoc, MessageActionsCard } from './elements/MessageActions';
+import { ErrorStateDoc, ErrorStateCard } from './elements/ErrorState';
+import { MessageQueueDoc, MessageQueueCard } from './elements/MessageQueue';
+import { EditMessageDoc, EditMessageCard } from './elements/EditMessage';
 
 export interface ElementEntry {
   slug: string;
@@ -37,6 +40,9 @@ export const SECTIONS: Section[] = [
       { slug: 'message-pair', title: 'Message pair', description: 'Una burbuja del usuario y una respuesta que llega en vivo, con acciones que aparecen al pasar el cursor.', Card: MessagePairCard, Doc: MessagePairDoc },
       { slug: 'message-branches', title: 'Message branches', description: 'Recorre las versiones regeneradas de una misma respuesta sin perder tu lugar.', Card: MessageBranchesCard, Doc: MessageBranchesDoc },
       { slug: 'message-actions', title: 'Message actions', description: 'Copiar, calificar y regenerar. Cada acción se confirma con un cambio de estado pequeño.', Card: MessageActionsCard, Doc: MessageActionsDoc },
+      { slug: 'error-state', title: 'Error state', description: 'Un aviso discreto con camino para reintentar, no un modal en tu cara.', Card: ErrorStateCard, Doc: ErrorStateDoc },
+      { slug: 'message-queue', title: 'Message queue', description: 'Lo que escribes mientras una ejecución corre queda en fila, y puedes cancelarlo hasta que termine.', Card: MessageQueueCard, Doc: MessageQueueDoc },
+      { slug: 'edit-message', title: 'Edit a sent message', description: 'Reescribe un turno en su lugar, sabiendo de antemano cuántas respuestas descarta la edición.', Card: EditMessageCard, Doc: EditMessageDoc },
     ],
   },
 ];

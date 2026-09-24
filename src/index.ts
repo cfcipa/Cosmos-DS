@@ -19,5 +19,8 @@ export * from './ai/guardrail-notice';
 export * from './ai/message-pair';
 export * from './ai/message-branches';
 export * from './ai/message-actions';
+export * from './ai/error-state';
+export * from './ai/message-queue';
+export * from './ai/edit-message';
 // 3 · Tool use
 export * from './ai/tool-call';
