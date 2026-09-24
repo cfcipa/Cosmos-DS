@@ -1,16 +1,18 @@
 // Cosmos DS · Kit IA · Thread: Settings panel.
-// Tablero «Settings panel»: modelo, instrucciones del sistema, temperatura y lo que el asistente tiene permitido hacer.
-// Como en assistant-ui: cada control es de solo lectura si no llega su callback; la temperatura se limita a 0–2 antes
-// de pintarse. ToggleButtonGroup, TextField, Slider y Switch de MUI con los estilos que Cosmos define para ellos.
+// Referente: assistant-ui «Settings panel» (elements/settings-panel.tsx): modelo, instrucciones del sistema,
+// temperatura y lo que el asistente tiene permitido hacer. Cada control es de solo lectura si no llega su callback;
+// la temperatura se limita a 0–2 antes de pintarse.
 import * as React from 'react';
+import InputBase from '@mui/material/InputBase';
+import Paper from '@mui/material/Paper';
 import Slider from '@mui/material/Slider';
 import Stack from '@mui/material/Stack';
 import Switch from '@mui/material/Switch';
-import TextField from '@mui/material/TextField';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Typography from '@mui/material/Typography';
 import type { SxProps, Theme } from '@mui/material/styles';
+import { fieldSx } from '../lib/thread';
 
 export interface SettingToggle {
   key: string;
@@ -33,7 +35,7 @@ export interface SettingsPanelProps {
   sx?: SxProps<Theme>;
 }
 
-const MAX_WIDTH = 448;
+const MAX_WIDTH = 384;
 const clamp = (n: number, min: number, max: number) => (Number.isNaN(n) ? min : Math.min(max, Math.max(min, n)));
 const fmt = (n: number) => n.toLocaleString('es-CO', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
@@ -43,43 +45,58 @@ export function SettingsPanel({
 }: SettingsPanelProps) {
   const id = React.useId();
   const temp = clamp(temperature, 0, 2);
-  const label = (text: string, htmlId?: string) => <Typography id={htmlId} variant="body1" color="text.secondary">{text}</Typography>;
+  const label = (text: string, htmlId: string) => <Typography id={htmlId} variant="caption" color="text.disabled">{text}</Typography>;
 
   return (
-    <Stack spacing={2.5} data-slot="settings-panel" className={className} sx={[{ width: '100%', maxWidth: MAX_WIDTH }, ...(Array.isArray(sx) ? sx : [sx])]}>
+    <Paper
+      variant="outlined"
+      data-slot="settings-panel"
+      className={className}
+      sx={[{ width: '100%', maxWidth: MAX_WIDTH, boxSizing: 'border-box', p: 2, display: 'flex', flexDirection: 'column', gap: 2 }, ...(Array.isArray(sx) ? sx : [sx])]}
+    >
       <Stack spacing={0.75}>
-        {label('Modelo', `${id}-model`)}
+        {label('modelo', `${id}-model`)}
         <ToggleButtonGroup
           size="small"
-          color="primary"
           exclusive
           fullWidth
           value={model}
           disabled={!onModelChange}
           aria-labelledby={`${id}-model`}
           onChange={(_e, v: string | null) => { if (v !== null) onModelChange?.(v); }}
+          sx={(t) => ({
+            ...fieldSx(),
+            p: 0.25,
+            gap: 0.25,
+            borderRadius: 1,
+            '& .MuiToggleButton-root': { ...t.typography.body3, fontWeight: t.typography.fontWeightMedium, textTransform: 'none', border: 0, borderRadius: `${t.shape.borderRadius}px !important`, py: 0.5, color: 'text.secondary' },
+            '& .MuiToggleButton-root.Mui-selected, & .MuiToggleButton-root.Mui-selected:hover': { bgcolor: 'background.paper', color: 'text.primary', boxShadow: t.shadows[1] },
+          })}
         >
-          {models.map((m) => <ToggleButton key={m} value={m} sx={{ textTransform: 'none' }}>{m}</ToggleButton>)}
+          {models.map((m) => <ToggleButton key={m} value={m}>{m}</ToggleButton>)}
         </ToggleButtonGroup>
       </Stack>
 
-      <TextField
-        label="Instrucciones del sistema"
-        multiline
-        rows={3}
-        fullWidth
-        value={systemPrompt}
-        onChange={(event) => onSystemPromptChange?.(event.target.value)}
-        InputProps={{ readOnly: !onSystemPromptChange }}
-        sx={{ mt: 1 }}
-      />
-
       <Stack spacing={0.75}>
+        {label('instrucciones del sistema', `${id}-prompt`)}
+        <InputBase
+          multiline
+          rows={3}
+          value={systemPrompt}
+          onChange={(event) => onSystemPromptChange?.(event.target.value)}
+          readOnly={!onSystemPromptChange}
+          inputProps={{ 'aria-labelledby': `${id}-prompt` }}
+          sx={(t) => ({ ...fieldSx(), ...t.typography.body3, borderRadius: 1, px: 1.5, py: 1, '&.Mui-focused': { outline: `1px solid ${t.palette.ai.focusRing}` } })}
+        />
+      </Stack>
+
+      <Stack spacing={0.5}>
         <Stack direction="row" justifyContent="space-between" alignItems="baseline">
-          {label('Temperatura', `${id}-temp`)}
-          <Typography variant="subtitle1" sx={{ fontVariantNumeric: 'tabular-nums' }}>{fmt(temp)}</Typography>
+          {label('temperatura', `${id}-temp`)}
+          <Typography variant="caption" color="text.secondary" sx={{ fontVariantNumeric: 'tabular-nums' }}>{fmt(temp)}</Typography>
         </Stack>
         <Slider
+          size="small"
           min={0}
           max={2}
           step={0.1}
@@ -87,30 +104,26 @@ export function SettingsPanel({
           disabled={!onTemperatureChange}
           aria-labelledby={`${id}-temp`}
           onChange={(_e, v) => onTemperatureChange?.(v as number)}
-          sx={(t) => ({
-            py: 1,
-            '&:not(.Mui-disabled) .MuiSlider-track': { border: 0, background: `linear-gradient(90deg, ${t.palette.ai.markStart}, ${t.palette.ai.markEnd})` },
-          })}
         />
       </Stack>
 
-      <Stack spacing={0.5}>
-        {label('Permisos')}
+      <Stack spacing={1.25}>
         {toggles.map((toggle) => (
-          <Stack key={toggle.key} direction="row" alignItems="center" spacing={2} sx={{ py: 1, borderBottom: 1, borderColor: 'divider' }}>
+          <Stack key={toggle.key} direction="row" alignItems="center" spacing={1.5}>
             <Stack sx={{ flexGrow: 1, minWidth: 0 }}>
-              <Typography id={`${id}-${toggle.key}`} variant="body1">{toggle.label}</Typography>
-              <Typography variant="body2" color="text.secondary">{toggle.detail}</Typography>
+              <Typography id={`${id}-${toggle.key}`} variant="body2" noWrap>{toggle.label}</Typography>
+              <Typography variant="body3" color="text.disabled" noWrap>{toggle.detail}</Typography>
             </Stack>
             <Switch
+              size="small"
               checked={toggle.on}
               disabled={!onToggle}
               onChange={() => onToggle?.(toggle.key)}
-              inputProps={{ 'aria-labelledby': `${id}-${toggle.key}` }}
+              inputProps={{ role: 'switch', 'aria-labelledby': `${id}-${toggle.key}` }}
             />
           </Stack>
         ))}
       </Stack>
-    </Stack>
+    </Paper>
   );
 }

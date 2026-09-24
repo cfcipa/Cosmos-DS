@@ -27,7 +27,7 @@ function SettingsDemo({ readOnly = false, maxHeight }: { readOnly?: boolean; max
       onSystemPromptChange={readOnly ? undefined : setPrompt}
       onTemperatureChange={readOnly ? undefined : setTemp}
       onToggle={readOnly ? undefined : (key) => setToggles((ts) => ts.map((t) => (t.key === key ? { ...t, on: !t.on } : t)))}
-      sx={{ maxHeight, overflowY: 'auto', pr: 0.5, pt: 1 }}
+      sx={{ maxHeight, overflowY: 'auto' }}
     />
   );
 }

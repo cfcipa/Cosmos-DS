@@ -1,19 +1,18 @@
 // Cosmos DS · Kit IA · Thread: Thread search.
-// Tablero «Thread search»: un historial al que de verdad puedes volver, fijados primero y luego agrupados por fecha.
-// Como en assistant-ui: el filtro busca en título y vista previa; ↑ ↓ recorren fijados y luego grupos, dando la vuelta,
-// e ignoran la composición IME. El campo es un combobox que apunta a la opción activa (aria-activedescendant).
+// Referente: assistant-ui «Thread search» (elements/thread-search.tsx): un historial al que de verdad puedes volver.
+// El filtro busca en título y vista previa; fijados primero y luego los grupos por fecha, en el orden en que llegan.
+// ↑ ↓ recorren ese orden dando la vuelta (si el activo quedó fuera del filtro, arrancan del borde que indica la tecla)
+// e ignoran la composición IME. Las filas son botones solo con `onSelect`.
 import * as React from 'react';
 import Box from '@mui/material/Box';
-import InputAdornment from '@mui/material/InputAdornment';
-import List from '@mui/material/List';
-import ListItemButton from '@mui/material/ListItemButton';
-import ListItemText from '@mui/material/ListItemText';
-import ListSubheader from '@mui/material/ListSubheader';
-import OutlinedInput from '@mui/material/OutlinedInput';
+import ButtonBase from '@mui/material/ButtonBase';
+import InputBase from '@mui/material/InputBase';
 import Paper from '@mui/material/Paper';
+import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import type { SxProps, Theme } from '@mui/material/styles';
 import { Pin, Search } from 'lucide-react';
+import { fieldSx } from '../lib/thread';
 
 export interface SearchableThread {
   id: string;
@@ -32,44 +31,32 @@ export interface ThreadSearchProps {
   onSelect?: (id: string) => void;
   /** Default 'Buscar hilos'. */
   placeholder?: string;
-  /** Default 'Fijados'. */
+  /** Default 'fijados'. */
   pinnedLabel?: string;
-  /** Default 'Ningún hilo coincide.' */
-  emptyLabel?: string;
   className?: string;
   sx?: SxProps<Theme>;
 }
 
-/** Medidas del tablero. */
-const MAX_WIDTH = 400;
-const LIST_MAX_HEIGHT = 300;
-const ICON_SIZE = 20;
-const PIN_SIZE = 16;
+/** Medidas de assistant-ui: max-w-sm, ícono de búsqueda de 14px, chincheta de 10px. */
+const MAX_WIDTH = 384;
+const ICON_SIZE = 14;
+const PIN_SIZE = 10;
 
-export function ThreadSearch({
-  threads, query, activeId, onQueryChange, onSelect,
-  placeholder = 'Buscar hilos', pinnedLabel = 'Fijados', emptyLabel = 'Ningún hilo coincide.', className, sx,
-}: ThreadSearchProps) {
-  const baseId = React.useId();
-  const optionId = (id: string) => `${baseId}-${id}`;
-  const listId = `${baseId}-list`;
+export function ThreadSearch({ threads, query, activeId, onQueryChange, onSelect, placeholder = 'Buscar hilos', pinnedLabel = 'fijados', className, sx }: ThreadSearchProps) {
   const q = query.toLowerCase();
   const matches = threads.filter((t) => `${t.title} ${t.preview}`.toLowerCase().includes(q));
   const pinned = matches.filter((t) => t.pinned);
   const groups = [...new Set(matches.filter((t) => !t.pinned).map((t) => t.group))];
   const ordered = [...pinned, ...groups.flatMap((g) => matches.filter((t) => !t.pinned && t.group === g))];
-  const current = ordered.find((t) => t.id === activeId);
 
-  const listRef = React.useRef<HTMLUListElement>(null);
+  const rowsRef = React.useRef<HTMLDivElement>(null);
   React.useEffect(() => {
-    if (!current) return;
-    listRef.current?.querySelector(`[id="${optionId(current.id)}"]`)?.scrollIntoView({ block: 'nearest' });
-  }, [current?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+    rowsRef.current?.querySelector('[data-active="true"]')?.scrollIntoView({ block: 'nearest' });
+  }, [activeId]);
 
   const move = (delta: number) => {
     if (ordered.length === 0 || !onSelect) return;
     const at = ordered.findIndex((t) => t.id === activeId);
-    // El activo puede quedar fuera del filtro: se arranca del borde que indica la tecla.
     const from = at === -1 ? (delta > 0 ? -1 : 0) : at;
     const next = ordered[(from + delta + ordered.length) % ordered.length];
     if (next) onSelect(next.id);
@@ -80,68 +67,65 @@ export function ThreadSearch({
     else if (event.key === 'ArrowUp') { event.preventDefault(); move(-1); }
   };
 
-  const row = (t: SearchableThread) => (
-    <ListItemButton
-      key={t.id}
-      id={optionId(t.id)}
-      role="option"
-      aria-selected={t.id === current?.id}
-      selected={t.id === current?.id}
-      onClick={onSelect ? () => onSelect(t.id) : undefined}
-      disableRipple={!onSelect}
-      sx={{ px: 2, py: 0.75 }}
-    >
-      <ListItemText
-        primary={t.title}
-        secondary={t.preview}
-        primaryTypographyProps={{ variant: 'body1' }}
-        secondaryTypographyProps={{ variant: 'body2', noWrap: true }}
-        sx={{ my: 0 }}
-      />
-    </ListItemButton>
-  );
-  const subheader = (label: string, pin = false) => (
-    <ListSubheader role="presentation" sx={{ display: 'flex', alignItems: 'center', gap: 1, bgcolor: 'inherit', backgroundImage: 'inherit' }}>
-      {pin ? <Pin size={PIN_SIZE} aria-hidden="true" /> : null}{label}
-    </ListSubheader>
-  );
+  const row = (thread: SearchableThread) => {
+    const isActive = thread.id === activeId;
+    const content = (
+      <>
+        <Stack direction="row" alignItems="center" spacing={0.75} sx={{ width: '100%', minWidth: 0 }}>
+          {thread.pinned ? <Box component="span" aria-hidden="true" sx={{ display: 'flex', flexShrink: 0, color: 'text.disabled' }}><Pin size={PIN_SIZE} /></Box> : null}
+          <Typography variant="body2" noWrap sx={{ flexGrow: 1, minWidth: 0 }}>{thread.title}</Typography>
+        </Stack>
+        <Typography variant="body3" color="text.disabled" noWrap sx={{ width: '100%' }}>{thread.preview}</Typography>
+      </>
+    );
+    const rowSx = (t: Theme) => ({
+      width: '100%',
+      display: 'flex',
+      flexDirection: 'column' as const,
+      alignItems: 'flex-start',
+      gap: 0.25,
+      textAlign: 'start' as const,
+      borderRadius: 1,
+      px: 1,
+      py: 0.5,
+      bgcolor: isActive ? 'action.selected' : 'transparent',
+      transition: t.transitions.create('background-color', { duration: t.transitions.duration.shortest }),
+      ...(onSelect && !isActive ? { '&:hover': { bgcolor: 'action.hover' } } : {}),
+      '&.Mui-focusVisible': { bgcolor: 'action.focus' },
+    });
+    return onSelect ? (
+      <ButtonBase key={thread.id} data-active={isActive} aria-current={isActive || undefined} onClick={() => onSelect(thread.id)} sx={rowSx}>{content}</ButtonBase>
+    ) : (
+      <Box key={thread.id} data-active={isActive} sx={rowSx}>{content}</Box>
+    );
+  };
+  const label = (text: string) => <Typography variant="caption" color="text.disabled" sx={{ px: 1, pb: 0.5 }}>{text}</Typography>;
 
   return (
     <Paper
       variant="outlined"
       data-slot="thread-search"
       className={className}
-      sx={[{ width: '100%', maxWidth: MAX_WIDTH, display: 'flex', flexDirection: 'column', overflow: 'hidden' }, ...(Array.isArray(sx) ? sx : [sx])]}
+      sx={[{ width: '100%', maxWidth: MAX_WIDTH, boxSizing: 'border-box', p: 1.5, display: 'flex', flexDirection: 'column', gap: 0.75, overflow: 'hidden' }, ...(Array.isArray(sx) ? sx : [sx])]}
     >
-      <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider', flexShrink: 0 }}>
-        <OutlinedInput
-          size="small"
-          fullWidth
+      <Stack direction="row" alignItems="center" spacing={1} sx={{ ...fieldSx(), flexShrink: 0, borderRadius: 1, px: 1.25, py: 0.75 }}>
+        <Box component="span" aria-hidden="true" sx={{ display: 'flex', flexShrink: 0, color: 'text.disabled' }}><Search size={ICON_SIZE} /></Box>
+        <InputBase
           value={query}
           onChange={(event) => onQueryChange?.(event.target.value)}
           onKeyDown={onKeyDown}
           placeholder={placeholder}
-          startAdornment={<InputAdornment position="start"><Search size={ICON_SIZE} /></InputAdornment>}
-          inputProps={{
-            role: 'combobox',
-            'aria-label': placeholder,
-            'aria-expanded': true,
-            'aria-controls': listId,
-            'aria-activedescendant': current ? optionId(current.id) : undefined,
-            'aria-autocomplete': 'list',
-          }}
+          inputProps={{ 'aria-label': placeholder }}
+          sx={(t) => ({ flexGrow: 1, minWidth: 0, ...t.typography.body2, '& input': { p: 0 } })}
         />
-      </Box>
-      <List ref={listRef} id={listId} role="listbox" aria-label="Hilos" disablePadding sx={{ maxHeight: LIST_MAX_HEIGHT, overflowY: 'auto', pb: 1, bgcolor: 'inherit', backgroundImage: 'inherit' }}>
-        {pinned.length > 0 ? <>{subheader(pinnedLabel, true)}{pinned.map(row)}</> : null}
+      </Stack>
+      <Stack ref={rowsRef} spacing={0.75} sx={{ minHeight: 0, overflowY: 'auto' }}>
+        {pinned.length > 0 ? <Stack>{label(pinnedLabel)}{pinned.map(row)}</Stack> : null}
         {groups.map((g) => (
-          <React.Fragment key={g}>
-            {subheader(g)}
-            {matches.filter((t) => !t.pinned && t.group === g).map(row)}
-          </React.Fragment>
+          <Stack key={g}>{label(g)}{matches.filter((t) => !t.pinned && t.group === g).map(row)}</Stack>
         ))}
-        {matches.length === 0 ? <Typography variant="body2" color="text.secondary" role="status" sx={{ px: 2, pt: 1.75, pb: 0.75 }}>{emptyLabel}</Typography> : null}
-      </List>
+        {matches.length === 0 ? <Typography variant="body3" color="text.disabled" role="status" sx={{ px: 1, py: 2, textAlign: 'center' }}>{`Ningún hilo coincide con «${query}»`}</Typography> : null}
+      </Stack>
     </Paper>
   );
 }

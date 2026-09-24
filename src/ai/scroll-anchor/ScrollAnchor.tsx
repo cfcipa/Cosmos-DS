@@ -1,7 +1,8 @@
 // Cosmos DS · Kit IA · Thread: Scroll anchor.
-// Tablero «Scroll anchor»: el streaming nunca te roba la posición; un botón ofrece el camino de vuelta.
-// Como en assistant-ui: los mensajes llegan cada 1,3 s y la vista los sigue mientras estés abajo. Si subes, el siguiente
-// mensaje suelta el ancla y aparece «Mensajes nuevos · N»; con 2 o más sin ver, vuelve sola a los 2,4 s salvo con `paused`.
+// Referente: assistant-ui «Scroll anchor» (elements/scroll-anchor.tsx): el streaming nunca te roba la posición.
+// Los mensajes llegan cada 1,3 s y la vista los sigue mientras estés abajo. Si subes, el siguiente mensaje suelta el
+// ancla y aparece «N mensajes nuevos»; con 2 o más sin ver, vuelve sola a los 2,4 s salvo con `paused`.
+// Arriba, un degradado desvanece lo que sale de la vista.
 // `onSettled` se llama una vez, cuando llegó el último mensaje con la vista abajo.
 import * as React from 'react';
 import Box from '@mui/material/Box';
@@ -9,7 +10,7 @@ import Button from '@mui/material/Button';
 import Fade from '@mui/material/Fade';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
-import { alpha, useTheme, type SxProps, type Theme } from '@mui/material/styles';
+import { useTheme, type SxProps, type Theme } from '@mui/material/styles';
 import { ArrowDown } from 'lucide-react';
 import { riseSx, userBubbleSx } from '../lib/thread';
 
@@ -23,8 +24,6 @@ export interface ScrollAnchorProps {
   /** Detiene la llegada de mensajes y el regreso automático. Default false. */
   paused?: boolean;
   onSettled?: () => void;
-  /** Default 'Mensajes nuevos'. */
-  newMessagesLabel?: string;
   className?: string;
   sx?: SxProps<Theme>;
 }
@@ -36,10 +35,13 @@ const AUTO_RETURN_MS = 2400;
 const AUTO_RETURN_AFTER = 2;
 /** Cuánto dura el desplazamiento suave de vuelta antes de volver a escuchar el scroll. */
 const JUMP_MS = 700;
-const MAX_WIDTH = 448;
-const HEIGHT = 300;
+/** Medidas de assistant-ui: max-w-sm × 256, degradado de 24px. */
+const MAX_WIDTH = 384;
+const HEIGHT = 256;
+const FADE = 3;
+const ARROW = 12;
 
-export function ScrollAnchor({ messages, paused = false, onSettled, newMessagesLabel = 'Mensajes nuevos', className, sx }: ScrollAnchorProps) {
+export function ScrollAnchor({ messages, paused = false, onSettled, className, sx }: ScrollAnchorProps) {
   const theme = useTheme();
   const bottomThreshold = parseFloat(theme.spacing(3));
   const viewportRef = React.useRef<HTMLDivElement>(null);
@@ -125,33 +127,31 @@ export function ScrollAnchor({ messages, paused = false, onSettled, newMessagesL
       <Box
         ref={viewportRef}
         onScroll={onScroll}
-        sx={{ height: '100%', overflowY: 'auto', overflowAnchor: 'none', boxSizing: 'border-box', p: 2, pb: 8, display: 'flex', flexDirection: 'column', gap: 2 }}
+        sx={{ height: '100%', overflowY: 'auto', overflowAnchor: 'none', boxSizing: 'border-box', p: 2, pb: 7, display: 'flex', flexDirection: 'column', gap: 1.25 }}
       >
         {messages.slice(0, count).map((message, index) => (
           <Typography
             key={index}
-            variant="body1"
+            variant="body2"
             component="div"
-            sx={(t) => ({ ...(message.role === 'user' ? userBubbleSx() : {}), ...riseSx(t) })}
+            color={message.role === 'user' ? undefined : 'text.secondary'}
+            sx={(t) => ({ flexShrink: 0, ...(message.role === 'user' ? userBubbleSx() : { alignSelf: 'flex-start', maxWidth: '85%' }), ...riseSx(t) })}
           >
             {message.text}
           </Typography>
         ))}
       </Box>
-      <Fade in={!pinned} unmountOnExit>
-        <Box sx={{ position: 'absolute', left: 0, right: 0, bottom: (t) => t.spacing(2), display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
+      <Box aria-hidden="true" sx={(t) => ({ position: 'absolute', left: 0, right: 0, top: 0, height: t.spacing(FADE), pointerEvents: 'none', background: `linear-gradient(${t.palette.background.paper}, transparent)` })} />
+      <Fade in={!pinned && unseen > 0} unmountOnExit>
+        <Box sx={{ position: 'absolute', left: 0, right: 0, bottom: (t) => t.spacing(1.5), display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
           <Button
             variant="outlined"
-            startIcon={<ArrowDown size={16} />}
+            color="inherit"
+            startIcon={<Box component="span" sx={{ display: 'flex', color: 'text.secondary' }}><ArrowDown size={ARROW} /></Box>}
             onClick={jump}
-            sx={(t) => ({
-              pointerEvents: 'auto',
-              bgcolor: 'background.paper',
-              boxShadow: t.shadows[2],
-              '&:hover': { bgcolor: 'background.paper', backgroundImage: `linear-gradient(${alpha(t.palette.primary.main, t.palette.action.hoverOpacity)}, ${alpha(t.palette.primary.main, t.palette.action.hoverOpacity)})` },
-            })}
+            sx={(t) => ({ pointerEvents: 'auto', ...t.typography.body3, borderColor: 'divider', bgcolor: 'background.paper', px: 1.75, '&:hover': { bgcolor: 'background.paper', borderColor: 'divider', transform: 'translateY(-1px)' }, transition: t.transitions.create('transform', { duration: t.transitions.duration.shorter }) })}
           >
-            {unseen ? `${newMessagesLabel} · ${unseen}` : newMessagesLabel}
+            {`${unseen} ${unseen === 1 ? 'mensaje nuevo' : 'mensajes nuevos'}`}
           </Button>
         </Box>
       </Fade>

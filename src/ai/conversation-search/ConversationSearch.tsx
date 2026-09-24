@@ -1,24 +1,23 @@
 // Cosmos DS · Kit IA · Thread: Conversation search.
-// Tablero «Conversation search»: busca dentro de un hilo largo, con cada coincidencia marcada a lo largo de la barra.
-// Como en assistant-ui: el contador «n/total», anterior y siguiente (solo con `onStep`), la coincidencia activa con su
-// contexto y una marca por coincidencia en la barra lateral, la activa en primary. Enter va a la siguiente y
-// Shift + Enter a la anterior; el padre da la vuelta al llegar al final. `children` es la conversación junto a la barra.
+// Referente: assistant-ui «Conversation search» (elements/conversation-search.tsx): busca dentro de un hilo largo.
+// Barra con contador «n/total» y, solo con `onStep`, anterior y siguiente; debajo la coincidencia activa con su
+// contexto; a la derecha una marca por coincidencia a lo largo de la conversación, la activa más intensa.
+// Enter va a la siguiente y Shift + Enter a la anterior; el padre da la vuelta al llegar al final.
 import * as React from 'react';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
-import InputAdornment from '@mui/material/InputAdornment';
-import OutlinedInput from '@mui/material/OutlinedInput';
+import InputBase from '@mui/material/InputBase';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { alpha, type SxProps, type Theme } from '@mui/material/styles';
+import { alpha, keyframes, type SxProps, type Theme } from '@mui/material/styles';
 import { ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { paletteScale } from '../lib/paletteScale';
+import { REDUCED_MOTION } from '../lib/shimmerText';
+import { fieldSx } from '../lib/thread';
 
 export interface SearchHit {
   id: string;
-  /** Quién lo dijo: «Tú», «Asistente». */
-  who?: string;
   before: string;
   match: string;
   after: string;
@@ -34,74 +33,67 @@ export interface ConversationSearchProps {
   onStep?: (delta: number) => void;
   /** Default 'Buscar en la conversación'. */
   placeholder?: string;
-  children?: React.ReactNode;
   className?: string;
   sx?: SxProps<Theme>;
 }
 
-/** Medidas del tablero. */
-const MAX_WIDTH = 448;
-const ICON_SIZE = 20;
-const PREVIEW_MIN_HEIGHT = 64;
+/** Medidas de assistant-ui: max-w-sm, botones de 24px, íconos de 14px, riel de 6px con marcas de 4px. */
+const MAX_WIDTH = 384;
+const BUTTON = 3;
+const ICON_SIZE = 14;
+const RAIL = 0.75;
+const MARK = 0.5;
+const fadein = keyframes`from { opacity: 0; } to { opacity: 1; }`;
 
-export function ConversationSearch({ query, hits, activeIndex, onQueryChange, onStep, placeholder = 'Buscar en la conversación', children, className, sx }: ConversationSearchProps) {
+export function ConversationSearch({ query, hits, activeIndex, onQueryChange, onStep, placeholder = 'Buscar en la conversación', className, sx }: ConversationSearchProps) {
   const index = hits.length === 0 ? -1 : Math.min(Math.max(activeIndex, 0), hits.length - 1);
   const active = index === -1 ? undefined : hits[index];
-  const noHits = hits.length === 0;
 
   const onKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key !== 'Enter' || event.nativeEvent.isComposing) return;
     event.preventDefault();
-    if (!noHits) onStep?.(event.shiftKey ? -1 : 1);
+    if (hits.length) onStep?.(event.shiftKey ? -1 : 1);
   };
+  const step = (t: Theme) => ({ width: t.spacing(BUTTON), height: t.spacing(BUTTON), flexShrink: 0 });
 
   return (
-    <Stack
-      direction="row"
-      spacing={1.5}
-      data-slot="conversation-search"
-      className={className}
-      sx={[{ width: '100%', maxWidth: MAX_WIDTH }, ...(Array.isArray(sx) ? sx : [sx])]}
-    >
-      <Stack spacing={1.5} sx={{ flexGrow: 1, minWidth: 0 }}>
-        <OutlinedInput
-          size="small"
-          fullWidth
-          value={query}
-          onChange={(event) => onQueryChange?.(event.target.value)}
-          onKeyDown={onKeyDown}
-          placeholder={placeholder}
-          inputProps={{ 'aria-label': placeholder }}
-          startAdornment={<InputAdornment position="start"><Search size={ICON_SIZE} /></InputAdornment>}
-          endAdornment={
-            <InputAdornment position="end" sx={{ gap: 0.5 }}>
-              <Typography role="status" variant="body2" color="text.secondary" sx={{ fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap', mr: 0.5 }}>
-                {noHits ? '0' : `${index + 1}/${hits.length}`}
-              </Typography>
-              {onStep ? (
-                <>
-                  <IconButton aria-label="Coincidencia anterior" disabled={noHits} onClick={() => onStep(-1)}><ChevronUp size={ICON_SIZE} /></IconButton>
-                  <IconButton aria-label="Coincidencia siguiente" disabled={noHits} onClick={() => onStep(1)} edge="end"><ChevronDown size={ICON_SIZE} /></IconButton>
-                </>
-              ) : null}
-            </InputAdornment>
-          }
-        />
-        <Box sx={{ minHeight: PREVIEW_MIN_HEIGHT }}>
-          {active ? (
-            <Paper variant="outlined" data-slot="conversation-search-preview" sx={{ px: 2, py: 1 }}>
-              {active.who ? <Typography variant="body3" color="text.secondary" component="span" sx={{ display: 'block', mb: 0.25 }}>{active.who}</Typography> : null}
-              <Typography variant="body1" component="span">
-                …{active.before}
-                <Box component="mark" sx={(t) => ({ bgcolor: paletteScale(t, 'warning', 100), color: 'inherit', borderRadius: 0.5, px: '1px' })}>{active.match}</Box>
-                {active.after}…
-              </Typography>
-            </Paper>
+    <Stack direction="row" spacing={1} data-slot="conversation-search" className={className} sx={[{ width: '100%', maxWidth: MAX_WIDTH }, ...(Array.isArray(sx) ? sx : [sx])]}>
+      <Stack spacing={1} sx={{ flexGrow: 1, minWidth: 0 }}>
+        <Paper variant="outlined" sx={{ display: 'flex', alignItems: 'center', gap: 1, py: 0.75, pl: 1.5, pr: 0.75 }}>
+          <Box component="span" aria-hidden="true" sx={{ display: 'flex', flexShrink: 0, color: 'text.disabled' }}><Search size={ICON_SIZE} /></Box>
+          <InputBase
+            value={query}
+            onChange={(event) => onQueryChange?.(event.target.value)}
+            onKeyDown={onKeyDown}
+            placeholder={placeholder}
+            inputProps={{ 'aria-label': placeholder }}
+            sx={(t) => ({ flexGrow: 1, minWidth: 0, ...t.typography.body2, '& input': { p: 0 } })}
+          />
+          <Typography role="status" variant="caption" color="text.disabled" sx={{ flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
+            {hits.length === 0 ? '0' : `${index + 1}/${hits.length}`}
+          </Typography>
+          {onStep ? (
+            <>
+              <IconButton aria-label="Coincidencia anterior" onClick={() => onStep(-1)} disabled={!hits.length} sx={step}><ChevronUp size={ICON_SIZE} /></IconButton>
+              <IconButton aria-label="Coincidencia siguiente" onClick={() => onStep(1)} disabled={!hits.length} sx={step}><ChevronDown size={ICON_SIZE} /></IconButton>
+            </>
           ) : null}
-        </Box>
-        {children}
+        </Paper>
+        {active ? (
+          <Typography
+            key={active.id}
+            variant="body3"
+            component="div"
+            data-slot="conversation-search-preview"
+            sx={(t) => ({ ...fieldSx(), borderRadius: 1, px: 1.5, py: 1, animation: `${fadein} ${t.transitions.duration.shorter}ms`, [REDUCED_MOTION]: { animation: 'none' } })}
+          >
+            <Box component="span" sx={{ color: 'text.secondary' }}>{active.before}</Box>
+            <Box component="mark" sx={(t) => ({ bgcolor: paletteScale(t, 'warning', 100), color: 'text.primary', borderRadius: 0.5, px: 0.25 })}>{active.match}</Box>
+            <Box component="span" sx={{ color: 'text.secondary' }}>{active.after}</Box>
+          </Typography>
+        ) : null}
       </Stack>
-      <Box aria-hidden="true" data-slot="conversation-search-rail" sx={{ position: 'relative', width: (t) => t.spacing(1), flexShrink: 0, borderRadius: 1, bgcolor: 'action.hover' }}>
+      <Box aria-hidden="true" data-slot="conversation-search-rail" sx={(t) => ({ ...fieldSx(), position: 'relative', width: t.spacing(RAIL), flexShrink: 0, borderRadius: 1 })}>
         {hits.map((hit, i) => (
           <Box
             key={hit.id}
@@ -109,10 +101,10 @@ export function ConversationSearch({ query, hits, activeIndex, onQueryChange, on
               position: 'absolute',
               left: 0,
               right: 0,
-              top: `${Math.max(0, hit.position - 1)}%`,
-              height: t.spacing(0.5),
-              borderRadius: 0.5,
-              bgcolor: i === index ? 'primary.main' : alpha(t.palette.primary.main, 0.3),
+              top: `${hit.position}%`,
+              height: t.spacing(MARK),
+              borderRadius: 1,
+              bgcolor: i === index ? 'warning.main' : alpha(t.palette.warning.main, 0.35),
               transition: t.transitions.create('background-color', { duration: t.transitions.duration.shorter }),
             })}
           />

@@ -1,8 +1,6 @@
 import * as React from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
 import { ConversationSearch, type SearchHit } from '../../src/ai/conversation-search';
 import { ElementPage, PropRow, PropToggle } from '../ui/Playground';
 
@@ -24,11 +22,11 @@ function findHits(query: string): Array<SearchHit & { line: number }> {
   const q = query.trim().toLowerCase();
   const hits: Array<SearchHit & { line: number }> = [];
   if (!q) return hits;
-  LINES.forEach(([who, text], line) => {
+  LINES.forEach(([, text], line) => {
     const low = text.toLowerCase();
     let from = 0;
     for (let k = low.indexOf(q, from); k >= 0; k = low.indexOf(q, from)) {
-      hits.push({ id: `${line}-${k}`, line, who, before: text.slice(Math.max(0, k - CONTEXT), k), match: text.slice(k, k + q.length), after: text.slice(k + q.length, k + q.length + CONTEXT), position: ((line + 0.5) / LINES.length) * 100 });
+      hits.push({ id: `${line}-${k}`, line, before: text.slice(Math.max(0, k - CONTEXT), k), match: text.slice(k, k + q.length), after: text.slice(k + q.length, k + q.length + CONTEXT), position: ((line + 0.5) / LINES.length) * 100 });
       from = k + q.length;
     }
   });
@@ -41,19 +39,10 @@ function SearchDemo({ withStep = true, initial = 'anticipo', queryRef }: { withS
   const hits = React.useMemo(() => findHits(query), [query]);
   const n = hits.length;
   const act = n ? ((active % n) + n) % n : -1;
-  const line = act >= 0 ? hits[act].line : -1;
   const change = (q: string) => { setQuery(q); setActive(0); };
   if (queryRef) queryRef.current = change;
   return (
-    <ConversationSearch query={query} hits={hits} activeIndex={act} onQueryChange={change} onStep={withStep ? (d) => setActive(act + d) : undefined}>
-      <List dense disablePadding sx={{ maxHeight: 160, overflowY: 'auto' }}>
-        {LINES.map(([who, text], i) => (
-          <ListItem key={i} sx={(t) => ({ ...t.typography.body2, px: 2, py: 0.5, bgcolor: i === line ? 'action.selected' : 'transparent', color: i === line ? 'text.primary' : 'text.secondary' })}>
-            {`${who}: ${text}`}
-          </ListItem>
-        ))}
-      </List>
-    </ConversationSearch>
+    <ConversationSearch query={query} hits={hits} activeIndex={act} onQueryChange={change} onStep={withStep ? (d) => setActive(act + d) : undefined} />
   );
 }
 

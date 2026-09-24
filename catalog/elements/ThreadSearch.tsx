@@ -22,7 +22,7 @@ export function ThreadSearchDoc() {
     <Box sx={{ maxWidth: 640 }}>
       <ElementPage
         demoHeight={400}
-        demo={<Box sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 3 }}><ThreadSearch threads={THREADS} query={query} activeId={activeId} onQueryChange={setQuery} onSelect={setActiveId} /></Box>}
+        demo={<Box sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 3 }}><ThreadSearch threads={THREADS} query={query} activeId={activeId} onQueryChange={setQuery} onSelect={setActiveId} sx={{ maxHeight: 352 }} /></Box>}
         properties={
           <>
             <PropRow label="activeId"><Typography variant="body3" color="text.secondary" sx={(t) => t.aiKit.code}>{`"${activeId}"`}</Typography></PropRow>

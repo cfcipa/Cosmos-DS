@@ -1,21 +1,15 @@
 // Cosmos DS · Kit IA · Thread: Shared conversation.
-// Tablero «Shared conversation»: una transcripción de solo lectura que alguien te envió, con una forma de seguirla tú.
-// Como en assistant-ui: título y quién la compartió arriba, los turnos sin controles de edición y, abajo, «Solo lectura»
-// y «Continuar en tu propio chat» (solo si llega `onContinue`, que importa los mensajes a un hilo nuevo).
+// Referente: assistant-ui «Shared conversation» (elements/shared-conversation.tsx): una transcripción de solo lectura
+// que alguien te envió. Arriba el título y quién la compartió; en medio los turnos sin controles de edición; abajo
+// «solo lectura» y «Continuar en tu propio chat», que importa los mensajes a un hilo tuyo.
 import * as React from 'react';
-import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Chip from '@mui/material/Chip';
-import ListItem from '@mui/material/ListItem';
-import ListItemAvatar from '@mui/material/ListItemAvatar';
-import ListItemText from '@mui/material/ListItemText';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import type { SxProps, Theme } from '@mui/material/styles';
-import { Link2, Lock } from 'lucide-react';
-import { primaryTint } from '../lib/primaryTint';
+import { Link } from 'lucide-react';
 import { userBubbleSx } from '../lib/thread';
 
 export interface SharedTurn {
@@ -35,11 +29,9 @@ export interface SharedConversationProps {
   sx?: SxProps<Theme>;
 }
 
-/** Medidas del tablero. */
-const MAX_WIDTH = 448;
-const TRANSCRIPT_MAX_HEIGHT = 190;
-const ICON_SIZE = 20;
-const CHIP_ICON_SIZE = 16;
+/** Medidas de assistant-ui: max-w-sm, ícono de 14px. */
+const MAX_WIDTH = 384;
+const ICON_SIZE = 14;
 
 export function SharedConversation({ title, sharedBy, sharedAt, turns, onContinue, className, sx }: SharedConversationProps) {
   return (
@@ -49,31 +41,30 @@ export function SharedConversation({ title, sharedBy, sharedAt, turns, onContinu
       className={className}
       sx={[{ width: '100%', maxWidth: MAX_WIDTH, display: 'flex', flexDirection: 'column', overflow: 'hidden' }, ...(Array.isArray(sx) ? sx : [sx])]}
     >
-      <ListItem component="div" divider sx={{ p: 2, flexShrink: 0 }}>
-        <ListItemAvatar>
-          <Avatar variant="rounded" sx={(t) => ({ bgcolor: primaryTint(t), color: 'primary.main' })}>
-            <Link2 size={ICON_SIZE} aria-hidden="true" />
-          </Avatar>
-        </ListItemAvatar>
-        <ListItemText
-          primary={title}
-          secondary={`Compartido por ${sharedBy} · ${sharedAt}`}
-          primaryTypographyProps={{ variant: 'subtitle2', noWrap: true }}
-          secondaryTypographyProps={{ variant: 'body2', noWrap: true }}
-          sx={{ my: 0 }}
-        />
-      </ListItem>
-      <Stack spacing={2} sx={{ p: 2, flexGrow: 1, minHeight: 0, maxHeight: TRANSCRIPT_MAX_HEIGHT, overflowY: 'auto' }}>
+      <Stack direction="row" alignItems="center" spacing={1.25} sx={{ flexShrink: 0, px: 2, pt: 1.75, pb: 1.5 }}>
+        <Box component="span" aria-hidden="true" sx={{ display: 'flex', flexShrink: 0, color: 'text.disabled' }}><Link size={ICON_SIZE} /></Box>
+        <Stack sx={{ flexGrow: 1, minWidth: 0 }}>
+          <Typography variant="subtitle2" noWrap>{title}</Typography>
+          <Typography variant="caption" color="text.disabled" noWrap>{`compartido por ${sharedBy} · ${sharedAt}`}</Typography>
+        </Stack>
+      </Stack>
+      <Stack spacing={1.25} sx={{ flexGrow: 1, minHeight: 0, overflowY: 'auto', px: 2, py: 1.75, borderTop: 1, borderColor: 'divider' }}>
         {turns.map((turn) => (
-          <Typography key={turn.id} variant="body1" component="div" sx={turn.role === 'user' ? userBubbleSx() : undefined}>
+          <Typography
+            key={turn.id}
+            variant="body2"
+            component="div"
+            color={turn.role === 'user' ? undefined : 'text.secondary'}
+            sx={turn.role === 'user' ? { ...userBubbleSx(), py: 1, flexShrink: 0 } : { flexShrink: 0 }}
+          >
             {turn.text}
           </Typography>
         ))}
       </Stack>
-      <Stack direction="row" alignItems="center" spacing={1} sx={{ flexShrink: 0, px: 2, py: 1, borderTop: 1, borderColor: 'divider' }}>
-        <Chip size="small" variant="outlined" icon={<Lock size={CHIP_ICON_SIZE} />} label="Solo lectura" />
+      <Stack direction="row" alignItems="center" spacing={1} sx={{ flexShrink: 0, px: 2, py: 1.5, borderTop: 1, borderColor: 'divider' }}>
+        <Typography variant="caption" color="text.disabled">solo lectura</Typography>
         <Box sx={{ flexGrow: 1 }} />
-        {onContinue ? <Button variant="contained" onClick={onContinue}>Continuar en tu propio chat</Button> : null}
+        <Button variant="contained" onClick={onContinue} disabled={!onContinue}>Continuar en tu propio chat</Button>
       </Stack>
     </Paper>
   );

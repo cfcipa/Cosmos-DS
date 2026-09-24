@@ -16,7 +16,7 @@ function PageBehind({ children, log }: { children: React.ReactNode; log?: string
       <Box sx={{ position: 'absolute', left: 20, top: 20, right: 20, display: 'flex', flexDirection: 'column', gap: 1 }}>
         {['40%', '70%', '55%'].map((w, i) => <Box key={w} sx={(t) => ({ height: t.spacing(i === 0 ? 1.75 : 1.25), width: w, borderRadius: 1, bgcolor: 'action.selected' })} />)}
       </Box>
-      <Box sx={{ position: 'absolute', right: 20, bottom: 20 }}>{children}</Box>
+      <Box sx={{ position: 'absolute', right: 20, bottom: 20, width: 304, display: 'flex', justifyContent: 'flex-end' }}>{children}</Box>
       {log !== undefined ? <Typography variant="body3" color="text.secondary" role="status" sx={{ position: 'absolute', left: 20, bottom: 20 }}>{log}</Typography> : null}
     </Box>
   );
@@ -59,8 +59,8 @@ export function LauncherCard() {
   const [open, setOpen] = React.useState(false);
   return (
     <Box sx={{ position: 'relative', height: 212 }}>
-      <Box sx={{ position: 'absolute', right: 0, bottom: 0, transform: 'scale(0.8)', transformOrigin: 'bottom right' }}>
-        <Launcher open={open} unread={2} greeting="¿En qué te ayudo?" prompts={PROMPTS} onToggle={() => setOpen((o) => !o)} onPick={() => setOpen(false)} />
+      <Box sx={{ position: 'absolute', right: 0, bottom: 0, width: 304, display: 'flex', justifyContent: 'flex-end' }}>
+        <Launcher open={open} unread={2} greeting="¿En qué te ayudo?" prompts={PROMPTS.slice(0, 2)} onToggle={() => setOpen((o) => !o)} onPick={() => setOpen(false)} />
       </Box>
     </Box>
   );

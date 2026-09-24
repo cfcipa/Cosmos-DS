@@ -1,6 +1,6 @@
 // Cosmos DS · Kit IA · Thread: Empty state.
-// Tablero «Empty state»: un saludo, tres maneras de empezar y el composer al frente.
-// Como en assistant-ui: el saludo entra primero, las sugerencias en cascada (120 ms + 70 ms por índice) y el composer
+// Referente: assistant-ui «Empty state» (elements/empty-state.tsx): un saludo, tres maneras de empezar y el composer.
+// El saludo entra primero, las sugerencias en cascada (120 ms + 70 ms por índice) y el composer
 // a los 360 ms. Elegir una sugerencia llena el composer con su prompt; no lo envía.
 import * as React from 'react';
 import Box from '@mui/material/Box';
@@ -15,13 +15,13 @@ import { riseSx } from '../lib/thread';
 const SUGGESTION_DELAY_MS = 120;
 const SUGGESTION_STAGGER_MS = 70;
 const COMPOSER_DELAY_MS = 360;
-const MAX_WIDTH = 480;
+const MAX_WIDTH = 448;
 
 interface SlotProps { children?: React.ReactNode; className?: string; sx?: SxProps<Theme> }
 
 export function EmptyState({ children, className, sx }: SlotProps) {
   return (
-    <Stack data-slot="empty-state" alignItems="center" spacing={2.5} className={className} sx={[{ width: '100%', maxWidth: MAX_WIDTH }, ...(Array.isArray(sx) ? sx : [sx])]}>
+    <Stack data-slot="empty-state" alignItems="center" spacing={3.5} className={className} sx={[{ width: '100%', maxWidth: MAX_WIDTH }, ...(Array.isArray(sx) ? sx : [sx])]}>
       {children}
     </Stack>
   );
@@ -29,7 +29,7 @@ export function EmptyState({ children, className, sx }: SlotProps) {
 
 export function EmptyStateGreeting({ children, className }: SlotProps) {
   return (
-    <Typography variant="h3" component="h2" data-slot="empty-state-greeting" className={className} sx={(t) => ({ m: 0, textAlign: 'center', ...riseSx(t) })}>
+    <Typography variant="h4" component="h2" data-slot="empty-state-greeting" className={className} sx={(t) => ({ m: 0, textAlign: 'center', ...riseSx(t) })}>
       {children}
     </Typography>
   );

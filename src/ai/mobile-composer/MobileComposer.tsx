@@ -1,18 +1,19 @@
 // Cosmos DS · Kit IA · Thread: Mobile composer.
-// Tablero «Mobile composer»: una hoja inferior atenta al teclado, acciones rápidas encima y objetivos del tamaño del pulgar.
-// Como en assistant-ui: con el teclado abierto se esconden las acciones y aparece «Retorno para enviar»; cerrado se ve
-// el indicador de inicio. El micrófono solo con el campo vacío. Enter envía (no durante IME ni corriendo); enviar se
-// vuelve detener mientras `running`. Cada control se desactiva si no llega su callback.
+// Referente: assistant-ui «Mobile composer» (elements/mobile-composer.tsx): la hoja inferior del teléfono.
+// Fila de acciones rápidas que se va cuando sube el teclado, adjuntar, un campo de una línea y enviar, que se vuelve
+// detener durante la ejecución. Abajo, el agarre de la hoja o «Retorno para enviar», nunca los dos.
+// Enter envía solo con texto y sin ejecución (ignora la composición IME). Adjuntar y las acciones se desactivan juntas
+// según llegue o no su callback; ninguna reacciona a `running` por sí sola.
 import * as React from 'react';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import IconButton from '@mui/material/IconButton';
-import InputAdornment from '@mui/material/InputAdornment';
-import OutlinedInput from '@mui/material/OutlinedInput';
+import InputBase from '@mui/material/InputBase';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import type { SxProps, Theme } from '@mui/material/styles';
-import { ArrowUp, Mic, Paperclip, Square } from 'lucide-react';
+import { ArrowUp, Mic, Plus, Square } from 'lucide-react';
+import { fieldSx, riseSx } from '../lib/thread';
 
 export interface MobileComposerProps {
   value: string;
@@ -32,79 +33,104 @@ export interface MobileComposerProps {
   sx?: SxProps<Theme>;
 }
 
-const ICON_SIZE = 20;
-const ATTACH_SIZE = 22;
-const STOP_SIZE = 14;
-/** El indicador de inicio del tablero: 96 × 4. */
-const HOME_INDICATOR_WIDTH = 12;
+/** Medidas de assistant-ui: hoja de 19rem, objetivos de 36px, íconos de 16px, agarre de 112 × 4. */
+const MAX_WIDTH = 304;
+const TARGET = 4.5;
+const ICON_SIZE = 16;
+const STOP_SIZE = 12;
+const GRABBER_WIDTH = 14;
+/** 16px en el campo: por debajo, Safari en iOS hace zoom al enfocar. */
+const INPUT_FONT_PX = 16;
 
 export function MobileComposer({
   value, keyboardOpen, running, actions,
   onAction, onAttach, onValueChange, onSend, onStop, onFocus, onBlur, placeholder = 'Mensaje', className, sx,
 }: MobileComposerProps) {
-  const empty = value.trim() === '';
+  const empty = value === '';
   const onKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing) return;
     event.preventDefault();
     if (!running && !empty && onSend) onSend();
   };
+  const circle = (t: Theme) => ({ width: t.spacing(TARGET), height: t.spacing(TARGET), flexShrink: 0 });
 
   return (
     <Stack
-      spacing={1}
+      spacing={1.25}
       data-slot="mobile-composer"
       className={className}
-      sx={[{ p: 1, pb: 0.75, bgcolor: 'background.paper', borderTop: 1, borderColor: 'divider' }, ...(Array.isArray(sx) ? sx : [sx])]}
+      sx={[
+        (t) => ({
+          width: '100%',
+          maxWidth: MAX_WIDTH,
+          boxSizing: 'border-box',
+          px: 1.5,
+          pt: 1.5,
+          pb: keyboardOpen ? 1.5 : 3,
+          bgcolor: 'background.paper',
+          borderTop: 1,
+          borderColor: 'divider',
+          borderRadius: `${t.shape.borderRadius * 2}px ${t.shape.borderRadius * 2}px 0 0`,
+        }),
+        ...(Array.isArray(sx) ? sx : [sx]),
+      ]}
     >
       {!keyboardOpen ? (
-        <Stack direction="row" spacing={0.75} sx={{ overflowX: 'auto' }}>
+        <Stack direction="row" spacing={0.75} sx={(t) => ({ mx: -1.5, px: 1.5, pb: 0.25, overflowX: 'auto', ...riseSx(t) })}>
           {actions.map((action) => (
-            <Chip key={action} variant="outlined" clickable label={action} onClick={() => onAction?.(action)} disabled={!onAction} sx={{ flexShrink: 0 }} />
+            <Chip
+              key={action}
+              size="small"
+              label={action}
+              onClick={() => onAction?.(action)}
+              disabled={!onAction}
+              sx={{ flexShrink: 0, bgcolor: 'action.hover', color: 'text.secondary' }}
+            />
           ))}
         </Stack>
       ) : null}
-      <Stack direction="row" alignItems="center" spacing={0.5}>
-        <IconButton size="large" aria-label="Agregar un adjunto" onClick={onAttach} disabled={!onAttach} sx={{ flexShrink: 0 }}>
-          <Paperclip size={ATTACH_SIZE} />
+
+      <Stack direction="row" alignItems="flex-end" spacing={1}>
+        <IconButton aria-label="Agregar un adjunto" onClick={onAttach} disabled={!onAttach} sx={(t) => ({ ...circle(t), ...fieldSx() })}>
+          <Plus size={ICON_SIZE} />
         </IconButton>
-        <OutlinedInput
-          fullWidth
-          value={value}
-          onChange={(event) => onValueChange?.(event.target.value)}
-          onKeyDown={onKeyDown}
-          onFocus={onFocus}
-          onBlur={onBlur}
-          placeholder={placeholder}
-          inputProps={{ 'aria-label': placeholder, enterKeyHint: 'send' }}
-          endAdornment={value === '' ? <InputAdornment position="end" sx={{ color: 'action.active' }}><Mic size={ICON_SIZE} aria-hidden="true" /></InputAdornment> : undefined}
-        />
+        <Stack direction="row" alignItems="center" spacing={1} sx={{ ...fieldSx(), flexGrow: 1, minWidth: 0, borderRadius: 1, px: 1.5, py: 1 }}>
+          <InputBase
+            value={value}
+            onChange={(event) => onValueChange?.(event.target.value)}
+            onKeyDown={onKeyDown}
+            onFocus={onFocus}
+            onBlur={onBlur}
+            placeholder={placeholder}
+            inputProps={{ 'aria-label': placeholder, enterKeyHint: 'send' }}
+            sx={(t) => ({ flexGrow: 1, minWidth: 0, ...t.typography.body1, fontSize: t.typography.pxToRem(INPUT_FONT_PX), '& input': { p: 0 } })}
+          />
+          {empty ? <Box component="span" sx={{ display: 'flex', color: 'text.disabled' }}><Mic size={ICON_SIZE} aria-hidden="true" /></Box> : null}
+        </Stack>
         {onSend || onStop ? (
           <IconButton
-            size="large"
             aria-label={running ? 'Detener' : 'Enviar'}
             onClick={running ? onStop : onSend}
             // Enviar y detener no le quitan el foco al campo: el teclado no se cierra a mitad del toque.
             onMouseDown={(event) => event.preventDefault()}
             disabled={running ? !onStop : !onSend || empty}
-            sx={{
-              flexShrink: 0,
+            sx={(t) => ({
+              ...circle(t),
               bgcolor: 'primary.main',
               color: 'primary.contrastText',
               '&:hover': { bgcolor: 'primary.dark' },
               '&.Mui-disabled': { bgcolor: 'action.disabledBackground', color: 'action.disabled' },
-            }}
+            })}
           >
-            {/* Mismo cuadro para los dos glifos: el botón no cambia de tamaño al pasar a detener. */}
-            <Box component="span" aria-hidden="true" sx={{ width: ICON_SIZE, height: ICON_SIZE, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-              {running ? <Square size={STOP_SIZE} fill="currentColor" /> : <ArrowUp size={ICON_SIZE} strokeWidth={2.25} />}
-            </Box>
+            {running ? <Square size={STOP_SIZE} fill="currentColor" /> : <ArrowUp size={ICON_SIZE} />}
           </IconButton>
         ) : null}
       </Stack>
+
       {keyboardOpen ? (
-        <Typography variant="body3" color="text.secondary" aria-hidden="true" sx={{ textAlign: 'center' }}>Retorno para enviar</Typography>
+        <Typography variant="caption" color="text.disabled" sx={{ textAlign: 'center' }}>Retorno para enviar</Typography>
       ) : (
-        <Box aria-hidden="true" sx={(t) => ({ alignSelf: 'center', width: t.spacing(HOME_INDICATOR_WIDTH), height: t.spacing(0.5), borderRadius: 0.5, bgcolor: 'action.disabled' })} />
+        <Box aria-hidden="true" sx={(t) => ({ alignSelf: 'center', width: t.spacing(GRABBER_WIDTH), height: t.spacing(0.5), borderRadius: 0.5, bgcolor: 'action.disabled' })} />
       )}
     </Stack>
   );
