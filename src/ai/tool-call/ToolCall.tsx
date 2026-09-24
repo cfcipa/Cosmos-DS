@@ -138,7 +138,7 @@ const bodySx = (open: boolean) => (t: Theme) => ({
 /** A tool call inside an assistant message (ToolFallback) on MUI: status icon, name, duration, collapsible args/result, and the approval when it requires action. */
 export function ToolCall({
   toolName, status = 'complete', args, result, error, durationMs, startedAt, open, defaultOpen = false, onOpenChange,
-  approval, children, usedLabel = 'Herramienta usada', cancelledLabel = 'Herramienta cancelada', requiresActionLabel = 'Requiere aprobación',
+  approval, children, usedLabel = 'Herramienta usada', cancelledLabel = 'Herramienta cancelada', requiresActionLabel = 'Herramienta usada',
   errorTitle = 'Error:', cancelTitle = 'Motivo de la cancelación:', resultLabel = 'Resultado:', className,
 }: ToolCallProps) {
   const [isOpen, setOpen] = useControllable(open, defaultOpen, onOpenChange);

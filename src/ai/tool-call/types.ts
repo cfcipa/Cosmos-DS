@@ -71,7 +71,7 @@ export interface ToolCallProps {
   usedLabel?: string;
   /** Default 'Herramienta cancelada'. */
   cancelledLabel?: string;
-  /** Default 'Requiere aprobación'. */
+  /** Default 'Herramienta usada' (como assistant-ui: el mismo «Used tool» mientras espera la aprobación). */
   requiresActionLabel?: string;
   /** Default 'Error:'. */
   errorTitle?: string;

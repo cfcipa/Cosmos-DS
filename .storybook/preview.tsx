@@ -1,6 +1,13 @@
 import * as React from 'react';
 import type { Preview } from '@storybook/react';
 import Box from '@mui/material/Box';
+import '@fontsource/inter/400.css';
+import '@fontsource/inter/500.css';
+import '@fontsource/inter/600.css';
+import '@fontsource/inter/700.css';
+import '@fontsource/schibsted-grotesk/500.css';
+import '@fontsource/schibsted-grotesk/600.css';
+import '@fontsource/jetbrains-mono/400.css';
 import { CosmosProvider } from '../src/CosmosProvider';
 
 const preview: Preview = {
@@ -25,7 +32,7 @@ const preview: Preview = {
           'Introducción', 'Tema', ['Colores', 'Tipografía'],
           'Elementos', [
             'Reasoning', 'Messages', 'Tool use', 'Knowledge', 'Structured output',
-            'Agents', 'Observability', 'Composer', 'Voice', 'Thread', 'Superficies Sinco',
+            'Agents', 'Observability', 'Composer', 'Voice', 'Thread', 'AUI connected', 'Sinco',
           ],
           'Plantillas',
         ],
@@ -35,7 +42,7 @@ const preview: Preview = {
   decorators: [
     (Story, ctx) => (
       <CosmosProvider brand={ctx.globals.brand || 'cosmos'} mode={ctx.globals.mode || 'light'}>
-        <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', p: ctx.parameters.layout === 'fullscreen' ? 4 : 0 }}>
+        <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', p: 4 }}>
           <Box sx={{ maxWidth: ctx.parameters.demoWidth ?? 640, mx: 'auto' }}>
             <Story />
           </Box>
