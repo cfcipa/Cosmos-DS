@@ -22,5 +22,8 @@ export * from './ai/message-actions';
 export * from './ai/error-state';
 export * from './ai/message-queue';
 export * from './ai/edit-message';
+export * from './ai/feedback-dialog';
+export * from './ai/stopped-run';
+export * from './ai/day-separator';
 // 3 · Tool use
 export * from './ai/tool-call';

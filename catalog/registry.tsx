@@ -11,6 +11,9 @@ import { MessageActionsDoc, MessageActionsCard } from './elements/MessageActions
 import { ErrorStateDoc, ErrorStateCard } from './elements/ErrorState';
 import { MessageQueueDoc, MessageQueueCard } from './elements/MessageQueue';
 import { EditMessageDoc, EditMessageCard } from './elements/EditMessage';
+import { FeedbackDialogDoc, FeedbackDialogCard } from './elements/FeedbackDialog';
+import { StoppedRunDoc, StoppedRunCard } from './elements/StoppedRun';
+import { TimestampsDoc, TimestampsCard } from './elements/Timestamps';
 
 export interface ElementEntry {
   slug: string;
@@ -43,6 +46,9 @@ export const SECTIONS: Section[] = [
       { slug: 'error-state', title: 'Error state', description: 'Un aviso discreto con camino para reintentar, no un modal en tu cara.', Card: ErrorStateCard, Doc: ErrorStateDoc },
       { slug: 'message-queue', title: 'Message queue', description: 'Lo que escribes mientras una ejecución corre queda en fila, y puedes cancelarlo hasta que termine.', Card: MessageQueueCard, Doc: MessageQueueDoc },
       { slug: 'edit-message', title: 'Edit a sent message', description: 'Reescribe un turno en su lugar, sabiendo de antemano cuántas respuestas descarta la edición.', Card: EditMessageCard, Doc: EditMessageDoc },
+      { slug: 'feedback-dialog', title: 'Feedback dialog', description: 'Un pulgar abajo que pregunta por qué, para que la señal llegue con su razón.', Card: FeedbackDialogCard, Doc: FeedbackDialogDoc },
+      { slug: 'stopped-run', title: 'Stopped run', description: 'Pulsaste detener. La respuesta a medias se queda, y seguir está a un toque.', Card: StoppedRunCard, Doc: StoppedRunDoc },
+      { slug: 'timestamps', title: 'Timestamps', description: 'Cronología en un hilo largo: los días marcados y la hora al pasar el cursor.', Card: TimestampsCard, Doc: TimestampsDoc },
     ],
   },
 ];
