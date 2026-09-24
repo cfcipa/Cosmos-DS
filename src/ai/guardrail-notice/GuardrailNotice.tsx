@@ -18,7 +18,11 @@ export interface GuardrailNoticeProps {
   explanation: string;
   /** Lo más cercano que sí se puede hacer. Vacío u omitido: la sección «Prueba en su lugar» no se muestra. */
   alternatives?: string[];
-  /** Se llama con el texto de la alternativa elegida. Sin él, las alternativas se ven pero no hacen nada. */
+  /**
+   * Se llama con el texto de la alternativa elegida; en el producto, se envía como un mensaje nuevo del usuario
+   * y arranca otra ejecución (en assistant-ui: `aui.thread.append(alternative)`).
+   * Sin él, las alternativas se muestran como sugerencias de solo lectura, no como botones.
+   */
   onPick?: (alternative: string) => void;
   /** Default 'Prueba en su lugar'. */
   alternativesLabel?: string;
@@ -96,32 +100,47 @@ export function GuardrailNotice({
         <Stack spacing={0.5}>
           <Typography component="span" variant="overline" color="text.secondary">{alternativesLabel}</Typography>
           <Stack sx={{ mx: -1 }}>
-            {alternatives.map((alternative) => (
-              <ButtonBase
-                key={alternative}
-                onClick={() => onPick?.(alternative)}
-                sx={(t) => ({
-                  width: '100%',
-                  minHeight: ALTERNATIVE_MIN_HEIGHT,
-                  justifyContent: 'flex-start',
-                  gap: 1,
-                  px: 1,
-                  py: 0.5,
-                  borderRadius: 1,
-                  textAlign: 'left',
-                  ...t.typography.body1,
-                  color: 'text.primary',
-                  cursor: onPick ? 'pointer' : 'default',
-                  '&:hover': { bgcolor: 'action.hover' },
-                  '&.Mui-focusVisible': { outline: `2px solid ${t.palette.ai.focusRing}`, outlineOffset: 2 },
-                })}
-              >
-                <Box component="span" aria-hidden="true" sx={{ display: 'inline-flex', flexShrink: 0, color: 'primary.main' }}>
-                  <ArrowRight size={ARROW_SIZE} />
+            {alternatives.map((alternative) => {
+              const content = (
+                <>
+                  <Box component="span" aria-hidden="true" sx={{ display: 'inline-flex', flexShrink: 0, color: onPick ? 'primary.main' : 'text.disabled' }}>
+                    <ArrowRight size={ARROW_SIZE} />
+                  </Box>
+                  {alternative}
+                </>
+              );
+              const rowSx = (t: Theme) => ({
+                width: '100%',
+                minHeight: ALTERNATIVE_MIN_HEIGHT,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'flex-start',
+                gap: 1,
+                px: 1,
+                py: 0.5,
+                borderRadius: 1,
+                textAlign: 'left' as const,
+                ...t.typography.body1,
+              });
+              return onPick ? (
+                <ButtonBase
+                  key={alternative}
+                  onClick={() => onPick(alternative)}
+                  sx={(t) => ({
+                    ...rowSx(t),
+                    color: 'text.primary',
+                    '&:hover': { bgcolor: 'action.hover' },
+                    '&.Mui-focusVisible': { outline: `2px solid ${t.palette.ai.focusRing}`, outlineOffset: 2 },
+                  })}
+                >
+                  {content}
+                </ButtonBase>
+              ) : (
+                <Box key={alternative} component="span" sx={(t) => ({ ...rowSx(t), color: 'text.secondary' })}>
+                  {content}
                 </Box>
-                {alternative}
-              </ButtonBase>
-            ))}
+              );
+            })}
           </Stack>
         </Stack>
       ) : null}

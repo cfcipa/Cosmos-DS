@@ -4,60 +4,95 @@ import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { GuardrailNotice } from '../../src/ai/guardrail-notice';
+import { TypingIndicator } from '../../src/ai/typing-indicator';
 import { ElementPage, PropRow, PropToggle } from '../ui/Playground';
 
 // Contenido del tablero aprobado «Guardrail notice».
 const POLICY = 'Política de datos personales';
 const EXPLANATION = 'Esto pide exportar los datos personales de toda la nómina, y tu rol no tiene ese permiso.';
 const ALTERNATIVES = ['Exporta solo los campos que no son sensibles', 'Pide el permiso a tu administrador'];
+// Demo: la solicitud que provoca la negativa y la respuesta a cada alternativa.
+const USER_REQUEST = 'Exporta los datos personales de toda la nómina.';
+const REPLIES: Record<string, string> = {
+  [ALTERNATIVES[0]]: 'Listo: preparé la exportación de la nómina sin cédulas, cuentas bancarias ni direcciones.',
+  [ALTERNATIVES[1]]: 'Envié la solicitud de permiso a tu administrador. Te aviso cuando la apruebe.',
+};
+/** Cuánto tarda la nueva ejecución en responder. */
+const RUN_MS = 1400;
 
 type Toggle = 'on' | 'off';
+type Turn = { role: 'user' | 'assistant'; text: string };
+
+function UserBubble({ children }: { children: React.ReactNode }) {
+  return (
+    <Box
+      sx={(t) => ({
+        alignSelf: 'flex-end',
+        maxWidth: 320,
+        px: 2,
+        py: 1.5,
+        borderRadius: 1,
+        bgcolor: 'ai.userBubble',
+        color: 'ai.userBubbleText',
+        ...t.typography.body1,
+      })}
+    >
+      {children}
+    </Box>
+  );
+}
 
 export function GuardrailNoticeDoc() {
   const [withAlternatives, setWithAlternatives] = React.useState<Toggle>('on');
   const [withPick, setWithPick] = React.useState<Toggle>('on');
-  const [sentMessages, setSentMessages] = React.useState<string[]>([]);
+  // Lo que pasa después de la negativa: la alternativa elegida y la respuesta de la nueva ejecución.
+  const [turns, setTurns] = React.useState<Turn[]>([]);
+  const [isRunning, setIsRunning] = React.useState(false);
+  const runTimer = React.useRef<number>();
   const conversationRef = React.useRef<HTMLDivElement>(null);
   const canPick = withPick === 'on';
 
-  // Cada alternativa enviada aparece abajo: se desplaza la conversación para mostrarla.
+  React.useEffect(() => () => window.clearTimeout(runTimer.current), []);
   React.useEffect(() => {
     const conversation = conversationRef.current;
     if (conversation) conversation.scrollTo({ top: conversation.scrollHeight, behavior: 'smooth' });
-  }, [sentMessages]);
+  }, [turns, isRunning]);
 
-  const sendAlternative = (alternative: string) => setSentMessages((current) => [...current, alternative]);
+  /** Como `aui.thread.append(alternative)`: la alternativa entra como mensaje del usuario y arranca otra ejecución. */
+  const appendAlternative = (alternative: string) => {
+    if (isRunning) return;
+    setTurns((current) => [...current, { role: 'user', text: alternative }]);
+    setIsRunning(true);
+    runTimer.current = window.setTimeout(() => {
+      setTurns((current) => [...current, { role: 'assistant', text: REPLIES[alternative] }]);
+      setIsRunning(false);
+    }, RUN_MS);
+  };
+
+  const resetDemo = () => {
+    window.clearTimeout(runTimer.current);
+    setTurns([]);
+    setIsRunning(false);
+  };
 
   return (
     <Box sx={{ maxWidth: 640 }}>
       <ElementPage
-        demoHeight={280}
+        demoHeight={360}
         demo={
-          <Box sx={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 3 }}>
-            <Stack ref={conversationRef} spacing={1.5} sx={{ width: '100%', maxWidth: 440, maxHeight: 232, overflowY: 'auto' }}>
+          <Box ref={conversationRef} sx={{ height: '100%', overflowY: 'auto', p: 3, boxSizing: 'border-box' }}>
+            <Stack spacing={2} sx={{ width: '100%', maxWidth: 440, mx: 'auto' }}>
+              <UserBubble>{USER_REQUEST}</UserBubble>
               <GuardrailNotice
                 policy={POLICY}
                 explanation={EXPLANATION}
                 alternatives={withAlternatives === 'on' ? ALTERNATIVES : []}
-                onPick={canPick ? sendAlternative : undefined}
+                onPick={canPick ? appendAlternative : undefined}
               />
-              {sentMessages.map((message, index) => (
-                <Box
-                  key={index}
-                  sx={(t) => ({
-                    alignSelf: 'flex-end',
-                    maxWidth: 320,
-                    px: 1.5,
-                    py: 1,
-                    borderRadius: 1,
-                    bgcolor: 'ai.userBubble',
-                    color: 'ai.userBubbleText',
-                    ...t.typography.body1,
-                  })}
-                >
-                  {message}
-                </Box>
-              ))}
+              {turns.map((turn, index) => (turn.role === 'user'
+                ? <UserBubble key={index}>{turn.text}</UserBubble>
+                : <Typography key={index} component="p" variant="body1" sx={{ m: 0 }}>{turn.text}</Typography>))}
+              {isRunning ? <TypingIndicator /> : null}
             </Stack>
           </Box>
         }
@@ -70,9 +105,9 @@ export function GuardrailNoticeDoc() {
               <PropToggle<Toggle> label="onPick" value={withPick} onChange={setWithPick} options={[['on', 'connected'], ['off', 'no callback']]} />
             </PropRow>
             <PropRow label="Demo">
-              <Button variant="outlined" onClick={() => setSentMessages([])}>Reset</Button>
+              <Button variant="outlined" onClick={resetDemo}>Reset</Button>
               <Typography variant="caption" color="text.secondary">
-                {canPick ? 'Picking an alternative sends it as a new message.' : 'Without onPick the buttons show but do nothing.'}
+                {canPick ? 'Picking an alternative sends it as a new message and starts a run.' : 'Without onPick the alternatives are read-only suggestions.'}
               </Typography>
             </PropRow>
           </>
