@@ -213,9 +213,11 @@ export function Composer({
           pb: 1,
           px: 1.75,
           '& .MuiInputBase-input': {
-            width: isCompact ? 'auto' : '100%',
+            // Siempre a todo el ancho; en compacto encoge lo justo para dejar sitio a enviar (flex-shrink), sin depender de flex-grow.
+            width: '100%',
+            minWidth: 0,
             // En compacto el texto (y el placeholder) va en una sola línea; el alto automático también la mide así.
-            ...(isCompact ? { flexGrow: 1, minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } : null),
+            ...(isCompact ? { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } : null),
             p: 0,
             ...(voice ? { display: 'none' } : null),
             '&::placeholder': {
