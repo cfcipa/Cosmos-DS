@@ -47,7 +47,7 @@ export function ComposerMenu({ id, label, width = 288, subheader, role = 'listbo
       })}
     >
       <Box component="ul" id={id} role={role} aria-label={label} sx={{ m: 0, p: 0, listStyle: 'none' }}>
-        {subheader ? <ListSubheader component="li" role="presentation" disableSticky>{subheader}</ListSubheader> : null}
+        {subheader ? <ListSubheader component="li" role="presentation" disableSticky sx={{ bgcolor: 'inherit', backgroundImage: 'inherit' }}>{subheader}</ListSubheader> : null}
         {children}
       </Box>
     </Paper>

@@ -48,5 +48,5 @@ export function ModelPickerDoc() {
 }
 
 export function ModelPickerCard() {
-  return <Box sx={{ width: '100%', pt: 16 }}><ModelsDemo /></Box>;
+  return <Box sx={{ width: '100%' }}><ModelsDemo defaultOpen={false} /></Box>;
 }

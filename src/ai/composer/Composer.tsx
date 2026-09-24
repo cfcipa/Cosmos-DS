@@ -186,7 +186,7 @@ export function Composer({
         startAdornment={
           attachments || voice ? (
             <InputAdornment position="start" sx={{ width: '100%', height: 'auto', maxHeight: 'none', m: 0, display: 'block' }}>
-              {attachments ? <Stack direction="row" useFlexGap sx={{ gap: 1, overflowX: 'auto', pb: 0.25 }}>{attachments}</Stack> : null}
+              {attachments ? <Stack direction="row" useFlexGap sx={{ gap: 1, flexWrap: 'wrap' }}>{attachments}</Stack> : null}
               {voice}
             </InputAdornment>
           ) : undefined
@@ -212,6 +212,7 @@ export function Composer({
           px: 1.75,
           '& .MuiInputBase-input': {
             width: isCompact ? 'auto' : '100%',
+            ...(isCompact ? { flexGrow: 1, minWidth: 0 } : null),
             p: 0,
             ...(voice ? { display: 'none' } : null),
             '&::placeholder': {

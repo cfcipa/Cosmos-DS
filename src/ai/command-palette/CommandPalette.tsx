@@ -86,7 +86,8 @@ export function CommandPalette({ commands, query, activeId, onQueryChange, onAct
         {groups.map((group) => (
           <li key={group.name} role="group" aria-label={group.name}>
             <List disablePadding component="ul">
-              <ListSubheader aria-hidden="true">{group.name}</ListSubheader>
+              {/* Mismo fondo que el Paper elevado (en oscuro lleva la capa de elevación), para que el título fijo no se vea como una franja. */}
+              <ListSubheader aria-hidden="true" sx={{ bgcolor: 'inherit', backgroundImage: 'inherit' }}>{group.name}</ListSubheader>
               {group.items.map((command) => (
                 <ListItemButton
                   key={command.id}

@@ -76,6 +76,6 @@ export function SlashCommandsDoc() {
 }
 
 export function SlashCommandsCard() {
-  const [text, setText] = React.useState('/');
-  return <Box sx={{ width: '100%', pt: 20 }}><SlashDemo text={text} setText={setText} /></Box>;
+  const [text, setText] = React.useState('/co');
+  return <Box sx={{ width: '100%', pt: 10 }}><SlashDemo text={text} setText={setText} /></Box>;
 }

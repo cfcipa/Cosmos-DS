@@ -64,6 +64,6 @@ export function MentionsDoc() {
 }
 
 export function MentionsCard() {
-  const [text, setText] = React.useState('Avísale a @');
-  return <Box sx={{ width: '100%', pt: 20 }}><MentionsDemo text={text} setText={setText} /></Box>;
+  const [text, setText] = React.useState('Avísale a @N');
+  return <Box sx={{ width: '100%', pt: 10 }}><MentionsDemo text={text} setText={setText} /></Box>;
 }
