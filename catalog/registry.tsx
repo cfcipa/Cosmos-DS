@@ -51,6 +51,12 @@ import { SettingsPanelDoc, SettingsPanelCard } from './elements/SettingsPanel';
 import { OnboardingDoc, OnboardingCard } from './elements/Onboarding';
 import { MobileComposerDoc, MobileComposerCard } from './elements/MobileComposer';
 import { ToolApprovalDoc, ToolApprovalCard } from './elements/ToolApproval';
+import { AuiThreadDoc, AuiThreadCard } from './elements/AuiThread';
+import { AuiAssistantModalDoc, AuiAssistantModalCard } from './elements/AuiAssistantModal';
+import { AuiAssistantSidebarDoc, AuiAssistantSidebarCard } from './elements/AuiAssistantSidebar';
+import { AuiThreadListDoc, AuiThreadListCard } from './elements/AuiThreadList';
+import { AuiThreadListSidebarDoc, AuiThreadListSidebarCard } from './elements/AuiThreadListSidebar';
+import { AuiOrbDoc, AuiOrbCard } from './elements/AuiOrb';
 
 export interface ElementEntry {
   slug: string;
@@ -142,6 +148,12 @@ export const SECTIONS: Section[] = [
   },
   {
     id: 'aui-connected', title: 'AUI connected', elements: [
+      { slug: 'aui-thread', title: 'Thread', description: 'Un contenedor de chat completo con mensajes, composer, desplazamiento automático y accesibilidad incluida.', Card: AuiThreadCard, Doc: AuiThreadDoc },
+      { slug: 'aui-assistant-modal', title: 'Assistant modal', description: 'Una burbuja de chat flotante para widgets de soporte, mesas de ayuda y asistentes incrustados.', Card: AuiAssistantModalCard, Doc: AuiAssistantModalDoc },
+      { slug: 'aui-assistant-sidebar', title: 'Assistant sidebar', description: 'Un panel lateral redimensionable para experiencias de copiloto y ayuda en contexto.', Card: AuiAssistantSidebarCard, Doc: AuiAssistantSidebarDoc },
+      { slug: 'aui-thread-list', title: 'Thread list', description: 'Cambio de conversación respaldado por el runtime, con búsqueda, selección activa y acciones por hilo.', Card: AuiThreadListCard, Doc: AuiThreadListDoc },
+      { slug: 'aui-thread-list-sidebar', title: 'Thread list sidebar', description: 'Una estructura de barra lateral completa que pone la lista de hilos junto a la conversación activa.', Card: AuiThreadListSidebarCard, Doc: AuiThreadListSidebarDoc },
+      { slug: 'aui-orb', title: 'Orb', description: 'El orbe de voz en tiempo real, con controles de conexión, silencio y estado de habla.', Card: AuiOrbCard, Doc: AuiOrbDoc },
       { slug: 'tool-approval', title: 'Tool approval', description: 'Una herramienta que pide la aprobación de la persona antes de cambiar datos y sigue según su respuesta.', Card: ToolApprovalCard, Doc: ToolApprovalDoc },
     ],
   },

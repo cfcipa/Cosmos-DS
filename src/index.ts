@@ -55,5 +55,7 @@ export * from './ai/launcher';
 export * from './ai/settings-panel';
 export * from './ai/onboarding';
 export * from './ai/mobile-composer';
+// 8 · AUI connected (sobre el runtime de @assistant-ui/react)
+export * from './ai/aui';
 // 3 · Tool use
 export * from './ai/tool-call';
