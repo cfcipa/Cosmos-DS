@@ -2,6 +2,7 @@ import * as React from 'react';
 import { LoaderDoc, LoaderCard } from './elements/Loader';
 import { ThinkingIndicatorDoc, ThinkingIndicatorCard } from './elements/ThinkingIndicator';
 import { StreamingTextDoc, StreamingTextCard } from './elements/StreamingText';
+import { TypingIndicatorDoc, TypingIndicatorCard } from './elements/TypingIndicator';
 
 export interface ElementEntry {
   slug: string;
@@ -21,6 +22,7 @@ export const SECTIONS: Section[] = [
       { slug: 'loader', title: 'Loader', description: 'El símbolo de Sinco marca el tiempo mientras el modelo todavía no tiene nada que mostrar.', Card: LoaderCard, Doc: LoaderDoc },
       { slug: 'thinking-indicator', title: 'Thinking indicator', description: 'Una línea viva que nombra lo que el asistente hace ahora mismo, con el tiempo transcurrido.', Card: ThinkingIndicatorCard, Doc: ThinkingIndicatorDoc },
       { slug: 'streaming-text', title: 'Streaming text', description: 'Las palabras llegan suave: las más nuevas entran en azul y se asientan en tinta.', Card: StreamingTextCard, Doc: StreamingTextDoc },
+      { slug: 'typing-indicator', title: 'Typing indicator', description: 'Tres puntos que se leen como presencia, no como ruido, justo donde aparecerá la respuesta.', Card: TypingIndicatorCard, Doc: TypingIndicatorDoc },
     ],
   },
 ];
