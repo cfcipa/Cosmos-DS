@@ -12,6 +12,7 @@ import { SECTIONS, findElement } from './registry';
 import type { ElementEntry, Section } from './registry';
 import { McpAuthorizePage, McpCallbackPage } from './elements/AuiMcpConfig';
 import { DesignPage } from './DesignPage';
+import { PlaygroundPage } from './playground/Playground';
 
 type Mode = 'light' | 'dark';
 const load = (): Mode => { try { return localStorage.getItem('cds-mode') === 'dark' ? 'dark' : 'light'; } catch { return 'light'; } };
@@ -32,12 +33,17 @@ export function App() {
     <CosmosProvider mode={mode}>
       <Box sx={{ minHeight: '100vh', bgcolor: 'background.paper', color: 'text.primary' }}>
         <TopBar mode={mode} onToggle={toggle} path={path} />
-        <Box sx={{ display: 'flex', maxWidth: 1360, mx: 'auto' }}>
-          <Sidebar path={path} />
-          <Box component="main" sx={{ flex: 1, minWidth: 0, px: { xs: 2, md: 6 }, py: 5 }}>
-            <Route path={path} />
+        {path.split('/')[1] === 'playground' ? (
+          // El playground ocupa todo el ancho bajo la barra, sin la barra lateral del catálogo.
+          <Box component="main" sx={{ height: 'calc(100vh - 56px)' }}><PlaygroundPage /></Box>
+        ) : (
+          <Box sx={{ display: 'flex', maxWidth: 1360, mx: 'auto' }}>
+            <Sidebar path={path} />
+            <Box component="main" sx={{ flex: 1, minWidth: 0, px: { xs: 2, md: 6 }, py: 5 }}>
+              <Route path={path} />
+            </Box>
           </Box>
-        </Box>
+        )}
       </Box>
     </CosmosProvider>
   );
@@ -45,6 +51,7 @@ export function App() {
 
 function TopBar({ mode, onToggle, path }: { mode: Mode; onToggle: () => void; path: string }) {
   const onDesign = path.split('/')[1] === 'design';
+  const onPlayground = path.split('/')[1] === 'playground';
   return (
     <Stack direction="row" alignItems="center" sx={{ position: 'sticky', top: 0, zIndex: 10, height: 56, px: 3, gap: 3, borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}>
       <ButtonBase onClick={() => go('/elements')} sx={{ gap: 1, borderRadius: 1 }}>
@@ -57,6 +64,12 @@ function TopBar({ mode, onToggle, path }: { mode: Mode; onToggle: () => void; pa
         fontWeight: onDesign ? 'fontWeightMedium' : 'fontWeightRegular', '&:hover': { color: 'text.primary' },
       }}>
         Diseño
+      </ButtonBase>
+      <ButtonBase onClick={() => go('/playground')} sx={{
+        px: 1, py: 0.5, borderRadius: 1, typography: 'body2', color: onPlayground ? 'primary.main' : 'text.secondary',
+        fontWeight: onPlayground ? 'fontWeightMedium' : 'fontWeightRegular', '&:hover': { color: 'text.primary' },
+      }}>
+        Playground
       </ButtonBase>
       <Box sx={{ flex: 1 }} />
       <Tooltip title={mode === 'light' ? 'Modo oscuro' : 'Modo claro'}>

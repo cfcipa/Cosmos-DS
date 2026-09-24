@@ -275,7 +275,9 @@ const ComposerInput = styled(ComposerPrimitive.Input)(({ theme: t }) => ({
   width: '100%', minHeight: t.spacing(5), maxHeight: t.spacing(24), boxSizing: 'border-box', resize: 'none', border: 0, outline: 'none',
   padding: t.spacing(0.5, 1.25), background: 'transparent', color: t.palette.text.primary, caretColor: t.palette.primary.main,
   '&::placeholder': { color: t.palette.text.secondary, opacity: 1 },
-  '&[data-preview="true"]::placeholder': { color: t.palette.text.disabled },
+  // El anticipo se ve en una línea (`maxRows`): si el composer creciera con él, lo de encima se movería bajo el puntero.
+  '&[data-preview="true"]': { whiteSpace: 'nowrap', overflow: 'hidden' },
+  '&[data-preview="true"]::placeholder': { color: t.palette.text.disabled, textOverflow: 'ellipsis' },
 }));
 
 const roundFilled = {
@@ -298,7 +300,7 @@ function Composer({ autoFocus }: { autoFocus: boolean }) {
             <AuiSelectionContextChip />
             <AuiComposerAttachments />
             <AuiComposerQuotePreview />
-            <ComposerInput placeholder={preview ?? placeholder} data-preview={preview !== null} rows={1} autoFocus={autoFocus} enterKeyHint="send" aria-label="Mensaje" />
+            <ComposerInput placeholder={preview ?? placeholder} data-preview={preview !== null} maxRows={preview !== null ? 1 : undefined} rows={1} autoFocus={autoFocus} enterKeyHint="send" aria-label="Mensaje" />
             <Stack direction="row" alignItems="center" justifyContent="space-between">
               <Stack direction="row" alignItems="center" spacing={0.75}>
                 <AuiComposerAddAttachment />

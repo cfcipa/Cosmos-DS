@@ -24,12 +24,19 @@ import { AuiAskAiAction, type AuiAssistantAgent, type AuiSelection, type AuiStar
 import type { DemoThread } from '../AuiDemoRuntime';
 
 export type Estado = 'borrador' | 'pendiente' | 'rechazada' | 'confirmada' | 'causada' | 'pagada' | 'descartado';
-export type Obligacion = { id: number; prov: string; nit: string; ob: string; total: number; cur: string; est: Estado; bloqueo?: boolean; soporte?: { dias: number; txt: string } };
+/** Medio de pago: tarjeta (marca y últimos dígitos), transferencia, efectivo, billetera u otro. */
+export type MedioPago = { t: string; brand?: string; icon?: 'transfer' | 'cash' | 'other'; d?: string; mask?: boolean };
+/** Saldo por pagar: pago por extracto, abonos, sin abonos o no aplica. */
+export type Saldo = { tipo: 'extracto' | 'abonos' | 'sin' | 'na'; valor?: number; n?: number };
+export type Obligacion = {
+  id: number; prov: string; nit: string; ob: string; total: number; cur: string; est: Estado; bloqueo?: boolean; soporte?: { dias: number; txt: string };
+  mp?: MedioPago; fc?: string; fr?: string; saldo?: Saldo; motivo?: string;
+};
 
-const ESTADOS: Array<{ k: Estado | 'todas'; label: string }> = [
+export const ESTADOS_COMPACTOS: Array<{ k: Estado | 'todas'; label: string }> = [
   { k: 'todas', label: 'Todas' }, { k: 'pendiente', label: 'Pendientes' }, { k: 'confirmada', label: 'Confirmadas' }, { k: 'causada', label: 'Causadas' }, { k: 'pagada', label: 'Pagadas' },
 ];
-const CHIP: Record<Estado, { label: string; color: 'primary' | 'warning' | 'error' | 'info' | 'secondary' | 'success' | 'grey' }> = {
+export const CHIP: Record<Estado, { label: string; color: 'primary' | 'warning' | 'error' | 'info' | 'secondary' | 'success' | 'grey' }> = {
   borrador: { label: 'Borrador', color: 'primary' }, pendiente: { label: 'Pendiente', color: 'warning' }, rechazada: { label: 'Rechazada', color: 'error' },
   confirmada: { label: 'Confirmada', color: 'info' }, causada: { label: 'Causada', color: 'secondary' }, pagada: { label: 'Pagada', color: 'success' }, descartado: { label: 'Descartado', color: 'grey' },
 };
@@ -51,18 +58,19 @@ export const ROWS: readonly Obligacion[] = [
   { id: 24, prov: 'Tecnología y Servicios S.A.S.', nit: 'Nit 8682548294-1', ob: 'FCT-246802', total: 540000, cur: 'COP', est: 'pendiente', soporte: { dias: 6, txt: 'vence en 6 días' } },
 ];
 const VENCEN = [7, 13, 24];
-const BLOQUEO = 'Tú radicaste esta obligación; la confirmación la hace otra persona.';
+export const BLOQUEO = 'Tú radicaste esta obligación; la confirmación la hace otra persona.';
 
 export const money = (n: number) => `$\u00a0${n.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 export const nObl = (n: number) => `${n} ${n === 1 ? 'obligación' : 'obligaciones'}`;
 const bulkKind = (f: Estado | 'todas'): 'Confirmar' | 'Causar' | null => (f === 'pendiente' ? 'Confirmar' : f === 'confirmada' ? 'Causar' : null);
-const NEXT = { Confirmar: 'confirmada', Causar: 'causada' } as const;
+export const NEXT = { Confirmar: 'confirmada', Causar: 'causada' } as const;
 
 export type ObligacionesState = ReturnType<typeof useObligaciones>;
 
 /** El estado de la pantalla: filas, filtro, selección, resaltado y el aviso con Deshacer. */
-export function useObligaciones(initial: { filter?: Estado | 'todas'; selected?: number[] } = {}) {
-  const [rows, setRows] = React.useState<Obligacion[]>(() => ROWS.map((r) => ({ ...r })));
+export function useObligaciones(initial: { filter?: Estado | 'todas'; selected?: number[]; rows?: readonly Obligacion[] } = {}) {
+  const source = initial.rows ?? ROWS;
+  const [rows, setRows] = React.useState<Obligacion[]>(() => source.map((r) => ({ ...r })));
   const [filter, setFilterState] = React.useState<Estado | 'todas'>(initial.filter ?? 'todas');
   const [selected, setSelected] = React.useState<ReadonlySet<number>>(() => new Set(initial.selected ?? []));
   const [flash, setFlash] = React.useState<ReadonlySet<number>>(() => new Set());
@@ -94,7 +102,7 @@ export function useObligaciones(initial: { filter?: Estado | 'todas'; selected?:
   const setFilter = React.useCallback((f: Estado | 'todas') => { setFilterState(f); setSelected(new Set()); }, []);
   const kind = bulkKind(filter);
   const selRows = kind ? rows.filter((r) => selected.has(r.id) && !r.bloqueo && (filter === 'todas' || r.est === filter)) : [];
-  return { rows, filter, setFilter, selected, setSelected, selRows, kind, flash, doFlash, setEst, snack, setSnack, undo, reset: () => { setRows(ROWS.map((r) => ({ ...r }))); setFilterState(initial.filter ?? 'todas'); setSelected(new Set(initial.selected ?? [])); } };
+  return { rows, filter, setFilter, selected, setSelected, selRows, kind, flash, doFlash, setEst, snack, setSnack, undo, reset: () => { setRows(source.map((r) => ({ ...r }))); setFilterState(initial.filter ?? 'todas'); setSelected(new Set(initial.selected ?? [])); } };
 }
 
 /** La selección como contexto del modelo: el resumen en la ficha y el detalle para el modelo. */
@@ -110,7 +118,7 @@ export function obligacionesSelection(s: ObligacionesState): AuiSelection | null
   };
 }
 
-const flashIn = keyframes`from { background-color: var(--flash); } to { background-color: transparent; }`;
+export const flashIn = keyframes`from { background-color: var(--flash); } to { background-color: transparent; }`;
 
 /** La pantalla: pestañas con la barra de selección, filtros por estado y la tabla. */
 export function ObligacionesHost({ state: s, askAi = true, compact = false }: { state: ObligacionesState; askAi?: boolean; compact?: boolean }) {
@@ -157,7 +165,7 @@ export function ObligacionesHost({ state: s, askAi = true, compact = false }: { 
             ) : null}
           </Stack>
           <Stack direction="row" useFlexGap flexWrap="wrap" spacing={1} sx={{ px: 2, py: 1.5 }} role="group" aria-label="Filtrar por estado">
-            {ESTADOS.map((e) => {
+            {ESTADOS_COMPACTOS.map((e) => {
               const on = s.filter === e.k;
               return (
                 <Chip

@@ -15,7 +15,7 @@ const ICON = 16;
 const icon = (Icon: LucideIcon) => <Icon size={ICON} />;
 
 type Model = AuiModelOption & { group: 'OpenAI' | 'Anthropic' };
-const MODELS: Model[] = [
+export const MODELS: Model[] = [
   { id: 'gpt-5.6-luna', name: 'GPT-5.6 Luna', description: 'Rápido y eficiente', icon: icon(Zap), group: 'OpenAI', keywords: ['openai'] },
   { id: 'gpt-5.6-terra', name: 'GPT-5.6 Terra', description: 'Rendimiento equilibrado', icon: icon(Gauge), group: 'OpenAI', keywords: ['openai'] },
   { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', description: 'El más capaz', icon: icon(Sparkles), group: 'OpenAI', keywords: ['openai'], efforts: true },
@@ -23,8 +23,8 @@ const MODELS: Model[] = [
   { id: 'claude-opus-5', name: 'Claude Opus 5', description: 'No disponible en tu plan', icon: icon(Gem), group: 'Anthropic', keywords: ['anthropic'], disabled: true },
 ];
 const GROUPS = ['OpenAI', 'Anthropic'] as const;
-const DEFAULT_MODEL = 'gpt-5.6-sol';
-const DEFAULT_EFFORT = 'medium';
+export const DEFAULT_MODEL = 'gpt-5.6-sol';
+export const DEFAULT_EFFORT = 'medium';
 
 const ASK = '¿Cuánto suman los anticipos pendientes de Nubia Rojas?';
 const ANS: Record<string, string> = {

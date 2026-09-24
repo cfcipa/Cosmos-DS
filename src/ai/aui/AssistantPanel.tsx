@@ -131,7 +131,7 @@ export function AuiAssistantLayout({ children, panel, dock, sx }: { children: Re
 
 export type AuiAssistantAgent = { id: string; name: string; color?: 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'info' };
 
-export interface AuiAssistantPanelProps extends Pick<AuiThreadProps, 'autoFocus' | 'empty' | 'components' | 'quotes' | 'messageTiming' | 'triggers' | 'directives' | 'modelSelector'> {
+export interface AuiAssistantPanelProps extends Pick<AuiThreadProps, 'autoFocus' | 'empty' | 'components' | 'quotes' | 'messageTiming' | 'triggers' | 'directives' | 'modelSelector' | 'modelContextWindow' | 'conversationMap' | 'followupSend'> {
   /** Los asistentes del menú «Nuevo chat». */
   agents?: readonly AuiAssistantAgent[];
   /** Default 'Las respuestas se generan con IA y pueden contener errores.' */
