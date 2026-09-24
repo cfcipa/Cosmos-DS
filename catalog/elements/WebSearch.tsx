@@ -10,6 +10,7 @@ import { Check, Copy, RefreshCw, Search } from 'lucide-react';
 import { SourceIcon, WebSearch } from '../../src/ai/web-search';
 import type { WebSearchResult } from '../../src/ai/web-search';
 import { DemoBubble } from '../ui/DemoBubble';
+import { useTimers } from '../ui/useTimers';
 import { ElementPage, PropRow, PropToggle } from '../ui/Playground';
 
 // Contenido del tablero «Web search».
@@ -172,7 +173,20 @@ export function WebSearchDoc() {
   );
 }
 
-/** Vista previa de la tarjeta en Elements. */
+/** Vista previa de la tarjeta en Elements: la misma demo, en pequeño y funcionando. */
 export function WebSearchCard() {
-  return <Box sx={{ width: '100%' }}><WebSearch query={QUERY} results={RESULTS} visibleResults={RESULTS.length} searching={false} durationMs={DONE_MS} /></Box>;
+  const { after, clear } = useTimers();
+  const [visible, setVisible] = React.useState(0);
+  const [searching, setSearching] = React.useState(true);
+  const play = React.useCallback(() => {
+    clear(); setVisible(0); setSearching(true);
+    RESULTS.forEach((_r, i) => after(600 * (i + 1), () => setVisible(i + 1)));
+    after(600 * (RESULTS.length + 1), () => setSearching(false));
+  }, [after, clear]);
+  React.useEffect(() => { play(); }, [play]);
+  return (
+    <Box sx={{ width: '100%' }}>
+      <WebSearch query={QUERY} results={RESULTS} visibleResults={visible} searching={searching} durationMs={searching ? undefined : DONE_MS} onOpenResult={(_r, event) => { event.preventDefault(); play(); }} />
+    </Box>
+  );
 }

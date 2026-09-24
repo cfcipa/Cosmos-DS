@@ -8,6 +8,7 @@ import Typography from '@mui/material/Typography';
 import { Copy, RefreshCw } from 'lucide-react';
 import { ImageGeneration } from '../../src/ai/image-generation';
 import { DemoBubble } from '../ui/DemoBubble';
+import { useTimers } from '../ui/useTimers';
 import { ElementPage, PropRow, PropToggle } from '../ui/Playground';
 
 // Contenido del tablero «Image generation».
@@ -72,7 +73,11 @@ export function ImageGenerationDoc() {
   );
 }
 
-/** Vista previa de la tarjeta en Elements. */
+/** Vista previa de la tarjeta en Elements: la misma demo, en pequeño y funcionando. */
 export function ImageGenerationCard() {
-  return <ImageGeneration prompt={PROMPT} generating={false} />;
+  const { after, clear } = useTimers();
+  const [generating, setGenerating] = React.useState(true);
+  const run = React.useCallback(() => { clear(); setGenerating(true); after(GENERATE_MS, () => setGenerating(false)); }, [after, clear]);
+  React.useEffect(() => { run(); }, [run]);
+  return <ImageGeneration prompt={PROMPT} generating={generating} onRegenerate={run} />;
 }

@@ -72,7 +72,16 @@ export function FeedbackDialogDoc() {
   );
 }
 
-/** Vista previa de la tarjeta en Elements. */
+/** Vista previa de la tarjeta en Elements: la misma demo, en pequeño y funcionando. */
 export function FeedbackDialogCard() {
-  return <Box sx={{ width: '100%' }}><FeedbackDialog reasons={REASONS} selected={['No es correcto']} note="" sent={false} /></Box>;
+  const [selected, setSelected] = React.useState<string[]>(['No es correcto']);
+  const [note, setNote] = React.useState('');
+  const [sent, setSent] = React.useState(false);
+  React.useEffect(() => {
+    if (!sent) return undefined;
+    const id = window.setTimeout(() => { setSent(false); setSelected([]); setNote(''); }, AUTO_RESET_MS);
+    return () => window.clearTimeout(id);
+  }, [sent]);
+  const toggle = (reason: string) => setSelected((current) => (current.includes(reason) ? current.filter((r) => r !== reason) : [...current, reason]));
+  return <Box sx={{ width: '100%' }}><FeedbackDialog reasons={REASONS} selected={selected} note={note} sent={sent} onToggleReason={toggle} onNoteChange={setNote} onSubmit={() => setSent(true)} /></Box>;
 }

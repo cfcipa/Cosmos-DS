@@ -127,7 +127,9 @@ export function MemoryChipsDoc() {
   );
 }
 
-/** Vista previa de la tarjeta en Elements. */
+/** Vista previa de la tarjeta en Elements: la misma demo, en pequeño y funcionando. */
 export function MemoryChipsCard() {
-  return <MemoryChips chips={[...base(), ...incoming()]} />;
+  const [chips, setChips] = React.useState<MemoryItem[]>(() => [...base(), ...incoming()]);
+  React.useEffect(() => { if (chips.length === 0) { const id = window.setTimeout(() => setChips([...base(), ...incoming()]), 1200); return () => window.clearTimeout(id); } return undefined; }, [chips]);
+  return <MemoryChips chips={chips} onForget={(id) => setChips((current) => current.filter((chip) => chip.id !== id))} />;
 }

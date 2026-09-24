@@ -73,7 +73,19 @@ export function StoppedRunDoc() {
   );
 }
 
-/** Vista previa de la tarjeta en Elements. */
+/** Vista previa de la tarjeta en Elements: la misma demo, en pequeño y funcionando. */
 export function StoppedRunCard() {
-  return <Box sx={{ width: '100%' }}><StoppedRun text={FULL_WORDS.slice(0, STOPPED_AT).join(' ')} reason={REASON_LABELS.user} onContinue={() => undefined} onDiscard={() => undefined} /></Box>;
+  const [outcome, setOutcome] = React.useState<'stopped' | 'continued' | 'discarded'>('stopped');
+  React.useEffect(() => {
+    if (outcome === 'stopped') return undefined;
+    const id = window.setTimeout(() => setOutcome('stopped'), 2400);
+    return () => window.clearTimeout(id);
+  }, [outcome]);
+  if (outcome === 'continued') return <Typography variant="body1">{FULL_WORDS.join(' ')}</Typography>;
+  if (outcome === 'discarded') return <Typography variant="body3" color="text.secondary">Respuesta descartada. El mensaje se eliminó del hilo.</Typography>;
+  return (
+    <Box sx={{ width: '100%' }}>
+      <StoppedRun text={FULL_WORDS.slice(0, STOPPED_AT).join(' ')} reason={REASON_LABELS.user} onContinue={() => setOutcome('continued')} onDiscard={() => setOutcome('discarded')} />
+    </Box>
+  );
 }

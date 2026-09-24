@@ -9,6 +9,7 @@ import { Copy, RefreshCw, RotateCcw } from 'lucide-react';
 import { ToolCall } from '../../src/ai/tool-call';
 import type { ToolCallStatus } from '../../src/ai/tool-call';
 import { DemoBubble } from '../ui/DemoBubble';
+import { useTimers } from '../ui/useTimers';
 import { ElementPage, PropRow, PropToggle } from '../ui/Playground';
 
 // Contenido del tablero aprobado «Tool approval».
@@ -130,11 +131,31 @@ export function ToolApprovalDoc() {
   );
 }
 
-/** Vista previa de la tarjeta en Elements. */
+/** Vista previa de la tarjeta en Elements: la misma demo, en pequeño y funcionando. */
 export function ToolApprovalCard() {
+  const { after, clear } = useTimers();
+  const [status, setStatus] = React.useState<DemoStatus>('requires-action');
+  const [startedAt, setStartedAt] = React.useState<number>();
+  const respond = (approved: boolean) => {
+    clear();
+    if (!approved) setStatus('cancelled');
+    else { setStatus('running'); setStartedAt(Date.now()); after(RUN_MS, () => setStatus('complete')); }
+    // La tarjeta vuelve a pedir aprobación para poder probarla otra vez.
+    after(RUN_MS + 2400, () => setStatus('requires-action'));
+  };
   return (
     <Box sx={{ width: '100%' }}>
-      <ToolCall toolName={TOOL_NAME} status="requires-action" args={ARGS} requiresActionLabel="Requiere aprobación" approval={{ prompt: PROMPT }} />
+      <ToolCall
+        toolName={TOOL_NAME}
+        status={status}
+        args={ARGS}
+        result={status === 'complete' ? RESULT : undefined}
+        error={status === 'cancelled' ? REJECTED : undefined}
+        durationMs={status === 'complete' ? RUN_MS : undefined}
+        startedAt={status === 'running' ? startedAt : undefined}
+        requiresActionLabel="Requiere aprobación"
+        approval={{ prompt: PROMPT, onRespond: (id) => respond(id === 'approve') }}
+      />
     </Box>
   );
 }

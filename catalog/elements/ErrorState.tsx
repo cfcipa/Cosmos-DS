@@ -5,6 +5,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { RotateCcw } from 'lucide-react';
 import { ErrorState } from '../../src/ai/error-state';
+import { useTimers } from '../ui/useTimers';
 import { ElementPage, PropRow, PropToggle } from '../ui/Playground';
 import { DemoBubble } from '../ui/DemoBubble';
 
@@ -71,7 +72,9 @@ export function ErrorStateDoc() {
   );
 }
 
-/** Vista previa de la tarjeta en Elements. */
+/** Vista previa de la tarjeta en Elements: la misma demo, en pequeño y funcionando. */
 export function ErrorStateCard() {
-  return <ErrorState title={TITLE} detail={DETAIL} retrying={false} onRetry={() => undefined} />;
+  const { after } = useTimers();
+  const [retrying, setRetrying] = React.useState(false);
+  return <ErrorState title={TITLE} detail={DETAIL} retrying={retrying} onRetry={() => { setRetrying(true); after(RETRY_MS, () => setRetrying(false)); }} />;
 }

@@ -11,6 +11,7 @@ import { ResearchReport } from '../../src/ai/research-report';
 import type { ReportSection } from '../../src/ai/research-report';
 import { SourceIcon } from '../../src/ai/web-search';
 import { DemoBubble } from '../ui/DemoBubble';
+import { useTimers } from '../ui/useTimers';
 import { ElementPage, PropRow, PropToggle } from '../ui/Playground';
 
 // Contenido del tablero «Research report».
@@ -146,7 +147,13 @@ export function ResearchReportDoc() {
   );
 }
 
-/** Vista previa de la tarjeta en Elements. */
+/** Vista previa de la tarjeta en Elements: la misma demo, en pequeño y funcionando. */
 export function ResearchReportCard() {
-  return <Box sx={{ width: '100%' }}><ResearchReport title={TITLE} sections={sectionsAt(2)} sourcesRead={12} /></Box>;
+  const { after, clear } = useTimers();
+  const [phase, setPhase] = React.useState(0);
+  React.useEffect(() => {
+    clear();
+    for (let k = 1; k <= SECTIONS.length; k += 1) after(SECTION_MS * k, () => setPhase(k));
+  }, [after, clear]);
+  return <Box sx={{ width: '100%' }}><ResearchReport title={TITLE} sections={sectionsAt(phase)} sourcesRead={6 + phase * 3} /></Box>;
 }

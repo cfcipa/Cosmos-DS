@@ -8,6 +8,7 @@ import Typography from '@mui/material/Typography';
 import { Download } from 'lucide-react';
 import { MessageActions } from '../../src/ai/message-actions';
 import type { MessageReaction } from '../../src/ai/message-actions';
+import { useTimers } from '../ui/useTimers';
 import { ElementPage, PropRow, PropToggle } from '../ui/Playground';
 
 // Contenido del tablero aprobado «Message actions».
@@ -110,12 +111,24 @@ export function MessageActionsDoc() {
   );
 }
 
-/** Vista previa de la tarjeta en Elements. */
+/** Vista previa de la tarjeta en Elements: la misma demo, en pequeño y funcionando. */
 export function MessageActionsCard() {
+  const { after } = useTimers();
+  const [copied, setCopied] = React.useState(false);
+  const [reaction, setReaction] = React.useState<MessageReaction>(null);
+  const [regenerating, setRegenerating] = React.useState(false);
   return (
     <Stack spacing={1} sx={{ maxWidth: 420 }}>
-      <Typography component="p" variant="body1" sx={{ m: 0 }}>{RESPONSE}</Typography>
-      <MessageActions copied={false} reaction="up" regenerating={false} onCopy={() => undefined} onReactionChange={() => undefined} onRegenerate={() => undefined} onMore={() => undefined} />
+      <Typography variant="body1" sx={{ opacity: regenerating ? 0.5 : 1 }}>{RESPONSE}</Typography>
+      <MessageActions
+        copied={copied}
+        reaction={reaction}
+        regenerating={regenerating}
+        onCopy={() => { navigator.clipboard?.writeText(RESPONSE).catch(() => undefined); setCopied(true); after(STATUS_MS, () => setCopied(false)); }}
+        onReactionChange={setReaction}
+        onRegenerate={() => { setRegenerating(true); after(REGENERATE_MS, () => setRegenerating(false)); }}
+        onMore={() => undefined}
+      />
     </Stack>
   );
 }

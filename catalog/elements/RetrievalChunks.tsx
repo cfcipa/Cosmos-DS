@@ -10,6 +10,7 @@ import { RetrievalChunks } from '../../src/ai/retrieval-chunks';
 import type { RetrievalChunk } from '../../src/ai/retrieval-chunks';
 import { ToolCall } from '../../src/ai/tool-call';
 import { DemoBubble } from '../ui/DemoBubble';
+import { useTimers } from '../ui/useTimers';
 import { ElementPage, PropRow, PropToggle } from '../ui/Playground';
 
 // Contenido del tablero «Retrieval chunks».
@@ -121,7 +122,14 @@ export function RetrievalChunksDoc() {
   );
 }
 
-/** Vista previa de la tarjeta en Elements. */
+/** Vista previa de la tarjeta en Elements: la misma demo, en pequeño y funcionando. */
 export function RetrievalChunksCard() {
-  return <Box sx={{ width: '100%' }}><RetrievalChunks query={QUERY} chunks={CHUNKS} visibleCount={2} searching={false} /></Box>;
+  const { after, clear } = useTimers();
+  const [visible, setVisible] = React.useState(0);
+  const [searching, setSearching] = React.useState(true);
+  React.useEffect(() => {
+    clear();
+    STEPS.forEach(([at, step]) => after(at, () => { if (step === 'answer') return; if (step === 1) setSearching(false); setVisible(step); }));
+  }, [after, clear]);
+  return <Box sx={{ width: '100%' }}><RetrievalChunks query={QUERY} chunks={CHUNKS} visibleCount={visible} searching={searching} /></Box>;
 }

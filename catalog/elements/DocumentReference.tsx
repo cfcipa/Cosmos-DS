@@ -82,7 +82,8 @@ export function DocumentReferenceDoc() {
   );
 }
 
-/** Vista previa de la tarjeta en Elements. */
+/** Vista previa de la tarjeta en Elements: la misma demo, en pequeño y funcionando. */
 export function DocumentReferenceCard() {
-  return <Box sx={{ width: '100%' }}><DocumentReference title={TITLE} pages={PAGES} anchors={SETS.two} activePage={3} /></Box>;
+  const [page, setPage] = React.useState(3);
+  return <Box sx={{ width: '100%' }}><DocumentReference title={TITLE} pages={PAGES} anchors={SETS.two} activePage={page} onJump={setPage} /></Box>;
 }

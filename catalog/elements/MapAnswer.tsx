@@ -97,7 +97,8 @@ export function MapAnswerDoc() {
   );
 }
 
-/** Vista previa de la tarjeta en Elements. */
+/** Vista previa de la tarjeta en Elements: la misma demo, en pequeño y funcionando. */
 export function MapAnswerCard() {
-  return <Box sx={{ width: '100%' }}><MapAnswer pins={PINS} activeId="on" /></Box>;
+  const [active, setActive] = React.useState('on');
+  return <Box sx={{ width: '100%' }}><MapAnswer pins={PINS} activeId={active} onSelect={setActive} /></Box>;
 }

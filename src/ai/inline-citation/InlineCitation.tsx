@@ -1,18 +1,23 @@
 // Cosmos DS · Kit IA · Knowledge: Inline citation.
 // Tablero «Inline citation»: referencias numeradas dentro de la frase, cada una con una vista previa de su fuente.
-// Como en assistant-ui: una sola vista previa abierta a la vez (openIndex controlado); se abre al pasar el cursor,
-// con el foco o con un clic, y el número abierto queda relleno. La vista previa es un Popper + Paper de MUI.
+// Como en assistant-ui (PreviewCard): una sola vista previa abierta a la vez (openIndex controlado); se abre al pasar el
+// cursor, con el foco o con un clic (el clic no la cierra), y se cierra al salir, al perder el foco o con Esc.
+// La vista previa muestra el sitio (favicon o inicial), el título y el fragmento. Es un Popper + Paper de MUI.
 import * as React from 'react';
 import ButtonBase from '@mui/material/ButtonBase';
 import Paper from '@mui/material/Paper';
 import Popper from '@mui/material/Popper';
+import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import { SourceIcon } from '../web-search';
 import { primaryTint } from '../lib/primaryTint';
 
 export interface CitationSource {
   domain: string;
   title: string;
   snippet: string;
+  /** Favicon del sitio. Si no carga, se muestra la inicial del dominio. */
+  iconUrl?: string;
 }
 
 /** Un tramo del texto; si trae `source`, al final lleva la referencia a sources[source]. */
@@ -48,7 +53,8 @@ function Citation({ index, source, open, onOpenChange }: { index: number; source
         onMouseLeave={() => onOpenChange(false)}
         onFocus={() => onOpenChange(true)}
         onBlur={() => onOpenChange(false)}
-        onClick={() => onOpenChange(!open)}
+        onClick={() => onOpenChange(true)}
+        onKeyDown={(event) => { if (event.key === 'Escape') onOpenChange(false); }}
         sx={(t) => ({
           minWidth: t.spacing(2),
           height: t.spacing(2),
@@ -68,9 +74,17 @@ function Citation({ index, source, open, onOpenChange }: { index: number; source
       >
         {index + 1}
       </ButtonBase>
-      <Popper open={open && Boolean(anchor)} anchorEl={anchor} placement="top-start" sx={{ zIndex: 'tooltip' }} modifiers={[{ name: 'offset', options: { offset: [0, 6] } }]}>
-        <Paper id={previewId} role="tooltip" elevation={8} sx={{ width: PREVIEW_WIDTH, px: 1.5, py: 1.25 }}>
-          <Typography variant="body3">{`${source.domain} · ${source.title} — ${source.snippet}`}</Typography>
+      {/* Popper ya lleva role="tooltip"; el id es el que describe al número. */}
+      <Popper id={previewId} open={open && Boolean(anchor)} anchorEl={anchor} placement="top-start" sx={{ zIndex: 'tooltip' }} modifiers={[{ name: 'offset', options: { offset: [0, 6] } }]}>
+        <Paper elevation={8} sx={{ width: PREVIEW_WIDTH, px: 1.5, py: 1.25 }}>
+          <Stack spacing={0.5}>
+            <Stack direction="row" alignItems="center" spacing={0.75}>
+              <SourceIcon domain={source.domain} iconUrl={source.iconUrl} />
+              <Typography variant="caption" color="text.secondary" noWrap>{source.domain}</Typography>
+            </Stack>
+            <Typography variant="subtitle2">{source.title}</Typography>
+            <Typography variant="body3" color="text.secondary">{source.snippet}</Typography>
+          </Stack>
         </Paper>
       </Popper>
     </>

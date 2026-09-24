@@ -83,7 +83,22 @@ export function EditMessageDoc() {
   );
 }
 
-/** Vista previa de la tarjeta en Elements. */
+/** Vista previa de la tarjeta en Elements: la misma demo, en pequeño y funcionando. */
 export function EditMessageCard() {
-  return <Box sx={{ width: '100%' }}><EditMessage value={ORIGINAL.question} discardedReplies={3} editing={false} /></Box>;
+  const [value, setValue] = React.useState(ORIGINAL.question);
+  const [draft, setDraft] = React.useState(ORIGINAL.question);
+  const [editing, setEditing] = React.useState(false);
+  return (
+    <Box sx={{ width: '100%' }}>
+      <EditMessage
+        value={editing ? draft : value}
+        discardedReplies={1}
+        editing={editing}
+        onStartEdit={() => { setDraft(value); setEditing(true); }}
+        onValueChange={setDraft}
+        onCancel={() => setEditing(false)}
+        onSave={() => { setValue(draft.trim()); setEditing(false); }}
+      />
+    </Box>
+  );
 }

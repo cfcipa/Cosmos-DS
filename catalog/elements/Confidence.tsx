@@ -44,7 +44,8 @@ export function ConfidenceDoc() {
   );
 }
 
-/** Vista previa de la tarjeta en Elements. */
+/** Vista previa de la tarjeta en Elements: la misma demo, en pequeño y funcionando. */
 export function ConfidenceCard() {
-  return <ConfidenceMarker claims={CLAIMS} hoveredId="c1" showLegend={false} />;
+  const [hoveredId, setHoveredId] = React.useState('');
+  return <ConfidenceMarker claims={CLAIMS} hoveredId={hoveredId} onHover={setHoveredId} showLegend={false} />;
 }

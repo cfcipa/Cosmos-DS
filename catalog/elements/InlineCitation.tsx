@@ -6,10 +6,11 @@ import type { CitationSource, CitedSegment } from '../../src/ai/inline-citation'
 import { ElementPage, PropRow } from '../ui/Playground';
 
 // Contenido del tablero «Inline citation».
+const favicon = (domain: string) => `https://icons.duckduckgo.com/ip3/${domain}.ico`;
 const SOURCES: CitationSource[] = [
   { domain: 'dian.gov.co', title: 'Retención en la fuente', snippet: 'La base de retención es el valor del pago antes de IVA, según el concepto.' },
   { domain: 'sinco.com.co', title: 'Conceptos de retención', snippet: 'Cada concepto define su tarifa y el mínimo a partir del cual se practica.' },
-];
+].map((source) => ({ ...source, iconUrl: favicon(source.domain) }));
 const SEGMENTS: CitedSegment[] = [
   { text: 'La retención se calcula sobre la base gravable antes de IVA', source: 0 },
   { text: ', con la tarifa del concepto y solo si la base supera el mínimo del año', source: 1 },
@@ -39,7 +40,8 @@ export function InlineCitationDoc() {
   );
 }
 
-/** Vista previa de la tarjeta en Elements. */
+/** Vista previa de la tarjeta en Elements: la misma demo, en pequeño y funcionando. */
 export function InlineCitationCard() {
-  return <Box sx={{ width: '100%' }}><InlineCitation segments={SEGMENTS} sources={SOURCES} openIndex={null} onOpenIndexChange={() => undefined} /></Box>;
+  const [openIndex, setOpenIndex] = React.useState<number | null>(null);
+  return <Box sx={{ width: '100%' }}><InlineCitation segments={SEGMENTS} sources={SOURCES} openIndex={openIndex} onOpenIndexChange={setOpenIndex} /></Box>;
 }

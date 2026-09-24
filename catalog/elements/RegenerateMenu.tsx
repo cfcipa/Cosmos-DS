@@ -67,7 +67,18 @@ export function RegenerateMenuDoc() {
   );
 }
 
-/** Vista previa de la tarjeta en Elements. */
+/** Vista previa de la tarjeta en Elements: la misma demo, en pequeño y funcionando. */
 export function RegenerateMenuCard() {
-  return <RegenerateMenu options={OPTIONS} open currentId="sonnet" />;
+  const [open, setOpen] = React.useState(false);
+  const [current, setCurrent] = React.useState('sonnet');
+  const [busy, setBusy] = React.useState(false);
+  const timer = React.useRef<number>();
+  React.useEffect(() => () => window.clearTimeout(timer.current), []);
+  const regenerate = (id: string) => { setBusy(true); window.clearTimeout(timer.current); timer.current = window.setTimeout(() => { setCurrent(id); setBusy(false); }, BUSY_MS); };
+  return (
+    <Stack spacing={1.5}>
+      <Typography variant="body1" sx={{ opacity: busy ? 0.5 : 1 }}>{REPLIES[current]}</Typography>
+      <RegenerateMenu options={OPTIONS} open={open} currentId={current} regenerating={busy} onOpenChange={setOpen} onRegenerate={() => regenerate(current)} onPick={(id) => { setOpen(false); regenerate(id); }} />
+    </Stack>
+  );
 }

@@ -83,7 +83,11 @@ export function MessageQueueDoc() {
   );
 }
 
-/** Vista previa de la tarjeta en Elements. */
+/** Vista previa de la tarjeta en Elements: la misma demo, en pequeño y funcionando. */
 export function MessageQueueCard() {
-  return <Box sx={{ width: '100%' }}><MessageQueue running={START_RUNNING} queued={START_QUEUED.slice(0, 2)} onCancel={() => undefined} /></Box>;
+  const [queued, setQueued] = React.useState<QueuedMessage[]>(START_QUEUED.slice(0, 2));
+  React.useEffect(() => { if (queued.length === 0) { const id = window.setTimeout(() => setQueued(START_QUEUED.slice(0, 2)), 1200); return () => window.clearTimeout(id); } return undefined; }, [queued]);
+  const remove = (id: string) => setQueued((current) => current.filter((message) => message.id !== id));
+  const sendNext = (id: string) => setQueued((current) => { const hit = current.find((m) => m.id === id); return hit ? [hit, ...current.filter((m) => m.id !== id)] : current; });
+  return <Box sx={{ width: '100%' }}><MessageQueue running={START_RUNNING} queued={queued} onCancel={remove} onSendNext={sendNext} /></Box>;
 }
