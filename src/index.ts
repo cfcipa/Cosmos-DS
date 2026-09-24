@@ -11,5 +11,6 @@ export type { AiPalette } from './ai/theme/aiPalette';
 // Reasoning
 export * from './ai/loader';
 export * from './ai/thinking-indicator';
+export * from './ai/streaming-text';
 // 3 · Tool use
 export * from './ai/tool-call';
