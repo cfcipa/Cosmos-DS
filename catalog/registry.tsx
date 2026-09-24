@@ -7,6 +7,7 @@ import { ReasoningEffortDoc, ReasoningEffortCard } from './elements/ReasoningEff
 import { GuardrailNoticeDoc, GuardrailNoticeCard } from './elements/GuardrailNotice';
 import { MessagePairDoc, MessagePairCard } from './elements/MessagePair';
 import { MessageBranchesDoc, MessageBranchesCard } from './elements/MessageBranches';
+import { MessageActionsDoc, MessageActionsCard } from './elements/MessageActions';
 
 export interface ElementEntry {
   slug: string;
@@ -35,6 +36,7 @@ export const SECTIONS: Section[] = [
     id: 'messages', title: 'Messages', elements: [
       { slug: 'message-pair', title: 'Message pair', description: 'Una burbuja del usuario y una respuesta que llega en vivo, con acciones que aparecen al pasar el cursor.', Card: MessagePairCard, Doc: MessagePairDoc },
       { slug: 'message-branches', title: 'Message branches', description: 'Recorre las versiones regeneradas de una misma respuesta sin perder tu lugar.', Card: MessageBranchesCard, Doc: MessageBranchesDoc },
+      { slug: 'message-actions', title: 'Message actions', description: 'Copiar, calificar y regenerar. Cada acción se confirma con un cambio de estado pequeño.', Card: MessageActionsCard, Doc: MessageActionsDoc },
     ],
   },
 ];
