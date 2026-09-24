@@ -5,11 +5,6 @@ import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import ButtonBase from '@mui/material/ButtonBase';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
 import { Sun, Moon, ChevronRight } from 'lucide-react';
 import { CosmosProvider } from '../src/CosmosProvider';
 import { SECTIONS, findElement } from './registry';
@@ -115,7 +110,7 @@ function PageHead({ overline, title, description, children }: { overline?: strin
 
 function ElementsIndex() {
   return (
-    <PageHead title="Elements" description="Los componentes del asistente, en el orden del catálogo de assistant-ui, construidos con MUI y el tema Cosmos. Cada tarjeta es una demo en vivo; ábrela para ver sus propiedades y código.">
+    <PageHead title="Elements" description="Los componentes del asistente, en el orden del catálogo de assistant-ui, construidos con MUI y el tema Cosmos. Cada tarjeta es una demo en vivo; ábrela para probarla, ver cómo usarla en tu producto y cómo está hecha.">
       {SECTIONS.map((s) => (
         <Box key={s.id} component="section" sx={{ mb: 6 }}>
           <Typography component="h2" variant="h6" sx={{ mb: 2 }}>{s.title}</Typography>
@@ -148,25 +143,7 @@ function ElementCard({ element: e }: { element: ElementEntry }) {
 function ElementDetail({ section, element: e }: { section: Section; element: ElementEntry }) {
   return (
     <PageHead overline={section.title} title={e.title} description={e.description}>
-      <Box sx={{ maxWidth: 640 }}><e.Playground /></Box>
-      <Typography component="h2" variant="h6" sx={{ mt: 6, mb: 1.5 }}>Uso</Typography>
-      <Box component="pre" sx={(t) => ({ m: 0, p: 2, borderRadius: 1, bgcolor: t.palette.ai.surfaceMuted, ...t.aiKit.code, fontSize: 13, overflowX: 'auto' })}>{e.usage}</Box>
-      <Typography component="h2" variant="h6" sx={{ mt: 6, mb: 1.5 }}>API</Typography>
-      <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, overflowX: 'auto' }}>
-        <Table size="small">
-          <TableHead><TableRow><TableCell>Prop</TableCell><TableCell>Tipo</TableCell><TableCell>Default</TableCell><TableCell>Descripción</TableCell></TableRow></TableHead>
-          <TableBody>
-            {e.api.map((p) => (
-              <TableRow key={p.name}>
-                <TableCell sx={{ fontFamily: 'monospace', whiteSpace: 'nowrap' }}>{p.name}</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 12, color: 'text.secondary' }}>{p.type}</TableCell>
-                <TableCell sx={{ fontFamily: 'monospace', fontSize: 12, whiteSpace: 'nowrap' }}>{p.default || '—'}</TableCell>
-                <TableCell sx={{ color: 'text.secondary' }}>{p.description}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Box>
+      <e.Doc />
     </PageHead>
   );
 }
