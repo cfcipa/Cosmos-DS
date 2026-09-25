@@ -154,13 +154,21 @@ export function CanvasSplitBody({ writing = false, children, className }: SlotPr
   );
 }
 
-export function CanvasSplitLine({ heading = false, children, className }: SlotProps & { heading?: boolean }) {
+/** El punto de una línea de lista: 4px, a 4px del borde. */
+const BULLET = 4;
+/** El alto de línea de body2 como longitud CSS (el tema lo da como número o como texto). */
+const lineHeightOf = (t: Theme) => (typeof t.typography.body2.lineHeight === 'number' ? `${t.typography.body2.lineHeight}em` : String(t.typography.body2.lineHeight ?? '1.5em'));
+
+export function CanvasSplitLine({ heading = false, bullet = false, children, className }: SlotProps & { heading?: boolean; /** Una línea de lista, con su punto. */ bullet?: boolean }) {
   return (
     <Typography
       variant="body2"
       data-slot="canvas-split-line"
       className={className}
-      sx={(t) => ({ m: 0, fontWeight: heading ? t.typography.fontWeightMedium : undefined, color: heading ? 'text.primary' : 'text.secondary', ...riseSx(t) })}
+      sx={(t) => ({
+        m: 0, fontWeight: heading ? t.typography.fontWeightMedium : undefined, color: heading ? 'text.primary' : 'text.secondary', ...riseSx(t),
+        ...(bullet ? { position: 'relative', pl: 2, '&::before': { content: '""', position: 'absolute', left: BULLET, top: `calc((${lineHeightOf(t)} - ${BULLET}px) / 2)`, width: BULLET, height: BULLET, borderRadius: '50%', bgcolor: 'text.secondary' } } : null),
+      })}
     >
       {children}
     </Typography>
