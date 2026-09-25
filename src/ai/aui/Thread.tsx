@@ -51,6 +51,7 @@ import { MessageActions } from '../message-actions';
 import { MessageBranchesStepper } from '../message-branches';
 import { ScrollAnchorButton } from '../scroll-anchor';
 import { STOPPED_RUN_REASONS, StoppedRunActions } from '../stopped-run';
+import { ToolGroup } from '../tool-call';
 import { ThinkingIndicator, useThinkingElapsed } from '../thinking-indicator';
 import { AuiIconButton } from './AuiIconButton';
 import { AuiComposerAddAttachment, AuiComposerAttachments, AuiUserMessageAttachments } from './Attachment';
@@ -61,7 +62,6 @@ import { AuiMarkdownText } from './MarkdownText';
 import { AuiMessageTiming, AuiMessageTimingFooter } from './MessageTiming';
 import { AuiReasoningGroup } from './Reasoning';
 import { AuiToolFallback } from './ToolFallback';
-import { AuiToolGroupContent, AuiToolGroupRoot, AuiToolGroupTrigger } from './ToolGroup';
 import { AuiComposerQuotePreview, AuiQuoteBlock, AuiSelectionToolbar, AUI_QUOTE_ACTIONS } from './Quote';
 import { AuiSources } from './Sources';
 import { AuiImage } from './Image';
@@ -384,12 +384,7 @@ function ToolGroupPart({ count, status, children }: { count: number; status: str
     setPrev(waiting);
     if (waiting) setOpen(true);
   }
-  return (
-    <AuiToolGroupRoot variant="ghost" open={open} onOpenChange={setOpen}>
-      <AuiToolGroupTrigger count={count} active={status === 'running'} />
-      <AuiToolGroupContent>{children}</AuiToolGroupContent>
-    </AuiToolGroupRoot>
-  );
+  return <ToolGroup variant="ghost" count={count} active={status === 'running'} open={open} onOpenChange={setOpen}>{children}</ToolGroup>;
 }
 
 function AssistantMessage() {
@@ -511,7 +506,8 @@ function UserMessage() {
           '&:hover [data-slot="aui-user-actions"], &:focus-within [data-slot="aui-user-actions"]': { opacity: 1 },
         })}
       >
-        <Typography variant="body1" component="div" sx={{ px: 2, py: 1.5, borderRadius: 1, bgcolor: 'ai.userBubble', color: 'ai.userBubbleText', overflowWrap: 'anywhere', '&:empty': { display: 'none' } }}>
+        {/* La parte de texto del runtime es un <p>: sin sus márgenes, la burbuja mide lo que dice el tablero. */}
+        <Typography variant="body1" component="div" sx={{ px: 2, py: 1.5, borderRadius: 1, bgcolor: 'ai.userBubble', color: 'ai.userBubbleText', overflowWrap: 'anywhere', '& p': { m: 0 }, '&:empty': { display: 'none' } }}>
           <MessagePrimitive.Quote>{(quote) => <AuiQuoteBlock {...quote} />}</MessagePrimitive.Quote>
           <UserParts />
         </Typography>

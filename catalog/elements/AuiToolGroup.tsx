@@ -5,10 +5,8 @@ import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { Play } from 'lucide-react';
-import {
-  AuiToolFallback, AuiToolGroupCard, AuiToolGroupContent, AuiToolGroupRoot, AuiToolGroupTrigger, toolCallsLabel,
-  type AuiGroupedTool, type AuiToolGroupVariant,
-} from '../../src/ai/aui';
+import { AuiToolFallback, AuiToolGroupCard, toolCallsLabel, type AuiGroupedTool, type AuiToolGroupVariant } from '../../src/ai/aui';
+import { ToolGroup } from '../../src/ai/tool-call';
 import { riseSx, userBubbleSx } from '../../src/ai/lib/thread';
 import { AuiDemoRuntime } from '../ui/AuiDemoRuntime';
 import { ElementPage, PropRow, PropToggle } from '../ui/Playground';
@@ -51,16 +49,13 @@ function RuntimeDesign({ variant, fail, el, open, setOpen }: { variant: AuiToolG
   const active = calls.some((x) => x.status.type === 'running');
   return (
     <>
-      <AuiToolGroupRoot variant={variant} open={open} onOpenChange={setOpen}>
-        <AuiToolGroupTrigger count={calls.length} active={active} />
-        <AuiToolGroupContent>
-          {calls.map((x) => (
-            <Box key={x.c.name}>
-              <AuiToolFallback type="tool-call" toolCallId={x.c.name} toolName={x.c.name} args={{}} argsText={x.c.args} status={x.status} result={x.result} elapsedMs={x.ms} />
-            </Box>
-          ))}
-        </AuiToolGroupContent>
-      </AuiToolGroupRoot>
+      <ToolGroup variant={variant} count={calls.length} active={active} open={open} onOpenChange={setOpen}>
+        {calls.map((x) => (
+          <Box key={x.c.name}>
+            <AuiToolFallback type="tool-call" toolCallId={x.c.name} toolName={x.c.name} args={{}} argsText={x.c.args} status={x.status} result={x.result} elapsedMs={x.ms} />
+          </Box>
+        ))}
+      </ToolGroup>
       {el >= total && <Typography variant="body1" sx={(t) => ({ mt: 1.5, ...riseSx(t) })}>{fail ? AFTER_FAIL : AFTER_OK}</Typography>}
     </>
   );

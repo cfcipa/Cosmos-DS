@@ -36,6 +36,8 @@ export interface ToolApprovalProps {
   submitLabel?: string;
   /** Default 'Descartar'. */
   dismissLabel?: string;
+  /** Text mode: whether Descartar is offered. Default true. */
+  dismissible?: boolean;
   /** Default 'Confirmar'. */
   confirmLabel?: string;
   /** Default 'Volver'. */

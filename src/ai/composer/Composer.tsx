@@ -9,7 +9,6 @@
 import * as React from 'react';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
-import InputAdornment from '@mui/material/InputAdornment';
 import type { InputBaseComponentProps } from '@mui/material/InputBase';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import Popper from '@mui/material/Popper';
@@ -200,25 +199,24 @@ export function Composer({
         inputProps={{ 'aria-label': label, ...(inputComponent ? { minRows: isCompact || previewing ? 1 : minRows, maxRows: previewing ? 1 : maxRows } : null), ...inputProps }}
         onChange={(event) => onValueChange?.(event.target.value)}
         onKeyDown={handleKeyDown}
+        // Los adornos son cajas simples, no InputAdornment: este reserva una línea de texto arriba (su espacio de ancho cero).
         startAdornment={
           attachments || voice ? (
-            <InputAdornment position="start" sx={{ width: '100%', height: 'auto', maxHeight: 'none', m: 0, display: 'block' }}>
+            <Box sx={{ width: '100%' }}>
               {attachments ? <Stack direction="row" useFlexGap sx={{ gap: 1, flexWrap: 'wrap' }}>{attachments}</Stack> : null}
               {voice}
-            </InputAdornment>
+            </Box>
           ) : undefined
         }
         endAdornment={
-          <InputAdornment position="end" sx={isCompact ? { height: 'auto', maxHeight: 'none', m: 0 } : { width: '100%', height: 'auto', maxHeight: 'none', m: 0 }}>
-            {isCompact ? send : (
-              <Stack direction="row" alignItems="center" spacing={0.5} sx={{ width: '100%' }}>
-                {toolbarStart}
-                <Box sx={{ flexGrow: 1 }} />
-                {toolbarEnd}
-                {send}
-              </Stack>
-            )}
-          </InputAdornment>
+          isCompact ? send : (
+            <Stack direction="row" alignItems="center" spacing={0.5} sx={{ width: '100%' }}>
+              {toolbarStart}
+              <Box sx={{ flexGrow: 1 }} />
+              {toolbarEnd}
+              {send}
+            </Stack>
+          )
         }
         sx={(t) => ({
           flexWrap: isCompact ? 'nowrap' : 'wrap',

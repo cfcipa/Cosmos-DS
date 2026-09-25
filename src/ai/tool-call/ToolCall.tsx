@@ -53,6 +53,7 @@ export function ToolApproval({
   placeholder = 'Escribe tu respuesta',
   submitLabel = 'Enviar',
   dismissLabel = 'Descartar',
+  dismissible = true,
   confirmLabel = 'Confirmar',
   backLabel = 'Volver',
   emptyError = 'La respuesta no puede estar vacía.',
@@ -117,7 +118,7 @@ export function ToolApproval({
                 sx={{ mt: '4px', '& .MuiOutlinedInput-root': { p: '12px 14px' }, '& textarea': { minHeight: 32 } }} />
               <Actions>
                 <Button variant="contained" disabled={disabled} onClick={submitAnswer}>{submitLabel}</Button>
-                <Button variant="outlined" disabled={disabled} onClick={() => respond('dismiss')}>{dismissLabel}</Button>
+                {dismissible ? <Button variant="outlined" disabled={disabled} onClick={() => respond('dismiss')}>{dismissLabel}</Button> : null}
               </Actions>
             </>
           )}

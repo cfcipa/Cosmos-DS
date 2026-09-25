@@ -1,7 +1,7 @@
 // Cosmos DS · Kit IA · AUI connected: Sources.
 // Referente: assistant-ui «Sources» (elements/sources.aui.tsx y sources.tsx).
 // Las fuentes del mensaje: cada enlace es una ficha con el favicon del dominio y su título (o el dominio), que abre en
-// una pestaña nueva; si el favicon no carga queda la inicial del dominio. Los documentos son una insignia con ícono de
+// una pestaña nueva; el favicon es el SourceIcon del kit (si no carga, queda la inicial del dominio). Los documentos son una insignia con ícono de
 // archivo, sin enlace. `AuiSourceCards` es el diseño estático: «Fuentes N» que despliega tarjetas de dos en dos.
 import * as React from 'react';
 import type { SourceMessagePartComponent } from '@assistant-ui/react';
@@ -16,6 +16,7 @@ import type { SxProps, SystemStyleObject } from '@mui/system';
 import { ChevronDown, FileText } from 'lucide-react';
 import { COLLAPSE_EASE, REDUCED_MOTION } from '../lib/shimmerText';
 import { fieldInteractiveSx } from '../lib/thread';
+import { SourceIcon } from '../web-search';
 
 export type AuiSourceVariant = 'outline' | 'secondary' | 'muted' | 'ghost' | 'info' | 'warning' | 'success' | 'destructive';
 export type AuiSourceSize = 'sm' | 'default' | 'lg';
@@ -57,37 +58,10 @@ export interface AuiSourceIconProps {
   faviconUrl?: (domain: string) => string;
 }
 
-/** El favicon del dominio; si falla, la inicial. */
+/** El favicon del dominio; si falla, la inicial (el SourceIcon del kit, de 12px). */
 export function AuiSourceIcon({ url, faviconUrl = defaultFaviconUrl }: AuiSourceIconProps) {
   const domain = extractDomain(url);
-  const src = faviconUrl(domain);
-  const [errorSrc, setErrorSrc] = React.useState<string>();
-  if (errorSrc === src) {
-    return (
-      <Box
-        component="span"
-        data-slot="aui-source-icon-fallback"
-        sx={(t) => ({
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, width: t.spacing(ICON), height: t.spacing(ICON),
-          borderRadius: 0.5, bgcolor: 'action.selected', fontSize: t.typography.overline.fontSize, fontWeight: t.typography.fontWeightMedium, lineHeight: 1,
-        })}
-      >
-        {domain.charAt(0).toUpperCase() || '?'}
-      </Box>
-    );
-  }
-  return (
-    <Box
-      component="img"
-      data-slot="aui-source-icon"
-      src={src}
-      alt=""
-      onError={() => setErrorSrc(src)}
-      // Una imagen que falla antes de hidratar no dispara onError.
-      ref={(el: HTMLImageElement | null) => { if (el?.complete && el.naturalWidth === 0) setErrorSrc(src); }}
-      sx={(t) => ({ width: t.spacing(ICON), height: t.spacing(ICON), flexShrink: 0, borderRadius: 0.5 })}
-    />
-  );
+  return <SourceIcon domain={domain} iconUrl={faviconUrl(domain)} size={ICON} />;
 }
 
 export function AuiSourceTitle({ children }: { children: React.ReactNode }) {
