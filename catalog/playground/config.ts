@@ -6,7 +6,6 @@ export type Tuck = '4000' | '8000' | 'never';
 export type Quotes = 'off' | 'quote' | 'actions';
 export type Timing = 'off' | 'badge' | 'footer';
 export type MapSide = 'off' | 'left' | 'right';
-export type Waiting = 'loader' | 'typing';
 
 export interface PlaygroundConfig {
   assistant: {
@@ -26,7 +25,6 @@ export interface PlaygroundConfig {
     askAi: boolean;
   };
   thread: {
-    waiting: Waiting;
     followups: boolean;
     quotes: Quotes;
     timing: Timing;
@@ -42,7 +40,7 @@ export const DEFAULT_PLAYGROUND: PlaygroundConfig = {
   assistant: { surface: 'closed', pill: true, preview: true, autoTuck: '4000', agents: true },
   empty: { starters: true, startersCount: 4, disclaimer: true },
   context: { selection: true, askAi: true },
-  thread: { waiting: 'loader', followups: true, quotes: 'off', timing: 'off', conversationMap: 'off', contextWindow: false, modelSelector: false, mentions: false },
+  thread: { followups: true, quotes: 'off', timing: 'off', conversationMap: 'off', contextWindow: false, modelSelector: false, mentions: false },
   theme: 'light',
 };
 
@@ -69,7 +67,6 @@ export function playgroundCode(c: PlaygroundConfig): string {
   if (c.assistant.agents) panelProps.push('agents={ASISTENTES}');
   if (!c.empty.disclaimer) panelProps.push('disclaimer=""');
   panelProps.push(c.empty.starters ? `empty={<AuiStarterSuggestions starters={INICIOS${c.empty.startersCount === 2 ? '.slice(0, 2)' : ''}} />}` : 'empty={null}');
-  if (t.waiting === 'typing') panelProps.push('waiting="typing"');
   if (t.quotes !== 'off') panelProps.push(t.quotes === 'actions' ? 'quotes="actions"' : 'quotes');
   if (t.timing !== 'off') panelProps.push(t.timing === 'badge' ? 'messageTiming' : "messageTiming={{ design: 'footer' }}");
   if (t.conversationMap !== 'off') panelProps.push(t.conversationMap === 'left' ? 'conversationMap' : 'conversationMap="right"');

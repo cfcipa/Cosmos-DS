@@ -17,7 +17,7 @@ import {
 } from './obligaciones';
 
 /** Lo que el hilo del panel lleva además de lo de siempre. */
-export type SincoThreadOptions = Pick<AuiAssistantPanelProps, 'quotes' | 'messageTiming' | 'conversationMap' | 'modelContextWindow' | 'modelSelector' | 'waiting'> & {
+export type SincoThreadOptions = Pick<AuiAssistantPanelProps, 'quotes' | 'messageTiming' | 'conversationMap' | 'modelContextWindow' | 'modelSelector'> & {
   /** @ para personas y herramientas, / para comandos; las menciones se ven como fichas. */
   mentions?: boolean;
 };

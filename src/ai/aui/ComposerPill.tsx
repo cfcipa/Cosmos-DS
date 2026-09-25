@@ -6,7 +6,6 @@
 import * as React from 'react';
 import { AuiIf, ComposerPrimitive, useAui, useAuiState } from '@assistant-ui/react';
 import Box from '@mui/material/Box';
-import ButtonBase from '@mui/material/ButtonBase';
 import Paper from '@mui/material/Paper';
 import { alpha, keyframes } from '@mui/material/styles';
 import { Mic, Plus, Square } from 'lucide-react';
@@ -43,12 +42,18 @@ export function AuiComposerPill({ placeholder = AUI_ASSISTANT_PLACEHOLDER, follo
     <Paper
       elevation={8}
       data-slot="aui-composer-pill"
-      onClick={(e) => { if (e.target === e.currentTarget) open(); }}
+      role="button"
+      tabIndex={0}
+      aria-label="Abrir el asistente"
+      // Como en el tablero: toda la píldora abre; los botones de adentro hacen lo suyo (y detienen el evento).
+      onClick={(e) => { if (!(e.target as HTMLElement).closest('button')) open(); }}
+      onKeyDown={(e) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); open(); } }}
       sx={(t) => ({
         display: 'flex', alignItems: 'center', gap: 0.5, height: t.spacing(HEIGHT), px: 0.75, boxSizing: 'border-box', borderRadius: t.spacing(HEIGHT),
         border: 1, borderColor: 'divider', cursor: 'text', animation: `${rise} ${t.transitions.duration.shorter}ms ease-out both`,
         transition: t.transitions.create('border-color', { duration: t.transitions.duration.shortest }),
         '&:hover': { borderColor: 'action.disabled' },
+        '&:focus-visible': { outline: `2px solid ${t.palette.ai.focusRing}`, outlineOffset: 1 },
         '& .MuiIconButton-root': { borderRadius: '50%', '& svg': { width: ICON, height: ICON } },
         [REDUCED_MOTION]: { animation: 'none' },
       })}
@@ -56,13 +61,7 @@ export function AuiComposerPill({ placeholder = AUI_ASSISTANT_PLACEHOLDER, follo
       <ComposerPrimitive.AddAttachment asChild>
         <AuiIconButton tooltip="Agregar adjunto" size={BUTTON} onClick={open}><Plus /></AuiIconButton>
       </ComposerPrimitive.AddAttachment>
-      <ButtonBase
-        aria-label="Abrir el asistente"
-        onClick={open}
-        sx={(t) => ({ flex: 1, minWidth: 0, alignSelf: 'stretch', justifyContent: 'flex-start', px: 0.5, borderRadius: 1, '&.Mui-focusVisible': { outline: `2px solid ${t.palette.ai.focusRing}` } })}
-      >
-        <Box component="span" sx={(t) => ({ ...t.typography.body1, color: 'text.secondary', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })}>{text}</Box>
-      </ButtonBase>
+      <Box component="span" aria-hidden="true" sx={(t) => ({ ...t.typography.body1, flex: 1, minWidth: 0, px: 0.5, color: 'text.secondary', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })}>{text}</Box>
       {canDictate ? (
         <>
           <AuiIf condition={(s) => !s.thread.isRunning && s.composer.dictation == null}>

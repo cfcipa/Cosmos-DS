@@ -7,9 +7,9 @@
 // Las respuestas llevan formato (Markdown) y su razonamiento en un visor plegable. Opcionales: el tiempo del mensaje en
 // la barra de acciones (`messageTiming`), el uso del contexto en el composer (`modelContextWindow`) y el mapa de la
 // conversación junto al hilo (`conversationMap`).
-// Lo visual es el del kit: mientras no hay nada que mostrar, el «Loader» (o el «Typing indicator»); el texto llega como
-// «Streaming text»; las acciones son «Message actions», las versiones el stepper de «Message branches», el mensaje del
-// usuario se edita con «Edit message», el error es «Error state» y una respuesta detenida lleva «Stopped run».
+// Lo visual es el del kit: mientras la respuesta no llega, el «Thinking indicator» nombra lo que el asistente hace
+// («Pensando», «Ejecutando consultar_obligaciones») con el tiempo transcurrido; el texto llega como «Streaming text»; las acciones son «Message actions», las versiones el stepper de «Message branches», el mensaje del
+// usuario se edita con «Edit message» (la burbuja es la de los tableros), el error es «Error state» y una respuesta detenida lleva «Stopped run».
 import * as React from 'react';
 import {
   ActionBarPrimitive,
@@ -27,7 +27,7 @@ import {
   useAuiState,
 } from '@assistant-ui/react';
 import {
-  useActionBarCopy, useActionBarEdit, useActionBarFeedbackNegative, useActionBarFeedbackPositive, useActionBarReload,
+  useActionBarCopy, useActionBarFeedbackNegative, useActionBarFeedbackPositive, useActionBarReload,
   useBranchPickerNext, useBranchPickerPrevious, useEditComposerCancel, useEditComposerSend, useMessageError,
 } from '@assistant-ui/core/react';
 import Box from '@mui/material/Box';
@@ -40,16 +40,15 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { visuallyHidden } from '@mui/utils';
 import { keyframes, styled } from '@mui/material/styles';
-import { ArrowDown, ArrowUp, Download, Mic, Square } from 'lucide-react';
+import { ArrowDown, ArrowUp, Download, Mic, Pencil, Square } from 'lucide-react';
 import { REDUCED_MOTION } from '../lib/shimmerText';
 import { riseSx } from '../lib/thread';
 import { EditMessage } from '../edit-message';
 import { ErrorState } from '../error-state';
-import { Loader } from '../loader';
 import { MessageActions } from '../message-actions';
 import { MessageBranchesStepper } from '../message-branches';
 import { STOPPED_RUN_REASONS, StoppedRunActions } from '../stopped-run';
-import { TypingIndicator } from '../typing-indicator';
+import { ThinkingIndicator, useThinkingElapsed } from '../thinking-indicator';
 import { AuiIconButton } from './AuiIconButton';
 import { AuiComposerAddAttachment, AuiComposerAttachments, AuiUserMessageAttachments } from './Attachment';
 import { AuiFollowupSuggestions } from './FollowupSuggestions';
@@ -106,11 +105,7 @@ export interface AuiThreadProps {
   empty?: React.ReactNode;
   /** Una línea al comienzo del hilo cuando ya hay mensajes (p. ej. que las respuestas se generan con IA). */
   disclaimer?: string;
-  /** Lo que se ve mientras la respuesta aún no trae nada: el «Loader» de Sinco (default) o el «Typing indicator». */
-  waiting?: AuiThreadWaiting;
 }
-
-export type AuiThreadWaiting = 'loader' | 'typing';
 
 type PlaceholderPreview = { preview: string | null; setPreview: (text: string | null) => void };
 const PlaceholderPreviewContext = React.createContext<PlaceholderPreview>({ preview: null, setPreview: () => undefined });
@@ -134,7 +129,7 @@ const MAP_GUTTER = 6;
 const pulse = keyframes`0%, 100% { opacity: 1; } 50% { opacity: .35; }`;
 
 const ComponentsContext = React.createContext<AuiThreadComponents>({});
-type ThreadOptions = { welcome: string; placeholder: string; timing?: AuiThreadTiming; modelContextWindow?: number; triggers?: React.ReactNode; directives?: boolean | AuiDirectiveTextOptions; modelSelector?: AuiModelSelectorProps; waiting?: AuiThreadWaiting };
+type ThreadOptions = { welcome: string; placeholder: string; timing?: AuiThreadTiming; modelContextWindow?: number; triggers?: React.ReactNode; directives?: boolean | AuiDirectiveTextOptions; modelSelector?: AuiModelSelectorProps };
 const LabelsContext = React.createContext<ThreadOptions>({ welcome: '¿En qué te ayudo hoy?', placeholder: 'Escribe un mensaje…' });
 
 // Al arrancar, el hilo de carga cuenta como chat nuevo (composer centrado); cambiar a un hilo que aún trae su
@@ -158,7 +153,7 @@ const ViewportFooter = styled(ThreadPrimitive.ViewportFooter)(({ theme: t }) => 
 
 export function AuiThread({
   components = {}, autoFocus = true, welcome = '¿En qué te ayudo hoy?', placeholder = 'Escribe un mensaje…', messageTiming = false, modelContextWindow, conversationMap, quotes = false, followupSend = true, triggers, directives, modelSelector,
-  empty, disclaimer, waiting = 'loader',
+  empty, disclaimer,
 }: AuiThreadProps) {
   const isNew = useAuiState(isNewChatView);
   const hasEmpty = empty !== undefined;
@@ -169,8 +164,8 @@ export function AuiThread({
   const timingDesign = messageTiming === true ? 'badge' : messageTiming ? messageTiming.design ?? 'badge' : undefined;
   const timingSide = typeof messageTiming === 'object' ? messageTiming.side : undefined;
   const labels = React.useMemo(
-    () => ({ welcome, placeholder, timing: timingDesign ? { design: timingDesign, side: timingSide } : undefined, modelContextWindow, triggers, directives, modelSelector, waiting }),
-    [welcome, placeholder, timingDesign, timingSide, modelContextWindow, triggers, directives, modelSelector, waiting],
+    () => ({ welcome, placeholder, timing: timingDesign ? { design: timingDesign, side: timingSide } : undefined, modelContextWindow, triggers, directives, modelSelector }),
+    [welcome, placeholder, timingDesign, timingSide, modelContextWindow, triggers, directives, modelSelector],
   );
   const mapSide = conversationMap === true ? 'left' : conversationMap || undefined;
   const Welcome = components.Welcome ?? ThreadWelcome;
@@ -382,10 +377,17 @@ function MessageStopped() {
   return <Box sx={{ mt: 1.5 }}><StoppedRunActions reason={label} onContinue={disabled ? undefined : reload} /></Box>;
 }
 
-/** Mientras la respuesta aún no trae nada. */
+/** Lo que el asistente hace ahora: la herramienta que corre, o pensar. */
+const thinkingLabel = (s: AssistantState) => {
+  const running = [...s.message.parts].reverse().find((p) => p.type === 'tool-call' && p.status.type === 'running');
+  return running && running.type === 'tool-call' ? `Ejecutando ${running.toolName}` : 'Pensando';
+};
+
+/** Mientras la respuesta no llega: el «Thinking indicator» del kit, con lo que hace y el tiempo que lleva. */
 function WaitingIndicator() {
-  const { waiting } = React.useContext(LabelsContext);
-  return waiting === 'typing' ? <TypingIndicator /> : <Box sx={{ display: 'flex' }}><Loader /></Box>;
+  const label = useAuiState(thinkingLabel);
+  const elapsed = useThinkingElapsed(true);
+  return <ThinkingIndicator label={label} elapsed={elapsed} />;
 }
 
 /** El texto de la respuesta, con formato. */
@@ -513,28 +515,37 @@ function UserParts() {
   return <MessagePrimitive.Parts components={{ Image: UserImagePart, File: UserFilePart, ...(Text ? { Text } : {}) }} />;
 }
 
-/** El texto del mensaje, para la etiqueta de la burbuja y la edición. */
-const messageText = (s: AssistantState) => s.message.parts.map((p) => (p.type === 'text' ? p.text : '')).join('\n');
-
 function UserMessage() {
-  const { edit, disabled } = useActionBarEdit();
-  const text = useAuiState(messageText);
   return (
     <Box
       component={MessagePrimitive.Root}
       data-slot="aui-user-message"
       data-role="user"
-      sx={(t) => ({ display: 'grid', gridTemplateColumns: 'minmax(72px, 1fr) auto', alignContent: 'start', rowGap: 1, px: 1, '& > *': { gridColumnStart: 2 }, ...riseSx(t) })}
+      sx={(t) => ({ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 1, px: 1, ...riseSx(t) })}
     >
       <AuiUserMessageAttachments />
-      <Box sx={{ justifySelf: 'end', '&:empty': { display: 'none' } }}><AuiSelectionContextMessageChip /></Box>
-      <Box sx={{ gridColumnStart: 2, minWidth: 0, overflowWrap: 'anywhere', '& [data-slot="edit-message"] > *': { maxWidth: 'none' } }}>
-        <EditMessage value={text} editing={false} discardedReplies={0} onStartEdit={disabled ? undefined : edit}>
+      <Box sx={{ '&:empty': { display: 'none' } }}><AuiSelectionContextMessageChip /></Box>
+      {/* La burbuja de los tableros (12px 16px, hasta el 85 %), con «Editar» a su izquierda al pasar. */}
+      <Box
+        sx={(t) => ({
+          position: 'relative', minWidth: 0, maxWidth: '85%',
+          '& [data-slot="aui-user-actions"]': { opacity: 0, transition: t.transitions.create('opacity', { duration: t.transitions.duration.shortest }) },
+          '&:hover [data-slot="aui-user-actions"], &:focus-within [data-slot="aui-user-actions"]': { opacity: 1 },
+        })}
+      >
+        <Typography variant="body1" component="div" sx={{ px: 2, py: 1.5, borderRadius: 1, bgcolor: 'ai.userBubble', color: 'ai.userBubbleText', overflowWrap: 'anywhere', '&:empty': { display: 'none' } }}>
           <MessagePrimitive.Quote>{(quote) => <AuiQuoteBlock {...quote} />}</MessagePrimitive.Quote>
           <UserParts />
-        </EditMessage>
+        </Typography>
+        <Box sx={{ position: 'absolute', left: 0, top: '50%', transform: 'translate(-100%, -50%)', pr: 1 }}>
+          <ActionBarPrimitive.Root hideWhenRunning autohide="not-last" data-slot="aui-user-actions">
+            <ActionBarPrimitive.Edit asChild>
+              <AuiIconButton tooltip="Editar"><Pencil /></AuiIconButton>
+            </ActionBarPrimitive.Edit>
+          </ActionBarPrimitive.Root>
+        </Box>
       </Box>
-      <BranchPicker user sx={{ gridColumn: '1 / -1', justifyContent: 'flex-end' }} />
+      <BranchPicker user />
     </Box>
   );
 }
