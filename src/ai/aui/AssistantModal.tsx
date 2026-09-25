@@ -114,10 +114,23 @@ export interface AuiAssistantModalProps {
   position?: 'fixed' | 'absolute';
   /** Abierta al montar. Default false. */
   defaultOpen?: boolean;
+  /** Abierta o cerrada desde afuera. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  /** Los botones de hilos y nuevo hilo del encabezado. Default true. */
+  threadList?: boolean;
+  /** Acciones propias en el encabezado (p. ej. mover el hilo a otra superficie). */
+  headerActions?: React.ReactNode;
 }
 
-export function AuiAssistantModal({ position = 'fixed', defaultOpen = false }: AuiAssistantModalProps) {
-  const [open, setOpen] = React.useState(defaultOpen);
+export function AuiAssistantModal({ position = 'fixed', defaultOpen = false, open: controlled, onOpenChange, threadList = true, headerActions }: AuiAssistantModalProps) {
+  const [own, setOwn] = React.useState(defaultOpen);
+  const open = controlled ?? own;
+  const setOpen = React.useCallback((next: boolean | ((o: boolean) => boolean)) => {
+    const value = typeof next === 'function' ? next(open) : next;
+    setOwn(value);
+    onOpenChange?.(value);
+  }, [open, onOpenChange]);
   const [view, setView] = React.useState<View>('thread');
   const anchorRef = React.useRef<HTMLButtonElement | null>(null);
   // El ancla en estado: abierta al montar, el Popper espera a que la burbuja exista.
@@ -197,7 +210,7 @@ export function AuiAssistantModal({ position = 'fixed', defaultOpen = false }: A
                   '[role="dialog"]:hover > &': { borderColor: 'divider' }, '&:hover': { borderColor: 'text.disabled' }, '&.Mui-focusVisible': { borderColor: t.palette.ai.focusRing },
                 })}
               />
-              <ModalHeader view={view} onViewChange={setView} />
+              <ModalHeader view={view} onViewChange={setView} threadList={threadList} actions={headerActions} />
               <Box sx={{ position: 'relative', flex: 1, minHeight: 0 }}>
                 <Box ref={(node: HTMLDivElement | null) => { if (node) node.inert = view === 'list'; }} sx={{ height: '100%' }}>{thread}</Box>
                 {view === 'list' ? <ModalThreadList onSelect={() => setView('thread')} /> : null}
@@ -210,7 +223,7 @@ export function AuiAssistantModal({ position = 'fixed', defaultOpen = false }: A
   );
 }
 
-function ModalHeader({ view, onViewChange }: { view: View; onViewChange: (v: View) => void }) {
+function ModalHeader({ view, onViewChange, threadList, actions }: { view: View; onViewChange: (v: View) => void; threadList: boolean; actions?: React.ReactNode }) {
   const title = useAuiState((s) => s.threadListItem.title);
   const hasThreads = useAuiState((s) => s.threads.threadIds.length > 0);
   const titleRef = React.useRef<HTMLHeadingElement>(null);
@@ -227,13 +240,18 @@ function ModalHeader({ view, onViewChange }: { view: View; onViewChange: (v: Vie
       <Typography id="aui-modal-title" ref={titleRef} tabIndex={-1} variant="subtitle2" component="h2" noWrap sx={{ m: 0, flex: 1, minWidth: 0, outline: 'none' }}>
         {view === 'list' ? 'Hilos' : title || AUI_NEW_CHAT}
       </Typography>
-      <Stack direction="row" spacing={0.25} sx={{ flexShrink: 0 }}>
-        <AuiIconButton tooltip="Hilos" size={HEADER_BUTTON} aria-pressed={view === 'list'} disabled={!hasThreads && view === 'thread'} onClick={() => onViewChange(view === 'list' ? 'thread' : 'list')} sx={buttonSx}>
-          <History />
-        </AuiIconButton>
-        <ThreadListPrimitive.New asChild>
-          <AuiIconButton tooltip="Nuevo hilo" size={HEADER_BUTTON} onClick={() => onViewChange('thread')} sx={buttonSx}><Plus /></AuiIconButton>
-        </ThreadListPrimitive.New>
+      <Stack direction="row" spacing={0.25} sx={{ flexShrink: 0, '& .MuiIconButton-root': buttonSx }}>
+        {actions}
+        {threadList ? (
+          <>
+            <AuiIconButton tooltip="Hilos" size={HEADER_BUTTON} aria-pressed={view === 'list'} disabled={!hasThreads && view === 'thread'} onClick={() => onViewChange(view === 'list' ? 'thread' : 'list')} sx={buttonSx}>
+              <History />
+            </AuiIconButton>
+            <ThreadListPrimitive.New asChild>
+              <AuiIconButton tooltip="Nuevo hilo" size={HEADER_BUTTON} onClick={() => onViewChange('thread')} sx={buttonSx}><Plus /></AuiIconButton>
+            </ThreadListPrimitive.New>
+          </>
+        ) : null}
       </Stack>
     </Stack>
   );

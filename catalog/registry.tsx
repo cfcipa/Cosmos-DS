@@ -83,6 +83,7 @@ import { TplChatPanelCard, TplChatPanelDoc } from './elements/TplChatPanel';
 import { TplSidebarCard, TplSidebarDoc } from './elements/TplSidebar';
 import { TplModalCard, TplModalDoc } from './elements/TplModal';
 import { TplCanvasCard, TplCanvasDoc } from './elements/TplCanvas';
+import { TplContinuidadCard, TplContinuidadDoc } from './elements/TplContinuidad';
 import { AuiResponsePreviewCard, AuiResponsePreviewDoc } from './elements/AuiResponsePreview';
 import { AuiOrbDoc, AuiOrbCard } from './elements/AuiOrb';
 
@@ -215,6 +216,7 @@ export const SECTIONS: Section[] = [
       { slug: 'tpl-sidebar', title: 'Obligaciones con asistente lateral', description: 'La pantalla y el hilo lado a lado, en paneles que se redimensionan; el AppBar abre y cierra el asistente.', Card: TplSidebarCard, Doc: TplSidebarDoc },
       { slug: 'tpl-modal', title: 'Obligaciones con asistente flotante', description: 'La burbuja del asistente sobre la pantalla: abre el hilo en un panel que se redimensiona, con la lista de chats.', Card: TplModalCard, Doc: TplModalDoc },
       { slug: 'tpl-canvas', title: 'Obligaciones con canvas', description: 'Pide un informe y el hilo se hace a un lado: el documento ocupa la pantalla mientras se escribe, y cada cambio es una versión.', Card: TplCanvasCard, Doc: TplCanvasDoc },
+      { slug: 'tpl-continuidad', title: 'Un hilo en todas las superficies', description: 'La misma conversación en la burbuja, en el panel lateral y en el canvas: cambia de superficie sin perder el hilo.', Card: TplContinuidadCard, Doc: TplContinuidadDoc },
     ],
   },
 ];

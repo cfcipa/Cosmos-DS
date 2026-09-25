@@ -1,10 +1,13 @@
 // La plantilla «Obligaciones con canvas»: el asistente lateral y, cuando se le pide un informe («redacta», «informe»,
 // «borrador»), el hilo se hace a un lado y el documento ocupa la pantalla (Canvas split del kit) mientras se escribe
 // línea a línea. «Agrega» o «incluye» suma una sección como nueva versión. Cerrar el canvas devuelve la pantalla.
+// Con `launcher`, es «Un hilo en todas las superficies»: cerrado el lateral, el mismo hilo vive en la burbuja del
+// Assistant modal, que puede moverse al panel lateral; el runtime es uno, así que la conversación no se pierde.
 import * as React from 'react';
 import Box from '@mui/material/Box';
 import type { ChatModelAdapter } from '@assistant-ui/react';
-import { AuiAssistantSidebar, AuiSelectionContextProvider, AuiThread } from '../../../src/ai/aui';
+import { PanelRight } from 'lucide-react';
+import { AuiAssistantModal, AuiAssistantSidebar, AuiIconButton, AuiSelectionContextProvider, AuiThread } from '../../../src/ai/aui';
 import { CanvasSplitBody, CanvasSplitDocument, CanvasSplitHeader, CanvasSplitLine } from '../../../src/ai/canvas-split';
 import { AuiDemoRuntime } from '../AuiDemoRuntime';
 import { lastUserText, streamText, wait } from '../demoStream';
@@ -113,17 +116,20 @@ export interface SincoCanvasProps {
   selected?: number[];
   /** El asistente abierto al inicio. Default true. */
   defaultOpen?: boolean;
+  /** Con el lateral cerrado, el hilo sigue en la burbuja del Assistant modal. Default false. */
+  launcher?: boolean;
   onModeChange?: (mode: 'side' | 'canvas') => void;
 }
 
-export function SincoCanvas({ filter, selected, defaultOpen = true, onModeChange }: SincoCanvasProps) {
+export function SincoCanvas({ filter, selected, defaultOpen = true, launcher = false, onModeChange }: SincoCanvasProps) {
   const host = useObligaciones({ filter, selected });
   const [doc, setDocState] = React.useState<CanvasDoc | null>(null);
   const [mode, setModeState] = React.useState<'side' | 'canvas'>('side');
   const [open, setOpen] = React.useState(defaultOpen);
+  const [modalOpen, setModalOpen] = React.useState(false);
   const setMode = (m: 'side' | 'canvas') => { setModeState(m); onModeChange?.(m); };
   const bridge = React.useRef<{ host: ObligacionesState; doc: CanvasDoc | null; setDoc: (doc: CanvasDoc | null) => void } | null>(null);
-  bridge.current = { host, doc, setDoc: (d) => { setDocState(d); if (d) { setModeState('canvas'); setOpen(true); onModeChange?.('canvas'); } } };
+  bridge.current = { host, doc, setDoc: (d) => { setDocState(d); if (d) { setModeState('canvas'); setOpen(true); setModalOpen(false); onModeChange?.('canvas'); } } };
   const hostBridge = React.useRef<ObligacionesState | null>(null);
   hostBridge.current = host;
   const model = React.useMemo(() => makeCanvasModel(makeObligacionesModel(hostBridge), bridge), []);
@@ -134,8 +140,8 @@ export function SincoCanvas({ filter, selected, defaultOpen = true, onModeChange
     <AuiDemoRuntime model={model} suggestions={followups} dictation={DICTATED} welcomeSuggestions={WELCOME_SUGGESTIONS}>
       <AuiSelectionContextProvider selection={obligacionesSelection(host)}>
         <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', containerType: 'inline-size', bgcolor: 'background.default', color: 'text.primary' }}>
-          <SincoAppBar actions={<AssistantToggle open={open} onToggle={() => setOpen(!open)} />} />
-          <Box data-mode={canvas ? 'canvas' : 'side'} sx={{ flex: 1, minHeight: 0, display: 'flex', bgcolor: 'background.paper' }}>
+          <SincoAppBar actions={<AssistantToggle open={open || canvas} onToggle={() => { if (canvas) { setMode('side'); setOpen(false); } else { setOpen(!open); setModalOpen(false); } }} />} />
+          <Box data-mode={canvas ? 'canvas' : 'side'} sx={{ position: 'relative', flex: 1, minHeight: 0, display: 'flex', bgcolor: 'background.paper', ...(launcher ? { overflow: 'hidden', transform: 'translateZ(0)', containerType: 'size' } : null) }}>
             {canvas ? (
               <>
                 {/* Con el documento, el hilo se hace a un lado y la pantalla espera detrás. */}
@@ -147,6 +153,15 @@ export function SincoCanvas({ filter, selected, defaultOpen = true, onModeChange
             ) : (
               <Box sx={{ flex: 1, minWidth: 0 }}>{page}</Box>
             )}
+            {launcher && !open && !canvas ? (
+              <AuiAssistantModal
+                position="absolute"
+                open={modalOpen}
+                onOpenChange={setModalOpen}
+                threadList={false}
+                headerActions={<AuiIconButton tooltip="Mover al panel lateral" onClick={() => { setModalOpen(false); setOpen(true); }}><PanelRight /></AuiIconButton>}
+              />
+            ) : null}
           </Box>
         </Box>
       </AuiSelectionContextProvider>
