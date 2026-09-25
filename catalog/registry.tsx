@@ -78,6 +78,8 @@ import { AuiStarterSuggestionsCard, AuiStarterSuggestionsDoc } from './elements/
 import { AuiSelectionContextCard, AuiSelectionContextDoc } from './elements/AuiSelectionContext';
 import { AuiAskAiActionCard, AuiAskAiActionDoc } from './elements/AuiAskAiAction';
 import { AuiInlinePromptCard, AuiInlinePromptDoc } from './elements/AuiInlinePrompt';
+import { TplComposerCard, TplComposerDoc } from './elements/TplComposer';
+import { TplChatPanelCard, TplChatPanelDoc } from './elements/TplChatPanel';
 import { AuiResponsePreviewCard, AuiResponsePreviewDoc } from './elements/AuiResponsePreview';
 import { AuiOrbDoc, AuiOrbCard } from './elements/AuiOrb';
 
@@ -201,6 +203,12 @@ export const SECTIONS: Section[] = [
       { slug: 'aui-assistant-panel', title: 'Assistant panel', description: 'El panel del asistente en tres superficies, flotante, lateral y pantalla completa, con cambio de chat y de asistente.', Card: AuiAssistantPanelCard, Doc: AuiAssistantPanelDoc },
       { slug: 'aui-response-preview', title: 'Response preview', description: 'La última respuesta asoma sobre el composer mientras el chat está cerrado y se recoge sola en una pestaña.', Card: AuiResponsePreviewCard, Doc: AuiResponsePreviewDoc },
       { slug: 'tool-approval', title: 'Tool approval', description: 'Una herramienta que pide la aprobación de la persona antes de cambiar datos y sigue según su respuesta.', Card: ToolApprovalCard, Doc: ToolApprovalDoc },
+    ],
+  },
+  {
+    id: 'templates', title: 'Templates', elements: [
+      { slug: 'tpl-composer', title: 'Obligaciones · Composer flotante', description: 'La pantalla con la píldora del asistente: se abre en el panel, la selección viaja como contexto y la respuesta asoma sobre la píldora.', Card: TplComposerCard, Doc: TplComposerDoc },
+      { slug: 'tpl-chat-panel', title: 'Obligaciones con chat panel', description: 'El detalle de una obligación en un cajón, con un chat panel que responde solo sobre ese registro.', Card: TplChatPanelCard, Doc: TplChatPanelDoc },
     ],
   },
 ];

@@ -127,10 +127,14 @@ export interface ObligacionesPageProps {
   state: ObligacionesState;
   /** La acción «Preguntar a la IA» en la barra de selección. Default true. */
   askAi?: boolean;
+  /** Tocar el nombre del proveedor abre el detalle de la fila (la plantilla con chat panel). Sin él, solo avisa. */
+  onDetail?: (row: Obligacion) => void;
+  /** La fila cuyo detalle está abierto: se ve seleccionada. */
+  detailId?: number | null;
 }
 
 /** El contenido de la pantalla (bajo el AppBar). */
-export function ObligacionesPage({ state: s, askAi = true }: ObligacionesPageProps) {
+export function ObligacionesPage({ state: s, askAi = true, onDetail, detailId = null }: ObligacionesPageProps) {
   const [seg, setSeg] = React.useState<'obl' | 'ext'>('obl');
   const [tab, setTab] = React.useState<TabKey>('compras');
   const [saldo, setSaldo] = React.useState(false);
@@ -228,7 +232,7 @@ export function ObligacionesPage({ state: s, askAi = true }: ObligacionesPagePro
                         </TableHead>
                         <TableBody>
                           {visible.map((r) => {
-                            const sel = s.selected.has(r.id) && !!s.kind;
+                            const sel = (s.selected.has(r.id) && !!s.kind) || r.id === detailId;
                             return (
                               <TableRow key={r.id} hover selected={sel} sx={(t) => (s.flash.has(r.id) ? { '--flash': alpha(t.palette.primary.main, t.palette.action.focusOpacity), animation: `${flashIn} 1.6s ease-out` } : {})}>
                                 {s.kind ? (
@@ -242,7 +246,7 @@ export function ObligacionesPage({ state: s, askAi = true }: ObligacionesPagePro
                                   <Tooltip title="Ver soporte"><IconButton size="small" color="primary" aria-label="Ver documento soporte" onClick={() => setNotice(`Soporte de ${r.ob}.`)}><FileText size={ICON} /></IconButton></Tooltip>
                                 </TableCell>
                                 <TableCell>
-                                  <Link component="button" variant="body2" underline="hover" color="text.primary" onClick={() => setNotice(`Detalle de ${r.prov} · ${r.ob}.`)} sx={(t) => ({ display: 'block', fontWeight: t.typography.fontWeightMedium, maxWidth: t.spacing(25), overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'start', '&:hover': { color: 'primary.main' } })}>{r.prov}</Link>
+                                  <Link component="button" variant="body2" underline="hover" color="text.primary" onClick={() => (onDetail ? onDetail(r) : setNotice(`Detalle de ${r.prov} · ${r.ob}.`))} sx={(t) => ({ display: 'block', fontWeight: t.typography.fontWeightMedium, maxWidth: t.spacing(25), overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'start', '&:hover': { color: 'primary.main' } })}>{r.prov}</Link>
                                   <Typography variant="caption" color="text.secondary">{r.nit}</Typography>
                                 </TableCell>
                                 <TableCell sx={{ color: 'text.secondary', fontVariantNumeric: 'tabular-nums' }}>{r.fc}</TableCell>
