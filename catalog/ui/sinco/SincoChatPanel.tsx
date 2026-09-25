@@ -12,7 +12,7 @@ import Typography from '@mui/material/Typography';
 import { X } from 'lucide-react';
 import { ChatPanel, ChatPanelAssistantMessage, ChatPanelComposer, ChatPanelMessages, ChatPanelTyping, ChatPanelUserMessage } from '../../../src/ai/chat-panel';
 import { FIRST_TOKEN_MS, STREAM_STEP, STREAM_TICK_MS } from '../demoStream';
-import { ObligacionesPage, SincoAppBar } from './ObligacionesPage';
+import { SincoPage, SincoScreen } from './SincoHost';
 import { CHIP, money, useObligaciones, type Estado, type Obligacion } from './obligaciones';
 import { EstadoChip } from './parts';
 
@@ -162,15 +162,12 @@ export function SincoChatPanel({ filter, defaultDetail = null, onDetailChange }:
   const record = detailId === null ? null : host.rows.find((r) => r.id === detailId) ?? null;
   const setDetail = (id: number | null) => { setDetailId(id); onDetailChange?.(id); };
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', containerType: 'inline-size', bgcolor: 'background.default', color: 'text.primary' }}>
-      <SincoAppBar />
+    <SincoScreen>
+      {/* La pantalla se desplaza sola; el cajón se apoya en el borde de la pantalla, bajo el AppBar. */}
       <Box sx={{ position: 'relative', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        {/* La pantalla se desplaza sola; el cajón se apoya en el borde de la pantalla, bajo el AppBar. */}
-        <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
-          <ObligacionesPage state={host} askAi={false} onDetail={(r) => setDetail(r.id)} detailId={detailId} />
-        </Box>
+        <SincoPage state={host} askAi={false} onDetail={(r) => setDetail(r.id)} detailId={detailId} />
         <ObligacionDrawer record={record} open={record !== null} onClose={() => setDetail(null)} />
       </Box>
-    </Box>
+    </SincoScreen>
   );
 }

@@ -211,12 +211,12 @@ export const SECTIONS: Section[] = [
   },
   {
     id: 'templates', title: 'Templates', elements: [
-      { slug: 'tpl-composer', title: 'Obligaciones · Composer flotante', description: 'La pantalla con la píldora del asistente: se abre en el panel, la selección viaja como contexto y la respuesta asoma sobre la píldora.', Card: TplComposerCard, Doc: TplComposerDoc },
-      { slug: 'tpl-chat-panel', title: 'Obligaciones con chat panel', description: 'El detalle de una obligación en un cajón, con un chat panel que responde solo sobre ese registro.', Card: TplChatPanelCard, Doc: TplChatPanelDoc },
-      { slug: 'tpl-sidebar', title: 'Obligaciones con asistente lateral', description: 'La pantalla y el hilo lado a lado, en paneles que se redimensionan; el AppBar abre y cierra el asistente.', Card: TplSidebarCard, Doc: TplSidebarDoc },
-      { slug: 'tpl-modal', title: 'Obligaciones con asistente flotante', description: 'La burbuja del asistente sobre la pantalla: abre el hilo en un panel que se redimensiona, con la lista de chats.', Card: TplModalCard, Doc: TplModalDoc },
-      { slug: 'tpl-canvas', title: 'Obligaciones con canvas', description: 'Pide un informe y el hilo se hace a un lado: el documento ocupa la pantalla mientras se escribe, y cada cambio es una versión.', Card: TplCanvasCard, Doc: TplCanvasDoc },
-      { slug: 'tpl-continuidad', title: 'Un hilo en todas las superficies', description: 'La misma conversación en la burbuja, en el panel lateral y en el canvas: cambia de superficie sin perder el hilo.', Card: TplContinuidadCard, Doc: TplContinuidadDoc },
+      { slug: 'tpl-composer', title: 'Pill to panel', description: 'La píldora del asistente sobre la pantalla: se abre en el panel, la selección viaja como contexto y la respuesta asoma sobre la píldora.', Card: TplComposerCard, Doc: TplComposerDoc },
+      { slug: 'tpl-chat-panel', title: 'Detail with chat panel', description: 'El detalle de un registro en un cajón, con un chat panel que responde solo sobre ese registro.', Card: TplChatPanelCard, Doc: TplChatPanelDoc },
+      { slug: 'tpl-sidebar', title: 'Side assistant', description: 'La pantalla y el hilo lado a lado, en paneles que se redimensionan; el AppBar abre y cierra el asistente.', Card: TplSidebarCard, Doc: TplSidebarDoc },
+      { slug: 'tpl-modal', title: 'Floating assistant', description: 'La burbuja del asistente sobre la pantalla: abre el hilo en un panel que se redimensiona, con la lista de chats.', Card: TplModalCard, Doc: TplModalDoc },
+      { slug: 'tpl-canvas', title: 'Canvas', description: 'Pide un informe y el hilo se hace a un lado: el documento ocupa la pantalla mientras se escribe, y cada cambio es una versión.', Card: TplCanvasCard, Doc: TplCanvasDoc },
+      { slug: 'tpl-continuidad', title: 'One thread, every surface', description: 'La misma conversación en la burbuja, en el panel lateral y en el canvas: cambia de superficie sin perder el hilo.', Card: TplContinuidadCard, Doc: TplContinuidadDoc },
     ],
   },
 ];

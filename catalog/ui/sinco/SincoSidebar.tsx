@@ -5,10 +5,9 @@ import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import { MoonStar } from 'lucide-react';
-import { AuiAssistantSidebar, AuiSelectionContextProvider } from '../../../src/ai/aui';
-import { AuiDemoRuntime } from '../AuiDemoRuntime';
-import { ObligacionesPage, SincoAppBar } from './ObligacionesPage';
-import { DICTATED, WELCOME_SUGGESTIONS, makeObligacionesFollowups, makeObligacionesModel, obligacionesSelection, useObligaciones, type Estado, type ObligacionesState } from './obligaciones';
+import { AuiAssistantSidebar } from '../../../src/ai/aui';
+import { SincoHost, SincoPage, useSincoHost } from './SincoHost';
+import type { Estado } from './obligaciones';
 
 /** Medidas del tablero: la aplicación arranca al 64 % y va del 40 al 80; el botón del AppBar es de 28px con ícono de 16. */
 const DEFAULT_SIZE = 64;
@@ -48,25 +47,16 @@ export interface SincoSidebarProps {
 }
 
 export function SincoSidebar({ filter, selected, defaultOpen = true, open: controlled, onOpenChange }: SincoSidebarProps) {
-  const host = useObligaciones({ filter, selected });
-  const bridge = React.useRef<ObligacionesState | null>(null);
-  bridge.current = host;
-  const model = React.useMemo(() => makeObligacionesModel(bridge), []);
-  const followups = React.useMemo(() => makeObligacionesFollowups(bridge), []);
+  const { host, model, followups } = useSincoHost({ filter, selected });
   const [own, setOwn] = React.useState(defaultOpen);
   const open = controlled ?? own;
   const toggle = () => { setOwn(!open); onOpenChange?.(!open); };
-  const page = <Box sx={{ height: '100%', overflow: 'auto' }}><ObligacionesPage state={host} askAi={false} /></Box>;
+  const page = <SincoPage state={host} askAi={false} />;
   return (
-    <AuiDemoRuntime model={model} suggestions={followups} dictation={DICTATED} welcomeSuggestions={WELCOME_SUGGESTIONS}>
-      <AuiSelectionContextProvider selection={obligacionesSelection(host)}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', containerType: 'inline-size', bgcolor: 'background.default', color: 'text.primary' }}>
-          <SincoAppBar actions={<AssistantToggle open={open} onToggle={toggle} />} />
-          <Box sx={{ flex: 1, minHeight: 0, display: 'flex' }}>
-            {open ? <AuiAssistantSidebar defaultSize={DEFAULT_SIZE} minSize={MIN_SIZE} maxSize={MAX_SIZE} withHandle>{page}</AuiAssistantSidebar> : <Box sx={{ flex: 1, minWidth: 0 }}>{page}</Box>}
-          </Box>
-        </Box>
-      </AuiSelectionContextProvider>
-    </AuiDemoRuntime>
+    <SincoHost host={host} model={model} followups={followups} actions={<AssistantToggle open={open} onToggle={toggle} />}>
+      <Box sx={{ flex: 1, minHeight: 0, display: 'flex' }}>
+        {open ? <AuiAssistantSidebar defaultSize={DEFAULT_SIZE} minSize={MIN_SIZE} maxSize={MAX_SIZE} withHandle>{page}</AuiAssistantSidebar> : <Box sx={{ flex: 1, minWidth: 0 }}>{page}</Box>}
+      </Box>
+    </SincoHost>
   );
 }

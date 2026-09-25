@@ -3,11 +3,10 @@
 // selección de la tabla viaja como contexto.
 import * as React from 'react';
 import Box from '@mui/material/Box';
-import { AuiAssistantModal, AuiSelectionContextProvider } from '../../../src/ai/aui';
-import { AuiDemoRuntime } from '../AuiDemoRuntime';
-import { ObligacionesPage, SincoAppBar } from './ObligacionesPage';
+import { AuiAssistantModal } from '../../../src/ai/aui';
 import { SINCO_PREVIOUS_THREADS } from './SincoAssistant';
-import { DICTATED, WELCOME_SUGGESTIONS, makeObligacionesFollowups, makeObligacionesModel, obligacionesSelection, useObligaciones, type Estado, type ObligacionesState } from './obligaciones';
+import { SincoHost, SincoPage, useSincoHost } from './SincoHost';
+import type { Estado } from './obligaciones';
 
 export interface SincoModalProps {
   filter?: Estado | 'todas';
@@ -17,23 +16,14 @@ export interface SincoModalProps {
 }
 
 export function SincoModal({ filter, selected, defaultOpen = false }: SincoModalProps) {
-  const host = useObligaciones({ filter, selected });
-  const bridge = React.useRef<ObligacionesState | null>(null);
-  bridge.current = host;
-  const model = React.useMemo(() => makeObligacionesModel(bridge), []);
-  const followups = React.useMemo(() => makeObligacionesFollowups(bridge), []);
+  const { host, model, followups } = useSincoHost({ filter, selected });
   return (
-    <AuiDemoRuntime model={model} suggestions={followups} threads={SINCO_PREVIOUS_THREADS} dictation={DICTATED} welcomeSuggestions={WELCOME_SUGGESTIONS}>
-      <AuiSelectionContextProvider selection={obligacionesSelection(host)}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', containerType: 'inline-size', bgcolor: 'background.default', color: 'text.primary' }}>
-          <SincoAppBar />
-          {/* La burbuja y el panel se anclan a la pantalla (no a la ventana), y el panel no crece más que ella. */}
-          <Box sx={{ position: 'relative', flex: 1, minHeight: 0, overflow: 'hidden', transform: 'translateZ(0)', containerType: 'size' }}>
-            <Box sx={{ height: '100%', overflow: 'auto' }}><ObligacionesPage state={host} askAi={false} /></Box>
-            <AuiAssistantModal position="absolute" defaultOpen={defaultOpen} />
-          </Box>
-        </Box>
-      </AuiSelectionContextProvider>
-    </AuiDemoRuntime>
+    <SincoHost host={host} model={model} followups={followups} threads={SINCO_PREVIOUS_THREADS}>
+      {/* La burbuja y el panel se anclan a la pantalla (no a la ventana), y el panel no crece más que ella. */}
+      <Box sx={{ position: 'relative', flex: 1, minHeight: 0, overflow: 'hidden', transform: 'translateZ(0)', containerType: 'size' }}>
+        <SincoPage state={host} askAi={false} />
+        <AuiAssistantModal position="absolute" defaultOpen={defaultOpen} />
+      </Box>
+    </SincoHost>
   );
 }

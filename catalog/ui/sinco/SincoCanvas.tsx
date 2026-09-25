@@ -7,13 +7,12 @@ import * as React from 'react';
 import Box from '@mui/material/Box';
 import type { ChatModelAdapter } from '@assistant-ui/react';
 import { PanelRight } from 'lucide-react';
-import { AuiAssistantModal, AuiAssistantSidebar, AuiIconButton, AuiSelectionContextProvider, AuiThread } from '../../../src/ai/aui';
+import { AuiAssistantModal, AuiAssistantSidebar, AuiIconButton, AuiThread } from '../../../src/ai/aui';
 import { CanvasSplitBody, CanvasSplitDocument, CanvasSplitHeader, CanvasSplitLine } from '../../../src/ai/canvas-split';
-import { AuiDemoRuntime } from '../AuiDemoRuntime';
 import { lastUserText, streamText, wait } from '../demoStream';
-import { ObligacionesPage, SincoAppBar } from './ObligacionesPage';
+import { SincoHost, SincoPage, useSincoHost } from './SincoHost';
 import { AssistantToggle } from './SincoSidebar';
-import { DICTATED, WELCOME_SUGGESTIONS, makeObligacionesFollowups, makeObligacionesModel, money, nObl, obligacionesSelection, useObligaciones, type Estado, type Obligacion, type ObligacionesState } from './obligaciones';
+import { money, nObl, type Estado, type Obligacion, type ObligacionesState } from './obligaciones';
 
 /** Medidas del tablero: la aplicación al 64 % (40–80) con el asistente; con el canvas, el hilo mide 400px. */
 const DEFAULT_SIZE = 64;
@@ -122,49 +121,41 @@ export interface SincoCanvasProps {
 }
 
 export function SincoCanvas({ filter, selected, defaultOpen = true, launcher = false, onModeChange }: SincoCanvasProps) {
-  const host = useObligaciones({ filter, selected });
   const [doc, setDocState] = React.useState<CanvasDoc | null>(null);
   const [mode, setModeState] = React.useState<'side' | 'canvas'>('side');
   const [open, setOpen] = React.useState(defaultOpen);
   const [modalOpen, setModalOpen] = React.useState(false);
   const setMode = (m: 'side' | 'canvas') => { setModeState(m); onModeChange?.(m); };
-  const bridge = React.useRef<{ host: ObligacionesState; doc: CanvasDoc | null; setDoc: (doc: CanvasDoc | null) => void } | null>(null);
-  bridge.current = { host, doc, setDoc: (d) => { setDocState(d); if (d) { setModeState('canvas'); setOpen(true); setModalOpen(false); onModeChange?.('canvas'); } } };
-  const hostBridge = React.useRef<ObligacionesState | null>(null);
-  hostBridge.current = host;
-  const model = React.useMemo(() => makeCanvasModel(makeObligacionesModel(hostBridge), bridge), []);
-  const followups = React.useMemo(() => makeObligacionesFollowups(hostBridge), []);
-  const page = <Box sx={{ height: '100%', overflow: 'auto' }}><ObligacionesPage state={host} askAi={false} /></Box>;
+  const docBridge = React.useRef<CanvasBridge['current']>(null);
+  const { host, model, followups } = useSincoHost({ filter, selected, model: (inner) => makeCanvasModel(inner, docBridge) });
+  docBridge.current = { host, doc, setDoc: (d) => { setDocState(d); if (d) { setModeState('canvas'); setOpen(true); setModalOpen(false); onModeChange?.('canvas'); } } };
+  const page = <SincoPage state={host} askAi={false} />;
   const canvas = mode === 'canvas' && doc !== null;
+  const toggle = <AssistantToggle open={open || canvas} onToggle={() => { if (canvas) { setMode('side'); setOpen(false); } else { setOpen(!open); setModalOpen(false); } }} />;
   return (
-    <AuiDemoRuntime model={model} suggestions={followups} dictation={DICTATED} welcomeSuggestions={WELCOME_SUGGESTIONS}>
-      <AuiSelectionContextProvider selection={obligacionesSelection(host)}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', containerType: 'inline-size', bgcolor: 'background.default', color: 'text.primary' }}>
-          <SincoAppBar actions={<AssistantToggle open={open || canvas} onToggle={() => { if (canvas) { setMode('side'); setOpen(false); } else { setOpen(!open); setModalOpen(false); } }} />} />
-          <Box data-mode={canvas ? 'canvas' : 'side'} sx={{ position: 'relative', flex: 1, minHeight: 0, display: 'flex', bgcolor: 'background.paper', ...(launcher ? { overflow: 'hidden', transform: 'translateZ(0)', containerType: 'size' } : null) }}>
-            {canvas ? (
-              <>
-                {/* Con el documento, el hilo se hace a un lado y la pantalla espera detrás. */}
-                <Box sx={(t) => ({ width: t.spacing(THREAD_WIDTH), flexShrink: 0, minWidth: 0, borderRight: 1, borderColor: 'divider' })}><AuiThread /></Box>
-                <CanvasDocument doc={doc} onClose={() => setMode('side')} />
-              </>
-            ) : open ? (
-              <AuiAssistantSidebar defaultSize={DEFAULT_SIZE} minSize={MIN_SIZE} maxSize={MAX_SIZE} withHandle>{page}</AuiAssistantSidebar>
-            ) : (
-              <Box sx={{ flex: 1, minWidth: 0 }}>{page}</Box>
-            )}
-            {launcher && !open && !canvas ? (
-              <AuiAssistantModal
-                position="absolute"
-                open={modalOpen}
-                onOpenChange={setModalOpen}
-                threadList={false}
-                headerActions={<AuiIconButton tooltip="Mover al panel lateral" onClick={() => { setModalOpen(false); setOpen(true); }}><PanelRight /></AuiIconButton>}
-              />
-            ) : null}
-          </Box>
-        </Box>
-      </AuiSelectionContextProvider>
-    </AuiDemoRuntime>
+    <SincoHost host={host} model={model} followups={followups} actions={toggle}>
+      <Box data-mode={canvas ? 'canvas' : 'side'} sx={{ position: 'relative', flex: 1, minHeight: 0, display: 'flex', bgcolor: 'background.paper', ...(launcher ? { overflow: 'hidden', transform: 'translateZ(0)', containerType: 'size' } : null) }}>
+        {canvas ? (
+          <>
+            {/* Con el documento, el hilo se hace a un lado y la pantalla espera detrás. */}
+            <Box sx={(t) => ({ width: t.spacing(THREAD_WIDTH), flexShrink: 0, minWidth: 0, borderRight: 1, borderColor: 'divider' })}><AuiThread /></Box>
+            <CanvasDocument doc={doc} onClose={() => setMode('side')} />
+          </>
+        ) : open ? (
+          <AuiAssistantSidebar defaultSize={DEFAULT_SIZE} minSize={MIN_SIZE} maxSize={MAX_SIZE} withHandle>{page}</AuiAssistantSidebar>
+        ) : (
+          <Box sx={{ flex: 1, minWidth: 0 }}>{page}</Box>
+        )}
+        {launcher && !open && !canvas ? (
+          <AuiAssistantModal
+            position="absolute"
+            open={modalOpen}
+            onOpenChange={setModalOpen}
+            threadList={false}
+            headerActions={<AuiIconButton tooltip="Mover al panel lateral" onClick={() => { setModalOpen(false); setOpen(true); }}><PanelRight /></AuiIconButton>}
+          />
+        ) : null}
+      </Box>
+    </SincoHost>
   );
 }

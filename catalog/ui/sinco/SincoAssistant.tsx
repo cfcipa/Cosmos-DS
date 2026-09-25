@@ -3,18 +3,15 @@
 // pantalla y el panel, la píldora y la vista previa. La usan los tableros Sinco del catálogo y el playground.
 import * as React from 'react';
 import { unstable_useMentionAdapter, unstable_useSlashCommandAdapter, useAui, type SuggestionAdapter } from '@assistant-ui/react';
-import Box from '@mui/material/Box';
 import { FileText, Filter, Landmark, Sparkles, User, Users, Wrench } from 'lucide-react';
 import {
-  AuiAssistantLayout, AuiAssistantPanel, AuiAssistantProvider, AuiComposerPill, AuiComposerTriggerPopover, AuiResponsePreview, AuiSelectionContextProvider,
+  AuiAssistantLayout, AuiAssistantPanel, AuiAssistantProvider, AuiComposerPill, AuiComposerTriggerPopover, AuiResponsePreview,
   AuiStarterSuggestions, useAuiAssistant, type AuiAssistantPanelProps, type AuiAssistantSurface, type AuiResponsePreviewProps, type AuiStarter,
 } from '../../../src/ai/aui';
-import { AuiDemoRuntime, type DemoThread } from '../AuiDemoRuntime';
-import { ObligacionesPage, SincoAppBar } from './ObligacionesPage';
-import {
-  AGENTS, DICTATED, SINCO_THREADS, STARTERS, makeObligacionesFollowups, makeObligacionesModel, nObl, obligacionesSelection, useObligaciones,
-  type Estado, type ObligacionesState,
-} from './obligaciones';
+import type { DemoThread } from '../AuiDemoRuntime';
+import { ObligacionesPage } from './ObligacionesPage';
+import { SincoHost, useSincoHost } from './SincoHost';
+import { AGENTS, SINCO_THREADS, STARTERS, nObl, type Estado } from './obligaciones';
 
 /** Lo que el hilo del panel lleva además de lo de siempre. */
 export type SincoThreadOptions = Pick<AuiAssistantPanelProps, 'quotes' | 'messageTiming' | 'conversationMap' | 'modelContextWindow' | 'modelSelector'> & {
@@ -109,16 +106,10 @@ function Template({
   surface, defaultSurface = 'closed', onSurfaceChange, threads = SINCO_PREVIOUS_THREADS, startIn, filter, selected, starters = STARTERS, agents = true, disclaimer = true,
   pill = true, preview = true, selection = true, askAi = true, followups = true, thread = {}, controlsRef,
 }: Omit<SincoAssistantProps, 'resetKey'>) {
-  const host = useObligaciones({ filter, selected });
-  const bridge = React.useRef<ObligacionesState | null>(null);
-  bridge.current = host;
-  const model = React.useMemo(() => makeObligacionesModel(bridge), []);
+  const { host, model, followups: inner } = useSincoHost({ filter, selected });
   const followupsOn = React.useRef(followups);
   followupsOn.current = followups;
-  const suggestions = React.useMemo<SuggestionAdapter>(() => {
-    const inner = makeObligacionesFollowups(bridge);
-    return { generate: (opts) => (followupsOn.current ? inner.generate(opts) : Promise.resolve([])) };
-  }, []);
+  const suggestions = React.useMemo<SuggestionAdapter>(() => ({ generate: (opts) => (followupsOn.current ? inner.generate(opts) : Promise.resolve([])) }), [inner]);
   const { mentions, ...threadProps } = thread;
   const panel = (
     <AuiAssistantPanel
@@ -137,20 +128,25 @@ function Template({
     </>
   ) : undefined;
   return (
-    <AuiDemoRuntime model={model} suggestions={suggestions} threads={threads} startIn={startIn} dictation={DICTATED}>
-      <AuiAssistantProvider surface={surface} defaultSurface={defaultSurface} onSurfaceChange={onSurfaceChange}>
-        <AuiSelectionContextProvider selection={selection ? obligacionesSelection(host) : null}>
+    <SincoHost
+      host={host}
+      model={model}
+      followups={suggestions}
+      threads={threads}
+      startIn={startIn}
+      selection={selection}
+      welcomeSuggestions={null}
+      providers={(children) => (
+        <AuiAssistantProvider surface={surface} defaultSurface={defaultSurface} onSurfaceChange={onSurfaceChange}>
           {controlsRef ? <Controls controlsRef={controlsRef} /> : null}
-          {/* El ancho del contenedor (no el de la ventana) decide la versión angosta del AppBar. */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', containerType: 'inline-size', bgcolor: 'background.default', color: 'text.primary' }}>
-            <SincoAppBar />
-            <AuiAssistantLayout panel={panel} dock={dock} sx={{ flex: 1 }}>
-              <ObligacionesPage state={host} askAi={askAi} />
-            </AuiAssistantLayout>
-          </Box>
-        </AuiSelectionContextProvider>
-      </AuiAssistantProvider>
-    </AuiDemoRuntime>
+          {children}
+        </AuiAssistantProvider>
+      )}
+    >
+      <AuiAssistantLayout panel={panel} dock={dock} sx={{ flex: 1 }}>
+        <ObligacionesPage state={host} askAi={askAi} />
+      </AuiAssistantLayout>
+    </SincoHost>
   );
 }
 
