@@ -11,8 +11,10 @@ export interface AuiAssistantSidebarProps {
   children: React.ReactNode;
   /** Tamaño inicial del panel de la aplicación, en %. Default 50. */
   defaultSize?: number;
-  /** Mínimo de cada panel, en %. Default 20. */
+  /** Mínimo del panel de la aplicación, en %. Default 20. */
   minSize?: number;
+  /** Máximo del panel de la aplicación, en %. Default 100 − minSize. */
+  maxSize?: number;
   /** Muestra el agarre sobre el separador. Default false. */
   withHandle?: boolean;
 }
@@ -22,11 +24,11 @@ const BIG_STEP = 10;
 /** El agarre del separador: 12 × 16. */
 const GRIP = { w: 1.5, h: 2 };
 
-export function AuiAssistantSidebar({ children, defaultSize = 50, minSize = 20, withHandle = false }: AuiAssistantSidebarProps) {
+export function AuiAssistantSidebar({ children, defaultSize = 50, minSize = 20, maxSize = 100 - minSize, withHandle = false }: AuiAssistantSidebarProps) {
   const [size, setSize] = React.useState(defaultSize);
   const rootRef = React.useRef<HTMLDivElement>(null);
   const dragging = React.useRef<number | null>(null);
-  const clamp = React.useCallback((v: number) => Math.min(100 - minSize, Math.max(minSize, v)), [minSize]);
+  const clamp = React.useCallback((v: number) => Math.min(maxSize, Math.max(minSize, v)), [minSize, maxSize]);
   React.useEffect(() => { setSize((s) => clamp(s)); }, [clamp]);
 
   const fromPointer = (clientX: number) => {
@@ -44,13 +46,13 @@ export function AuiAssistantSidebar({ children, defaultSize = 50, minSize = 20, 
         aria-label="Redimensionar paneles"
         aria-valuenow={Math.round(size)}
         aria-valuemin={minSize}
-        aria-valuemax={100 - minSize}
+        aria-valuemax={maxSize}
         onPointerDown={(e) => { if (e.button !== 0) return; dragging.current = e.pointerId; e.currentTarget.setPointerCapture(e.pointerId); e.preventDefault(); }}
         onPointerMove={(e) => { if (dragging.current === e.pointerId) fromPointer(e.clientX); }}
         onPointerUp={(e) => { if (dragging.current === e.pointerId) dragging.current = null; }}
         onKeyDown={(e) => {
           const step = e.shiftKey ? BIG_STEP : STEP;
-          const next = ({ ArrowLeft: size - step, ArrowRight: size + step, Home: minSize, End: 100 - minSize } as Record<string, number>)[e.key];
+          const next = ({ ArrowLeft: size - step, ArrowRight: size + step, Home: minSize, End: maxSize } as Record<string, number>)[e.key];
           if (next === undefined) return;
           e.preventDefault();
           setSize(clamp(next));

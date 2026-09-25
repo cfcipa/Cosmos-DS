@@ -251,6 +251,8 @@ export interface AuiDemoRuntimeProps {
   model?: ChatModelAdapter;
   /** Seguimientos propios (debe ser estable). */
   suggestions?: SuggestionAdapter;
+  /** Las sugerencias del chat vacío (título, resto y prompt). Default: las de los tableros. */
+  welcomeSuggestions?: readonly { title: string; label: string; prompt: string }[];
   /** Dictado simulado: escucha 2,2 s y escribe este texto. */
   dictation?: string;
 }
@@ -335,7 +337,7 @@ export function AuiDemoRuntime(props: AuiDemoRuntimeProps) {
 /** Calificar respuestas en la demo: la calificación queda marcada, no se envía a ninguna parte. */
 const DEMO_FEEDBACK: FeedbackAdapter = { submit: () => undefined };
 
-function DemoRuntime({ children, seed = false, voice = false, reasoning = false, mcp = false, threads, startIn, slowUploads = false, script = 'answer', failTools = false, followups = 'default', answer, model: customModel, suggestions, dictation }: AuiDemoRuntimeProps) {
+function DemoRuntime({ children, seed = false, voice = false, reasoning = false, mcp = false, threads, startIn, slowUploads = false, script = 'answer', failTools = false, followups = 'default', answer, model: customModel, suggestions, dictation, welcomeSuggestions = DEMO_SUGGESTIONS }: AuiDemoRuntimeProps) {
   const list = React.useMemo(() => makeThreadList([...(seed ? SEED_THREADS : []), ...(threads ?? [])]), [seed, threads]);
   const uploads = React.useMemo(() => (slowUploads ? slowAttachments(DEMO_ATTACHMENTS) : DEMO_ATTACHMENTS), [slowUploads]);
   const demoModel = React.useMemo(() => makeModel(reasoning, script, failTools, answer), [reasoning, script, failTools, answer]);
@@ -356,6 +358,6 @@ function DemoRuntime({ children, seed = false, voice = false, reasoning = false,
     },
     adapter,
   });
-  const config = React.useMemo(() => AuiConfig({ suggestions: Suggestions(DEMO_SUGGESTIONS), ...(mcp ? { mcp: demoMcpManager() } : {}) }), [mcp]);
+  const config = React.useMemo(() => AuiConfig({ suggestions: Suggestions([...welcomeSuggestions]), ...(mcp ? { mcp: demoMcpManager() } : {}) }), [mcp, welcomeSuggestions]);
   return <AssistantRuntimeProvider runtime={runtime} config={config}>{startIn ? <StartIn id={startIn} /> : null}{children}</AssistantRuntimeProvider>;
 }

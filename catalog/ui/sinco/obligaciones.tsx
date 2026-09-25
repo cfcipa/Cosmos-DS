@@ -233,6 +233,13 @@ export function makeObligacionesFollowups(bridge: ObligacionesBridge): Suggestio
 
 const STARTER_ICON = 20;
 /** Los inicios del tablero «Starter suggestions». */
+/** Las mismas preguntas como sugerencias del chat vacío del hilo (título y resto). */
+export const WELCOME_SUGGESTIONS = [
+  { title: '¿Qué documentos soporte', label: 'vencen pronto?', prompt: '¿Qué documentos soporte vencen pronto? Revisa las obligaciones pendientes y filtra la tabla.' },
+  { title: 'Resume', label: 'las obligaciones pendientes', prompt: 'Resume las obligaciones pendientes de Compras: cuántas son, por cuánto y cuál vence primero.' },
+  { title: 'Confirma', label: 'las seleccionadas', prompt: 'Confirma las seleccionadas' },
+] as const;
+
 export const STARTERS: readonly AuiStarter[] = [
   { title: 'Filtrar soportes por vencer', prompt: '¿Qué documentos soporte vencen pronto? Revisa las obligaciones pendientes y filtra la tabla.', icon: <Filter size={STARTER_ICON} />, color: 'warning' },
   { title: 'Resumir las pendientes', prompt: 'Resume las obligaciones pendientes de Compras: cuántas son, por cuánto y cuál vence primero.', icon: <Receipt size={STARTER_ICON} />, color: 'primary' },

@@ -80,6 +80,7 @@ import { AuiAskAiActionCard, AuiAskAiActionDoc } from './elements/AuiAskAiAction
 import { AuiInlinePromptCard, AuiInlinePromptDoc } from './elements/AuiInlinePrompt';
 import { TplComposerCard, TplComposerDoc } from './elements/TplComposer';
 import { TplChatPanelCard, TplChatPanelDoc } from './elements/TplChatPanel';
+import { TplSidebarCard, TplSidebarDoc } from './elements/TplSidebar';
 import { AuiResponsePreviewCard, AuiResponsePreviewDoc } from './elements/AuiResponsePreview';
 import { AuiOrbDoc, AuiOrbCard } from './elements/AuiOrb';
 
@@ -209,6 +210,7 @@ export const SECTIONS: Section[] = [
     id: 'templates', title: 'Templates', elements: [
       { slug: 'tpl-composer', title: 'Obligaciones · Composer flotante', description: 'La pantalla con la píldora del asistente: se abre en el panel, la selección viaja como contexto y la respuesta asoma sobre la píldora.', Card: TplComposerCard, Doc: TplComposerDoc },
       { slug: 'tpl-chat-panel', title: 'Obligaciones con chat panel', description: 'El detalle de una obligación en un cajón, con un chat panel que responde solo sobre ese registro.', Card: TplChatPanelCard, Doc: TplChatPanelDoc },
+      { slug: 'tpl-sidebar', title: 'Obligaciones con asistente lateral', description: 'La pantalla y el hilo lado a lado, en paneles que se redimensionan; el AppBar abre y cierra el asistente.', Card: TplSidebarCard, Doc: TplSidebarDoc },
     ],
   },
 ];

@@ -62,7 +62,7 @@ const ROWS_PER_PAGE = [10, 25, 50];
 const NARROW = '@container (max-width: 599px)';
 
 /** El AppBar de la aplicación: el módulo, la organización y la empresa. */
-export function SincoAppBar({ module = 'Obligaciones por pagar', compact = false }: { module?: string; compact?: boolean }) {
+export function SincoAppBar({ module = 'Obligaciones por pagar', compact = false, actions }: { module?: string; compact?: boolean; /** Acciones antes de la empresa (p. ej. abrir el asistente). */ actions?: React.ReactNode }) {
   return (
     <Stack
       component="header"
@@ -78,6 +78,7 @@ export function SincoAppBar({ module = 'Obligaciones por pagar', compact = false
       </Stack>
       {compact ? null : <Button size="small" endIcon={<ChevronDown size={ICON} />} aria-haspopup="menu" sx={{ textTransform: 'none', flexShrink: 0, [NARROW]: { display: 'none' } }}>Administración</Button>}
       <Box sx={{ flex: 1 }} />
+      {actions}
       {compact ? null : <Typography variant="body2" color="text.secondary" noWrap sx={{ [NARROW]: { display: 'none' } }}>Empresa de insumos S.A.S</Typography>}
       <Avatar sx={(t) => ({ width: t.spacing(AVATAR), height: t.spacing(AVATAR), flexShrink: 0 })} alt="" />
     </Stack>

@@ -226,7 +226,7 @@ function ThreadWelcome() {
 
 /** Una sugerencia del runtime como ficha del «Empty state»: al tocarla llena el composer con su prompt. */
 function WelcomeSuggestion() {
-  const label = useAuiState((s) => s.suggestion.title || s.suggestion.prompt);
+  const label = useAuiState((s) => `${s.suggestion.title} ${s.suggestion.label}`.trim() || s.suggestion.prompt);
   const index = useAuiState((s) => s.suggestions.suggestions.findIndex((x) => x.prompt === s.suggestion.prompt && x.title === s.suggestion.title));
   return (
     <SuggestionPrimitive.Trigger asChild>
