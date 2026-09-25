@@ -41,6 +41,37 @@ const HEIGHT = 256;
 const FADE = 3;
 const ARROW = 12;
 
+/** «N mensajes nuevos», en palabras; sin cuenta, «Ir al final». */
+export function scrollAnchorLabel(unseen: number) {
+  if (unseen <= 0) return 'Ir al final';
+  return `${unseen} ${unseen === 1 ? 'mensaje nuevo' : 'mensajes nuevos'}`;
+}
+
+export interface ScrollAnchorButtonProps extends Omit<React.ComponentProps<typeof Button>, 'variant' | 'color' | 'children'> {
+  /** Mensajes que llegaron sin verse. */
+  unseen: number;
+}
+
+/** El botón que ofrece el camino de vuelta (Button outlined, sobre el papel). */
+export const ScrollAnchorButton = React.forwardRef<HTMLButtonElement, ScrollAnchorButtonProps>(function ScrollAnchorButton({ unseen, sx, ...props }, ref) {
+  return (
+    <Button
+      ref={ref}
+      variant="outlined"
+      color="inherit"
+      data-slot="scroll-anchor-button"
+      startIcon={<Box component="span" sx={{ display: 'flex', color: 'text.secondary' }}><ArrowDown size={ARROW} /></Box>}
+      {...props}
+      sx={[
+        (t) => ({ pointerEvents: 'auto', ...t.typography.body3, borderColor: 'divider', bgcolor: 'background.paper', px: 1.75, '&:hover': { bgcolor: 'background.paper', borderColor: 'divider', transform: 'translateY(-1px)' }, transition: t.transitions.create('transform', { duration: t.transitions.duration.shorter }) }),
+        ...(Array.isArray(sx) ? sx : [sx]),
+      ]}
+    >
+      {scrollAnchorLabel(unseen)}
+    </Button>
+  );
+});
+
 export function ScrollAnchor({ messages, paused = false, onSettled, className, sx }: ScrollAnchorProps) {
   const theme = useTheme();
   const bottomThreshold = parseFloat(theme.spacing(3));
@@ -144,15 +175,7 @@ export function ScrollAnchor({ messages, paused = false, onSettled, className, s
       <Box aria-hidden="true" sx={(t) => ({ position: 'absolute', left: 0, right: 0, top: 0, height: t.spacing(FADE), pointerEvents: 'none', background: `linear-gradient(${t.palette.background.paper}, transparent)` })} />
       <Fade in={!pinned && unseen > 0} unmountOnExit>
         <Box sx={{ position: 'absolute', left: 0, right: 0, bottom: (t) => t.spacing(1.5), display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
-          <Button
-            variant="outlined"
-            color="inherit"
-            startIcon={<Box component="span" sx={{ display: 'flex', color: 'text.secondary' }}><ArrowDown size={ARROW} /></Box>}
-            onClick={jump}
-            sx={(t) => ({ pointerEvents: 'auto', ...t.typography.body3, borderColor: 'divider', bgcolor: 'background.paper', px: 1.75, '&:hover': { bgcolor: 'background.paper', borderColor: 'divider', transform: 'translateY(-1px)' }, transition: t.transitions.create('transform', { duration: t.transitions.duration.shorter }) })}
-          >
-            {`${unseen} ${unseen === 1 ? 'mensaje nuevo' : 'mensajes nuevos'}`}
-          </Button>
+          <ScrollAnchorButton unseen={unseen} onClick={jump} />
         </Box>
       </Fade>
     </Paper>

@@ -28,25 +28,28 @@ import {
 } from '@assistant-ui/react';
 import {
   useActionBarCopy, useActionBarFeedbackNegative, useActionBarFeedbackPositive, useActionBarReload,
-  useBranchPickerNext, useBranchPickerPrevious, useEditComposerCancel, useEditComposerSend, useMessageError,
+  useBranchPickerNext, useBranchPickerPrevious, useComposerCancel, useComposerSend, useEditComposerCancel, useEditComposerSend, useMessageError,
 } from '@assistant-ui/core/react';
 import Box from '@mui/material/Box';
+import type { InputBaseComponentProps } from '@mui/material/InputBase';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
-import Paper from '@mui/material/Paper';
 import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { visuallyHidden } from '@mui/utils';
 import { keyframes, styled } from '@mui/material/styles';
-import { ArrowDown, ArrowUp, Download, Mic, Pencil, Square } from 'lucide-react';
+import { Download, Mic, Pencil, Square } from 'lucide-react';
 import { REDUCED_MOTION } from '../lib/shimmerText';
 import { riseSx } from '../lib/thread';
+import { Composer as KitComposer } from '../composer';
 import { EditMessage } from '../edit-message';
+import { EmptyStateGreeting, EmptyStateSuggestion, EmptyStateSuggestions } from '../empty-state';
 import { ErrorState } from '../error-state';
 import { MessageActions } from '../message-actions';
 import { MessageBranchesStepper } from '../message-branches';
+import { ScrollAnchorButton } from '../scroll-anchor';
 import { STOPPED_RUN_REASONS, StoppedRunActions } from '../stopped-run';
 import { ThinkingIndicator, useThinkingElapsed } from '../thinking-indicator';
 import { AuiIconButton } from './AuiIconButton';
@@ -65,7 +68,7 @@ import { AuiImage } from './Image';
 import { AuiFile } from './File';
 import { AuiModelSelector, type AuiModelSelectorProps } from './ModelSelector';
 import { createAuiDirectiveText, type AuiDirectiveTextOptions } from './DirectiveText';
-import { AuiSelectionContextChip, AuiSelectionContextMessageChip } from './SelectionContext';
+import { AuiSelectionContextChip, AuiSelectionContextMessageChip, useAuiSelectionContext } from './SelectionContext';
 
 export type AuiThreadTiming = { design?: 'badge' | 'footer'; side?: 'top' | 'right' | 'bottom' | 'left' };
 
@@ -218,134 +221,109 @@ function HistorySkeleton() {
 
 function ThreadWelcome() {
   const { welcome } = React.useContext(LabelsContext);
+  return <Box sx={{ mb: 3, px: 1 }}><EmptyStateGreeting sx={{ textAlign: 'start' }}>{welcome}</EmptyStateGreeting></Box>;
+}
+
+/** Una sugerencia del runtime como ficha del «Empty state»: al tocarla llena el composer con su prompt. */
+function WelcomeSuggestion() {
+  const label = useAuiState((s) => s.suggestion.title || s.suggestion.prompt);
+  const index = useAuiState((s) => s.suggestions.suggestions.findIndex((x) => x.prompt === s.suggestion.prompt && x.title === s.suggestion.title));
   return (
-    <Box sx={{ mb: 3, px: 1 }}>
-      <Typography variant="h4" component="p" sx={(t) => ({ m: 0, ...riseSx(t) })}>{welcome}</Typography>
+    <SuggestionPrimitive.Trigger asChild>
+      <EmptyStateSuggestion label={label} index={index} />
+    </SuggestionPrimitive.Trigger>
+  );
+}
+
+function WelcomeSuggestions() {
+  return (
+    <EmptyStateSuggestions sx={{ justifyContent: 'flex-start', px: 1 }}>
+      <ThreadPrimitive.Suggestions>{() => <WelcomeSuggestion />}</ThreadPrimitive.Suggestions>
+    </EmptyStateSuggestions>
+  );
+}
+
+/** El botón del «Scroll anchor»: cuenta los mensajes que llegan mientras la vista no está abajo. */
+const ScrollAnchorTrigger = React.forwardRef<HTMLButtonElement, React.ComponentProps<typeof ScrollAnchorButton>>(function ScrollAnchorTrigger({ disabled, unseen: _unseen, ...props }, ref) {
+  const count = useAuiState((s) => s.thread.messages.length);
+  const seen = React.useRef(count);
+  if (disabled) seen.current = count;
+  return <ScrollAnchorButton ref={ref} unseen={count - seen.current} {...props} sx={{ visibility: disabled ? 'hidden' : 'visible' }} />;
+});
+
+function ScrollToBottom() {
+  return (
+    <Box sx={(t) => ({ position: 'absolute', top: t.spacing(-6), left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 1, pointerEvents: 'none' })}>
+      <ThreadPrimitive.ScrollToBottom asChild>
+        <ScrollAnchorTrigger unseen={0} />
+      </ThreadPrimitive.ScrollToBottom>
     </Box>
   );
 }
 
-const SuggestionButton = styled('button')(({ theme: t }) => ({
-  ...t.typography.body2,
-  display: 'flex', alignItems: 'baseline', gap: t.spacing(1.25), width: '100%', padding: t.spacing(1), border: 0,
-  borderRadius: t.shape.borderRadius, background: 'transparent', color: t.palette.text.primary, textAlign: 'start', cursor: 'pointer',
-  transition: t.transitions.create('background-color', { duration: t.transitions.duration.shortest }),
-  '&:hover': { backgroundColor: t.palette.action.hover },
-  '&:hover [data-slot="aui-suggestion-caret"]': { color: t.palette.text.primary },
-  '&:focus-visible': { outline: `2px solid ${t.palette.ai.focusRing}` },
-  [REDUCED_MOTION]: { transition: 'none' },
-}));
+/** `ComposerPrimitive.Input` como textarea del OutlinedInput: el marco no controla el valor (es del runtime), así que su
+ * `value` vacío no lo pisa. */
+const ConnectedInput = React.forwardRef<HTMLTextAreaElement, InputBaseComponentProps>(function ConnectedInput({ value: _value, defaultValue: _default, ...props }, ref) {
+  return <ComposerPrimitive.Input ref={ref} {...(props as React.ComponentProps<typeof ComposerPrimitive.Input>)} />;
+});
 
-function WelcomeSuggestions() {
-  return (
-    <Stack sx={{ width: '100%' }}>
-      <ThreadPrimitive.Suggestions>
-        {() => (
-          <Box sx={(t) => riseSx(t)}>
-            <SuggestionPrimitive.Trigger send asChild>
-              <SuggestionButton type="button">
-                <Box component="span" aria-hidden="true" data-slot="aui-suggestion-caret" sx={(t) => ({ ...t.aiKit.code, fontSize: t.typography.body3.fontSize, color: 'text.disabled' })}>{'>'}</Box>
-                <Box component="span" sx={{ minWidth: 0, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  <SuggestionPrimitive.Title />{' '}
-                  <Box component={SuggestionPrimitive.Description} sx={{ color: 'text.secondary', '&:empty': { display: 'none' } }} />
-                </Box>
-              </SuggestionButton>
-            </SuggestionPrimitive.Trigger>
-          </Box>
-        )}
-      </ThreadPrimitive.Suggestions>
-    </Stack>
-  );
-}
-
-function ScrollToBottom() {
-  return (
-    <ThreadPrimitive.ScrollToBottom asChild>
-      <AuiIconButton
-        tooltip="Ir al final"
-        size={4.5}
-        sx={(t) => ({ position: 'absolute', top: t.spacing(-6), alignSelf: 'center', zIndex: 1, border: 1, borderColor: 'divider', bgcolor: 'background.paper', boxShadow: t.shadows[1], '&:hover': { bgcolor: 'background.paper' }, '&.Mui-disabled': { visibility: 'hidden' } })}
-      >
-        <ArrowDown />
-      </AuiIconButton>
-    </ThreadPrimitive.ScrollToBottom>
-  );
-}
-
-/** El marco del composer: el mismo borde del Composer del kit, con el foco en primary. */
-const ComposerShell = styled(Paper)(({ theme: t }) => ({
-  display: 'flex', flexDirection: 'column', gap: t.spacing(1), width: '100%', boxSizing: 'border-box', padding: t.spacing(1),
-  cursor: 'text', transition: t.transitions.create('border-color', { duration: t.transitions.duration.shortest }),
-  '&:focus-within': { borderColor: t.palette.primary.main, boxShadow: `0 0 0 1px ${t.palette.primary.main}` },
-  '&[data-dragging="true"]': { borderStyle: 'dashed', borderColor: t.palette.primary.main, backgroundColor: t.palette.action.hover },
-}));
-
-const ComposerInput = styled(ComposerPrimitive.Input)(({ theme: t }) => ({
-  ...t.typography.body1,
-  width: '100%', minHeight: t.spacing(5), maxHeight: t.spacing(24), boxSizing: 'border-box', resize: 'none', border: 0, outline: 'none',
-  padding: t.spacing(0.5, 1.25), background: 'transparent', color: t.palette.text.primary, caretColor: t.palette.primary.main,
-  '&::placeholder': { color: t.palette.text.secondary, opacity: 1 },
-  // El anticipo se ve en una línea (`maxRows`): si el composer creciera con él, lo de encima se movería bajo el puntero.
-  '&[data-preview="true"]': { whiteSpace: 'nowrap', overflow: 'hidden' },
-  '&[data-preview="true"]::placeholder': { color: t.palette.text.disabled, textOverflow: 'ellipsis' },
-}));
-
-const roundFilled = {
-  bgcolor: 'primary.main',
-  color: 'primary.contrastText',
-  '&:hover': { bgcolor: 'primary.dark' },
-  '&.Mui-disabled': { bgcolor: 'action.disabledBackground', color: 'action.disabled' },
-} as const;
-
+/** El composer del kit sobre las primitivas: el textarea es `ComposerPrimitive.Input` (texto, Enter, IME, foco y dictado
+ * son del runtime), enviar y detener llaman al runtime, y soltar archivos los adjunta. */
 function Composer({ autoFocus }: { autoFocus: boolean }) {
   const { placeholder, modelContextWindow, triggers, modelSelector } = React.useContext(LabelsContext);
   const { preview } = React.useContext(PlaceholderPreviewContext);
-  const isSending = useAuiState((s) => s.composer.submission !== undefined && !(s.thread.isRunning && s.thread.capabilities.cancel));
+  const aui = useAui();
+  const { send, disabled: sendDisabled } = useComposerSend();
+  const { cancel } = useComposerCancel();
+  const running = useAuiState((s) => s.composer.canCancel && (s.thread.voice === undefined || s.composer.submission !== undefined));
+  const disabled = useAuiState((s) => s.thread.isDisabled);
+  const hasAdornments = useAuiState((s) => s.composer.attachments.length > 0 || s.composer.quote !== undefined);
+  const selection = useAuiSelectionContext();
+  const canDictate = useAuiState((s) => s.thread.capabilities.dictation);
+  const dictating = useAuiState((s) => s.composer.dictation != null);
+  const inputProps = React.useMemo(() => ({ autoFocus, enterKeyHint: 'send' as const, 'data-preview': preview !== null }), [autoFocus, preview]);
   return (
     <ComposerPrimitive.Unstable_TriggerPopoverRoot>
-      <Box component={ComposerPrimitive.Root} sx={{ position: 'relative', display: 'flex', flexDirection: 'column', width: '100%' }} data-slot="aui-composer">
+      <Box sx={{ position: 'relative', display: 'flex', flexDirection: 'column', width: '100%' }} data-slot="aui-composer">
         {triggers}
-        <ComposerPrimitive.AttachmentDropzone asChild>
-          <ComposerShell variant="outlined">
-            <AuiSelectionContextChip />
-            <AuiComposerAttachments />
-            <AuiComposerQuotePreview />
-            <ComposerInput placeholder={preview ?? placeholder} data-preview={preview !== null} maxRows={preview !== null ? 1 : undefined} rows={1} autoFocus={autoFocus} enterKeyHint="send" aria-label="Mensaje" />
-            <Stack direction="row" alignItems="center" justifyContent="space-between">
-              <Stack direction="row" alignItems="center" spacing={0.75}>
-                <AuiComposerAddAttachment />
-                {modelSelector ? <AuiModelSelector size="sm" variant="ghost" {...modelSelector} /> : null}
-              </Stack>
-              <Stack direction="row" alignItems="center" spacing={0.75}>
-                {modelContextWindow ? <AuiContextDisplayRing modelContextWindow={modelContextWindow} /> : null}
-                <AuiIf condition={(s) => s.thread.capabilities.dictation}>
-                  <AuiIf condition={(s) => s.composer.dictation == null}>
-                    <ComposerPrimitive.Dictate asChild>
-                      <AuiIconButton tooltip="Dictar" size={SEND}><Mic /></AuiIconButton>
-                    </ComposerPrimitive.Dictate>
-                  </AuiIf>
-                  <AuiIf condition={(s) => s.composer.dictation != null}>
-                    <ComposerPrimitive.StopDictation asChild>
-                      <AuiIconButton tooltip="Detener el dictado" size={SEND} sx={{ color: 'error.main' }}>
-                        <Box component="span" sx={{ display: 'flex', animation: `${pulse} 1.2s infinite`, [REDUCED_MOTION]: { animation: 'none' } }}><Square size={STOP_SIZE} fill="currentColor" /></Box>
-                      </AuiIconButton>
-                    </ComposerPrimitive.StopDictation>
-                  </AuiIf>
-                </AuiIf>
-                <AuiIf condition={(s) => !s.composer.canCancel || (s.thread.voice !== undefined && s.composer.submission === undefined)}>
-                  <ComposerPrimitive.Send asChild>
-                    <AuiIconButton tooltip="Enviar mensaje" size={SEND} sx={{ ...roundFilled, '& svg': { width: ICON_SIZE, height: ICON_SIZE } }}><ArrowUp /></AuiIconButton>
-                  </ComposerPrimitive.Send>
-                </AuiIf>
-                <AuiIf condition={(s) => s.composer.canCancel && (s.thread.voice === undefined || s.composer.submission !== undefined)}>
-                  <ComposerPrimitive.Cancel asChild>
-                    <AuiIconButton tooltip={isSending ? 'Cancelar el envío' : 'Detener la respuesta'} size={SEND} sx={{ ...roundFilled, '& svg': { width: STOP_SIZE, height: STOP_SIZE } }}><Square fill="currentColor" /></AuiIconButton>
-                  </ComposerPrimitive.Cancel>
-                </AuiIf>
-              </Stack>
-            </Stack>
-          </ComposerShell>
-        </ComposerPrimitive.AttachmentDropzone>
+        <KitComposer
+          inputComponent={ConnectedInput}
+          inputProps={inputProps}
+          submitMode="none"
+          placeholder={preview ?? placeholder}
+          previewing={preview !== null}
+          minRows={1}
+          onSubmit={send}
+          canSubmit={!sendDisabled}
+          running={running}
+          onCancel={cancel}
+          disabled={disabled}
+          onFilesDrop={(files) => files.forEach((file) => { void aui.composer().addAttachment(file); })}
+          attachments={hasAdornments || selection?.active ? <><AuiSelectionContextChip /><AuiComposerAttachments /><AuiComposerQuotePreview /></> : undefined}
+          toolbarStart={
+            <>
+              <AuiComposerAddAttachment />
+              {modelSelector ? <AuiModelSelector size="sm" variant="ghost" {...modelSelector} /> : null}
+            </>
+          }
+          toolbarEnd={
+            <>
+              {modelContextWindow ? <AuiContextDisplayRing modelContextWindow={modelContextWindow} /> : null}
+              {canDictate && !dictating ? (
+                <ComposerPrimitive.Dictate asChild>
+                  <AuiIconButton tooltip="Dictar" size={SEND}><Mic /></AuiIconButton>
+                </ComposerPrimitive.Dictate>
+              ) : null}
+              {canDictate && dictating ? (
+                <ComposerPrimitive.StopDictation asChild>
+                  <AuiIconButton tooltip="Detener el dictado" size={SEND} sx={{ color: 'error.main' }}>
+                    <Box component="span" sx={{ display: 'flex', animation: `${pulse} 1.2s infinite`, [REDUCED_MOTION]: { animation: 'none' } }}><Square size={STOP_SIZE} fill="currentColor" /></Box>
+                  </AuiIconButton>
+                </ComposerPrimitive.StopDictation>
+              ) : null}
+            </>
+          }
+        />
       </Box>
     </ComposerPrimitive.Unstable_TriggerPopoverRoot>
   );

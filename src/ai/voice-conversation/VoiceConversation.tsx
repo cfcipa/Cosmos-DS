@@ -1,7 +1,7 @@
 // Cosmos DS · Kit IA · Voice: Voice conversation.
 // Tablero «Voice conversation»: una llamada en vivo; el orbe sigue tu voz, el rótulo nombra el turno y la transcripción lo acompaña.
-// Como en assistant-ui: cuatro modos (conectando, escuchando, pensando, hablando); los anillos del orbe siguen la amplitud
-// mientras escucha o habla; mientras el asistente habla, tocar el orbe lo interrumpe (solo con onInterrupt). El micrófono se
+// Como en assistant-ui: cuatro modos (conectando, escuchando, pensando, hablando); el centro es el «Voice orb» del kit
+// (respira, gira y crece con la voz) y los anillos siguen la amplitud mientras escucha o habla; mientras el asistente habla, tocar el orbe lo interrumpe (solo con onInterrupt). El micrófono se
 // silencia y la llamada se termina desde los dos botones; terminada, se puede volver a llamar.
 import * as React from 'react';
 import Box from '@mui/material/Box';
@@ -15,6 +15,7 @@ import { alpha, keyframes } from '@mui/material/styles';
 import { Mic, MicOff, PhoneOff } from 'lucide-react';
 import { paletteScale } from '../lib/paletteScale';
 import { REDUCED_MOTION, shimmerTextSx } from '../lib/shimmerText';
+import { VoiceOrb, type VoiceOrbState } from '../voice-orb';
 
 export type VoiceMode = 'connecting' | 'listening' | 'thinking' | 'speaking';
 
@@ -45,12 +46,12 @@ const CAPTION: Record<VoiceMode, string> = { connecting: 'Conectando', listening
 /** Medidas del tablero, en la escala de spacing: el orbe y sus capas. */
 const ORB = 15;
 const RING_INSET = 2;
-const CORE_INSET = 4.5;
+/** El orbe del kit cabe en el anillo interior: el tamaño de la caja menos su margen. */
+const CORE_INSET = 2.5;
 const ICON_SIZE = 18;
 /** Ancho de la columna de quién habla en la transcripción. */
 const WHO_WIDTH = 8;
 
-const pulse = keyframes`0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .45; transform: scale(.8); }`;
 const rise = keyframes`from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; }`;
 
 export function VoiceConversation({ mode, amplitude, transcript, muted = false, ended = false, onToggleMute, onInterrupt, onEnd, onRestart, className }: VoiceConversationProps) {
@@ -59,6 +60,7 @@ export function VoiceConversation({ mode, amplitude, transcript, muted = false, 
   const canInterrupt = mode === 'speaking' && !ended && Boolean(onInterrupt);
   const waiting = (mode === 'connecting' || mode === 'thinking') && !ended;
   const caption = ended ? 'Llamada terminada' : muted ? 'Micrófono apagado' : CAPTION[mode];
+  const orbState: VoiceOrbState = ended ? 'idle' : muted ? 'muted' : mode === 'thinking' ? 'connecting' : mode;
   const transcriptRef = React.useRef<HTMLDivElement>(null);
   React.useEffect(() => { const el = transcriptRef.current; if (el) el.scrollTop = el.scrollHeight; }, [transcript]);
 
@@ -90,17 +92,11 @@ export function VoiceConversation({ mode, amplitude, transcript, muted = false, 
       >
         {ring(0, 0.35, 0.12)}
         {ring(RING_INSET, 0.6, 0.22)}
-        <Box
-          component="span"
-          aria-hidden="true"
-          sx={(t) => ({
-            position: 'absolute',
-            inset: t.spacing(CORE_INSET),
-            borderRadius: '50%',
-            bgcolor: ended ? 'text.disabled' : 'primary.main',
-            ...(waiting ? { animation: `${pulse} 1.2s ease-in-out infinite` } : null),
-            [REDUCED_MOTION]: { animation: 'none' },
-          })}
+        <VoiceOrb
+          state={orbState}
+          volume={active ? level : 0}
+          variant={ended ? 'default' : 'primary'}
+          sx={(t) => ({ position: 'absolute', inset: t.spacing(CORE_INSET), width: 'auto', height: 'auto' })}
         />
       </ButtonBase>
 

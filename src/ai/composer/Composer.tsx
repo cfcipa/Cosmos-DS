@@ -4,10 +4,13 @@
 // compone con IME), mientras corre una respuesta el botón de enviar pasa a detener, y sin texto no se puede enviar.
 // El marco es un OutlinedInput multilínea de MUI: el borde, el hover, el foco y el disabled salen del tema; los adjuntos y
 // la barra de herramientas son sus adornos, a lo ancho. Los menús flotan sobre el marco (Popper, sin robar el foco).
+// Conectado a un runtime, el textarea puede ser otro (`inputComponent`, p. ej. ComposerPrimitive.Input de assistant-ui):
+// entonces el runtime es dueño del texto y de Enter (`value` sin definir, `submitMode="none"`).
 import * as React from 'react';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
+import type { InputBaseComponentProps } from '@mui/material/InputBase';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import Popper from '@mui/material/Popper';
 import Stack from '@mui/material/Stack';
@@ -20,8 +23,9 @@ import { REDUCED_MOTION } from '../lib/shimmerText';
 export type ComposerSubmitMode = 'enter' | 'ctrlEnter' | 'none';
 
 export interface ComposerProps {
-  value: string;
-  onValueChange: (value: string) => void;
+  /** Sin definir, el texto es del `inputComponent` (no controlado). */
+  value?: string;
+  onValueChange?: (value: string) => void;
   /** Envía el mensaje. */
   onSubmit?: () => void;
   /** Default 'enter' (Enter envía, Shift+Enter hace salto de línea). */
@@ -60,6 +64,10 @@ export interface ComposerProps {
   /** Atributos del textarea (combobox, aria-activedescendant…). */
   inputProps?: React.TextareaHTMLAttributes<HTMLTextAreaElement> & Record<string, unknown>;
   inputRef?: React.Ref<HTMLTextAreaElement>;
+  /** El textarea, si no es el de MUI (un TextareaAutosize que reciba los mismos atributos). */
+  inputComponent?: React.ElementType<InputBaseComponentProps>;
+  /** El placeholder es un anticipo (una sugerencia al pasar): en una línea y atenuado, para que el marco no crezca. */
+  previewing?: boolean;
   /** Default 'Mensaje'. */
   label?: string;
   className?: string;
@@ -126,6 +134,8 @@ export function Composer({
   onKeyDown,
   inputProps,
   inputRef,
+  inputComponent,
+  previewing = false,
   label = 'Mensaje',
   className,
 }: ComposerProps) {
@@ -133,7 +143,8 @@ export function Composer({
   const [dragging, setDragging] = React.useState(false);
   const placeholders = typeof placeholder === 'string' ? [placeholder] : placeholder ?? [];
   const [phIndex, setPhIndex] = React.useState(0);
-  const isEmpty = value.length === 0;
+  const text = value ?? '';
+  const isEmpty = text.length === 0;
 
   React.useEffect(() => {
     if (placeholders.length < 2 || !isEmpty) return undefined;
@@ -141,9 +152,9 @@ export function Composer({
     return () => window.clearInterval(id);
   }, [placeholders.length, isEmpty, placeholderInterval]);
 
-  const sendable = (canSubmit ?? value.trim().length > 0) && !running && !disabled;
+  const sendable = (canSubmit ?? text.trim().length > 0) && !running && !disabled;
   const submit = () => { if (sendable) onSubmit?.(); };
-  const isCompact = compact && !attachments && !voice && !value.includes('\n') && value.length < COMPACT_MAX_CHARS;
+  const isCompact = compact && !attachments && !voice && !text.includes('\n') && text.length < COMPACT_MAX_CHARS;
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     onKeyDown?.(event);
@@ -179,14 +190,15 @@ export function Composer({
       <OutlinedInput
         fullWidth
         multiline
-        minRows={isCompact ? 1 : minRows}
-        maxRows={maxRows}
+        minRows={isCompact || previewing ? 1 : minRows}
+        maxRows={previewing ? 1 : maxRows}
         value={value}
         disabled={disabled}
         placeholder={placeholders[phIndex] ?? ''}
         inputRef={inputRef}
-        inputProps={{ 'aria-label': label, ...inputProps }}
-        onChange={(event) => onValueChange(event.target.value)}
+        inputComponent={inputComponent}
+        inputProps={{ 'aria-label': label, ...(inputComponent ? { minRows: isCompact || previewing ? 1 : minRows, maxRows: previewing ? 1 : maxRows } : null), ...inputProps }}
+        onChange={(event) => onValueChange?.(event.target.value)}
         onKeyDown={handleKeyDown}
         startAdornment={
           attachments || voice ? (
@@ -220,12 +232,13 @@ export function Composer({
             width: '100%',
             minWidth: 0,
             // En compacto el texto (y el placeholder) va en una sola línea; el alto automático también la mide así.
-            ...(isCompact ? { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } : null),
+            ...(isCompact || previewing ? { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } : null),
             p: 0,
             ...(voice ? { display: 'none' } : null),
             '&::placeholder': {
               opacity: 1,
-              color: 'text.secondary',
+              color: previewing ? 'text.disabled' : 'text.secondary',
+              textOverflow: previewing ? 'ellipsis' : undefined,
               animation: placeholders.length > 1 ? `${phIndex % 2 ? phInA : phInB} 1.2s cubic-bezier(.45, 0, .55, 1) both` : 'none',
             },
             [REDUCED_MOTION]: { '&::placeholder': { animation: 'none' } },
