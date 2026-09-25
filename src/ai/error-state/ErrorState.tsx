@@ -14,8 +14,12 @@ import type { Theme } from '@mui/material/styles';
 import { CircleAlert, RefreshCw } from 'lucide-react';
 import { REDUCED_MOTION, shimmerTextSx } from '../lib/shimmerText';
 
+/** El título del tablero. */
+export const ERROR_STATE_TITLE = 'No se pudo completar la respuesta';
+
 export interface ErrorStateProps {
-  title: string;
+  /** Default 'No se pudo completar la respuesta'. */
+  title?: string;
   detail: string;
   /** Mientras reintenta, el aviso se reemplaza por «Reintentando». */
   retrying: boolean;
@@ -32,7 +36,7 @@ const fadein = keyframes`from { opacity: 0; transform: translateY(2px); } to { o
 const enter = (t: Theme) => ({ animation: `${fadein} ${t.transitions.duration.complex}ms ${t.transitions.easing.easeOut}`, [REDUCED_MOTION]: { animation: 'none' } });
 
 export function ErrorState({
-  title,
+  title = ERROR_STATE_TITLE,
   detail,
   retrying,
   onRetry,
@@ -58,7 +62,7 @@ export function ErrorState({
       icon={<CircleAlert size={18} />}
       className={className}
       data-slot="error-state"
-      action={<Button variant="outlined" color="error" onClick={onRetry}>{retryLabel}</Button>}
+      action={<Button variant="outlined" color="error" onClick={onRetry} sx={{ whiteSpace: 'nowrap' }}>{retryLabel}</Button>}
       sx={enter}
     >
       <AlertTitle>{title}</AlertTitle>

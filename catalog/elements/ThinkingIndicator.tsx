@@ -4,14 +4,13 @@ import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { RotateCcw } from 'lucide-react';
-import { ThinkingIndicator } from '../../src/ai/thinking-indicator';
+import { ThinkingIndicator, formatThinkingElapsed } from '../../src/ai/thinking-indicator';
 import type { ThinkingIndicatorAnimation } from '../../src/ai/thinking-indicator';
 import { ElementPage, PropRow, PropToggle } from '../ui/Playground';
 
 // Secuencia del tablero aprobado «Thinking indicator».
 const SEQ: Array<[number, string | null]> = [[1600, 'Running consultar_anticipos'], [3400, 'Running consultar_vencimientos'], [5000, 'Thinking'], [6400, null]];
 const MANUAL = ['Thinking', 'Running buscar_anticipo', 'Writing response'];
-const fmtT = (ms: number) => { const s = Math.floor(ms / 1000); return s < 60 ? s + 's' : Math.floor(s / 60) + 'm ' + String(s % 60).padStart(2, '0') + 's'; };
 
 function Scene({ animation, label, elapsed, answered }: { animation: ThinkingIndicatorAnimation; label: string; elapsed?: string; answered: boolean }) {
   return (
@@ -53,7 +52,7 @@ export function ThinkingIndicatorDoc() {
     <Box sx={{ maxWidth: 640 }}>
       <ElementPage
         demoHeight={280}
-        demo={<Scene animation={animation} label={label} elapsed={showElapsed ? fmtT(ms) : undefined} answered={answered} />}
+        demo={<Scene animation={animation} label={label} elapsed={showElapsed ? formatThinkingElapsed(ms) : undefined} answered={answered} />}
         properties={
           <>
             <PropRow label="Simulation">
@@ -79,5 +78,5 @@ export function ThinkingIndicatorDoc() {
 export function ThinkingIndicatorCard() {
   const [ms, setMs] = React.useState(0);
   React.useEffect(() => { const t0 = Date.now(); const id = window.setInterval(() => setMs(Date.now() - t0), 1000); return () => clearInterval(id); }, []);
-  return <ThinkingIndicator label="Running consultar_anticipos" elapsed={fmtT(ms)} />;
+  return <ThinkingIndicator label="Running consultar_anticipos" elapsed={formatThinkingElapsed(ms)} />;
 }

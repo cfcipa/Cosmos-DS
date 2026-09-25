@@ -18,6 +18,28 @@ export interface ThinkingIndicatorProps {
   className?: string;
 }
 
+const SECOND_MS = 1000;
+const MINUTE_S = 60;
+
+/** El tiempo del tablero: «12s», «1m 05s». */
+export function formatThinkingElapsed(ms: number) {
+  const s = Math.floor(ms / SECOND_MS);
+  return s < MINUTE_S ? `${s}s` : `${Math.floor(s / MINUTE_S)}m ${String(s % MINUTE_S).padStart(2, '0')}s`;
+}
+
+/** El tiempo transcurrido mientras `active`, ya formateado; cuenta desde que se activa. */
+export function useThinkingElapsed(active: boolean) {
+  const [ms, setMs] = React.useState(0);
+  React.useEffect(() => {
+    if (!active) return undefined;
+    const start = Date.now();
+    setMs(0);
+    const id = window.setInterval(() => setMs(Date.now() - start), SECOND_MS);
+    return () => window.clearInterval(id);
+  }, [active]);
+  return formatThinkingElapsed(ms);
+}
+
 const fadein = keyframes`from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: none; }`;
 const pulse = keyframes`0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .45; transform: scale(.8); }`;
 const exhaust = keyframes`0% { transform: translateX(0) scale(1); opacity: .8; } 100% { transform: translateX(-14px) scale(.35); opacity: 0; }`;

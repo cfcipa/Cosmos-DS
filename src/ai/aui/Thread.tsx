@@ -7,15 +7,15 @@
 // Las respuestas llevan formato (Markdown) y su razonamiento en un visor plegable. Opcionales: el tiempo del mensaje en
 // la barra de acciones (`messageTiming`), el uso del contexto en el composer (`modelContextWindow`) y el mapa de la
 // conversación junto al hilo (`conversationMap`).
+// Lo visual es el del kit: mientras no hay nada que mostrar, el «Loader» (o el «Typing indicator»); el texto llega como
+// «Streaming text»; las acciones son «Message actions», las versiones el stepper de «Message branches», el mensaje del
+// usuario se edita con «Edit message», el error es «Error state» y una respuesta detenida lleva «Stopped run».
 import * as React from 'react';
 import {
-  ActionBarMorePrimitive,
   ActionBarPrimitive,
   AuiIf,
   type AssistantState,
-  BranchPickerPrimitive,
   ComposerPrimitive,
-  ErrorPrimitive,
   groupPartByType,
   MessagePrimitive,
   SuggestionPrimitive,
@@ -23,27 +23,36 @@ import {
   type FileMessagePartComponent,
   type ImageMessagePartComponent,
   type ToolCallMessagePartComponent,
+  useAui,
   useAuiState,
 } from '@assistant-ui/react';
-import Alert from '@mui/material/Alert';
+import {
+  useActionBarCopy, useActionBarEdit, useActionBarFeedbackNegative, useActionBarFeedbackPositive, useActionBarReload,
+  useBranchPickerNext, useBranchPickerPrevious, useEditComposerCancel, useEditComposerSend, useMessageError,
+} from '@assistant-ui/core/react';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
 import Paper from '@mui/material/Paper';
 import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { visuallyHidden } from '@mui/utils';
 import { keyframes, styled } from '@mui/material/styles';
-import {
-  ArrowDown, ArrowUp, Check, ChevronLeft, ChevronRight, Copy, Download, Mic,
-  MoreHorizontal, Pencil, RefreshCw, Square, ThumbsDown, ThumbsUp,
-} from 'lucide-react';
+import { ArrowDown, ArrowUp, Download, Mic, Square } from 'lucide-react';
 import { REDUCED_MOTION } from '../lib/shimmerText';
 import { riseSx } from '../lib/thread';
+import { EditMessage } from '../edit-message';
+import { ErrorState } from '../error-state';
+import { Loader } from '../loader';
+import { MessageActions } from '../message-actions';
+import { MessageBranchesStepper } from '../message-branches';
+import { STOPPED_RUN_REASONS, StoppedRunActions } from '../stopped-run';
+import { TypingIndicator } from '../typing-indicator';
 import { AuiIconButton } from './AuiIconButton';
 import { AuiComposerAddAttachment, AuiComposerAttachments, AuiUserMessageAttachments } from './Attachment';
 import { AuiFollowupSuggestions } from './FollowupSuggestions';
-import { auiMenuContent, auiMenuItem } from './menu';
 import { AuiContextDisplayRing } from './ContextDisplay';
 import { AuiConversationMapRail } from './ConversationMap';
 import { AuiMarkdownText } from './MarkdownText';
@@ -97,7 +106,11 @@ export interface AuiThreadProps {
   empty?: React.ReactNode;
   /** Una línea al comienzo del hilo cuando ya hay mensajes (p. ej. que las respuestas se generan con IA). */
   disclaimer?: string;
+  /** Lo que se ve mientras la respuesta aún no trae nada: el «Loader» de Sinco (default) o el «Typing indicator». */
+  waiting?: AuiThreadWaiting;
 }
+
+export type AuiThreadWaiting = 'loader' | 'typing';
 
 type PlaceholderPreview = { preview: string | null; setPreview: (text: string | null) => void };
 const PlaceholderPreviewContext = React.createContext<PlaceholderPreview>({ preview: null, setPreview: () => undefined });
@@ -113,13 +126,15 @@ const ICON_SIZE = 16;
 const STOP_SIZE = 14;
 /** Espacio que reserva la barra de acciones bajo cada respuesta (min-h-7.5). */
 const ACTION_BAR = 3.75;
+/** Tiempo que «Copiar» muestra la marca (useCopyToClipboard de assistant-ui). */
+const COPIED_MS = 3000;
 /** Con el mapa de la conversación, el hilo deja libre su riel (24px más 12px a cada lado). */
 const MAP_GUTTER = 6;
 
 const pulse = keyframes`0%, 100% { opacity: 1; } 50% { opacity: .35; }`;
 
 const ComponentsContext = React.createContext<AuiThreadComponents>({});
-type ThreadOptions = { welcome: string; placeholder: string; timing?: AuiThreadTiming; modelContextWindow?: number; triggers?: React.ReactNode; directives?: boolean | AuiDirectiveTextOptions; modelSelector?: AuiModelSelectorProps };
+type ThreadOptions = { welcome: string; placeholder: string; timing?: AuiThreadTiming; modelContextWindow?: number; triggers?: React.ReactNode; directives?: boolean | AuiDirectiveTextOptions; modelSelector?: AuiModelSelectorProps; waiting?: AuiThreadWaiting };
 const LabelsContext = React.createContext<ThreadOptions>({ welcome: '¿En qué te ayudo hoy?', placeholder: 'Escribe un mensaje…' });
 
 // Al arrancar, el hilo de carga cuenta como chat nuevo (composer centrado); cambiar a un hilo que aún trae su
@@ -143,7 +158,7 @@ const ViewportFooter = styled(ThreadPrimitive.ViewportFooter)(({ theme: t }) => 
 
 export function AuiThread({
   components = {}, autoFocus = true, welcome = '¿En qué te ayudo hoy?', placeholder = 'Escribe un mensaje…', messageTiming = false, modelContextWindow, conversationMap, quotes = false, followupSend = true, triggers, directives, modelSelector,
-  empty, disclaimer,
+  empty, disclaimer, waiting = 'loader',
 }: AuiThreadProps) {
   const isNew = useAuiState(isNewChatView);
   const hasEmpty = empty !== undefined;
@@ -154,8 +169,8 @@ export function AuiThread({
   const timingDesign = messageTiming === true ? 'badge' : messageTiming ? messageTiming.design ?? 'badge' : undefined;
   const timingSide = typeof messageTiming === 'object' ? messageTiming.side : undefined;
   const labels = React.useMemo(
-    () => ({ welcome, placeholder, timing: timingDesign ? { design: timingDesign, side: timingSide } : undefined, modelContextWindow, triggers, directives, modelSelector }),
-    [welcome, placeholder, timingDesign, timingSide, modelContextWindow, triggers, directives, modelSelector],
+    () => ({ welcome, placeholder, timing: timingDesign ? { design: timingDesign, side: timingSide } : undefined, modelContextWindow, triggers, directives, modelSelector, waiting }),
+    [welcome, placeholder, timingDesign, timingSide, modelContextWindow, triggers, directives, modelSelector, waiting],
   );
   const mapSide = conversationMap === true ? 'left' : conversationMap || undefined;
   const Welcome = components.Welcome ?? ThreadWelcome;
@@ -350,14 +365,27 @@ function ThreadMessage() {
   return <Assistant />;
 }
 
+/** El error de la respuesta, con «Reintentar» (vuelve a generarla). */
 function MessageError() {
-  return (
-    <MessagePrimitive.Error>
-      <ErrorPrimitive.Root>
-        <Alert severity="error" sx={{ mt: 1 }}><ErrorPrimitive.Message /></Alert>
-      </ErrorPrimitive.Root>
-    </MessagePrimitive.Error>
-  );
+  const error = useMessageError();
+  const { reload } = useActionBarReload();
+  if (error === undefined) return null;
+  return <Box sx={{ mt: 1 }}><ErrorState detail={String(error)} retrying={false} onRetry={reload} /></Box>;
+}
+
+/** Una respuesta detenida (por ti o por longitud): el motivo y «Continuar» (vuelve a generarla). */
+function MessageStopped() {
+  const reason = useAuiState((s) => (s.message.status?.type === 'incomplete' ? s.message.status.reason : undefined));
+  const { reload, disabled } = useActionBarReload();
+  const label = reason === 'cancelled' ? STOPPED_RUN_REASONS.user : reason === 'length' ? STOPPED_RUN_REASONS.length : undefined;
+  if (!label) return null;
+  return <Box sx={{ mt: 1.5 }}><StoppedRunActions reason={label} onContinue={disabled ? undefined : reload} /></Box>;
+}
+
+/** Mientras la respuesta aún no trae nada. */
+function WaitingIndicator() {
+  const { waiting } = React.useContext(LabelsContext);
+  return waiting === 'typing' ? <TypingIndicator /> : <Box sx={{ display: 'flex' }}><Loader /></Box>;
 }
 
 /** El texto de la respuesta, con formato. */
@@ -419,15 +447,14 @@ function AssistantMessage() {
               case 'file':
                 return <Box sx={{ py: 0.5 }} data-slot="aui-assistant-file"><AuiFile {...part} /></Box>;
               case 'indicator':
-                return (
-                  <Box component="span" role="status" aria-label="El asistente está trabajando" sx={{ color: 'primary.main', animation: `${pulse} 1.2s ease-in-out infinite`, [REDUCED_MOTION]: { animation: 'none' } }}>●</Box>
-                );
+                return <WaitingIndicator />;
               default:
                 return null;
             }
           }}
         </MessagePrimitive.GroupedParts>
         <MessageError />
+        <MessageStopped />
         {timing?.design === 'footer' ? <AuiMessageTimingFooter sx={{ mt: 1.5 }} /> : null}
       </Box>
       <Stack direction="row" alignItems="center" sx={(t) => ({ ml: 1, minHeight: t.spacing(ACTION_BAR), pt: 0.75 })}>
@@ -438,47 +465,38 @@ function AssistantMessage() {
   );
 }
 
-const ActionBarRoot = styled(ActionBarPrimitive.Root)(({ theme: t }) => ({ display: 'flex', gap: t.spacing(0.5), marginLeft: t.spacing(-0.5), color: t.palette.text.secondary }));
-const MoreContent = styled(ActionBarMorePrimitive.Content)(({ theme }) => auiMenuContent(theme));
-const MoreItem = styled(ActionBarMorePrimitive.Item)(({ theme }) => auiMenuItem(theme));
+const ActionBarRoot = styled(ActionBarPrimitive.Root)(({ theme: t }) => ({ display: 'flex', alignItems: 'center', gap: t.spacing(0.5) }));
 
-function CopyIcon() {
-  return (
-    <>
-      <AuiIf condition={(s) => s.message.isCopied}><Check /></AuiIf>
-      <AuiIf condition={(s) => !s.message.isCopied}><Copy /></AuiIf>
-    </>
-  );
-}
+const copyToClipboard = (text: string) => navigator.clipboard.writeText(text);
 
+/** Las acciones de la respuesta: «Message actions» del kit, con «Más» → Exportar como Markdown. */
 function AssistantActionBar() {
   const { timing } = React.useContext(LabelsContext);
+  const copy = useActionBarCopy({ copiedDuration: COPIED_MS, copyToClipboard });
+  const { reload } = useActionBarReload();
+  const positive = useActionBarFeedbackPositive();
+  const negative = useActionBarFeedbackNegative();
+  const feedback = useAuiState((s) => s.thread.capabilities.feedback);
+  const [more, setMore] = React.useState<HTMLElement | null>(null);
+  const close = () => setMore(null);
   return (
     <ActionBarRoot hideWhenRunning autohide="not-last">
-      <ActionBarPrimitive.Copy asChild>
-        <AuiIconButton tooltip="Copiar"><CopyIcon /></AuiIconButton>
-      </ActionBarPrimitive.Copy>
-      <AuiIf condition={(s) => s.thread.capabilities.feedback}>
-        <ActionBarPrimitive.FeedbackPositive asChild>
-          <AuiIconButton tooltip="Útil" sx={{ '&[data-submitted="true"]': { bgcolor: 'action.selected', color: 'text.primary' } }}><ThumbsUp /></AuiIconButton>
-        </ActionBarPrimitive.FeedbackPositive>
-        <ActionBarPrimitive.FeedbackNegative asChild>
-          <AuiIconButton tooltip="No útil" sx={{ '&[data-submitted="true"]': { bgcolor: 'action.selected', color: 'text.primary' } }}><ThumbsDown /></AuiIconButton>
-        </ActionBarPrimitive.FeedbackNegative>
-      </AuiIf>
-      <ActionBarPrimitive.Reload asChild>
-        <AuiIconButton tooltip="Regenerar"><RefreshCw /></AuiIconButton>
-      </ActionBarPrimitive.Reload>
-      <ActionBarMorePrimitive.Root>
-        <ActionBarMorePrimitive.Trigger asChild>
-          <AuiIconButton tooltip="Más" sx={{ '&[data-state="open"]': { bgcolor: 'action.selected' } }}><MoreHorizontal /></AuiIconButton>
-        </ActionBarMorePrimitive.Trigger>
-        <MoreContent side="bottom" align="start" sideOffset={6}>
-          <ActionBarPrimitive.ExportMarkdown asChild>
-            <MoreItem><Download size={ICON_SIZE} />Exportar como Markdown</MoreItem>
-          </ActionBarPrimitive.ExportMarkdown>
-        </MoreContent>
-      </ActionBarMorePrimitive.Root>
+      <MessageActions
+        copied={copy.isCopied}
+        reaction={positive.isSubmitted ? 'up' : negative.isSubmitted ? 'down' : null}
+        regenerating={false}
+        reactions={feedback}
+        onCopy={copy.copy}
+        onReactionChange={(r) => { if (r === 'up') positive.submit(); else if (r === 'down') negative.submit(); }}
+        onRegenerate={reload}
+        onMore={setMore}
+        moreOpen={more !== null}
+      />
+      <Menu anchorEl={more} open={more !== null} onClose={close}>
+        <ActionBarPrimitive.ExportMarkdown asChild>
+          <MenuItem onClick={close}><ListItemIcon><Download size={ICON_SIZE} /></ListItemIcon>Exportar como Markdown</MenuItem>
+        </ActionBarPrimitive.ExportMarkdown>
+      </Menu>
       {timing?.design === 'badge' ? <AuiMessageTiming side={timing.side} /> : null}
     </ActionBarRoot>
   );
@@ -495,7 +513,12 @@ function UserParts() {
   return <MessagePrimitive.Parts components={{ Image: UserImagePart, File: UserFilePart, ...(Text ? { Text } : {}) }} />;
 }
 
+/** El texto del mensaje, para la etiqueta de la burbuja y la edición. */
+const messageText = (s: AssistantState) => s.message.parts.map((p) => (p.type === 'text' ? p.text : '')).join('\n');
+
 function UserMessage() {
+  const { edit, disabled } = useActionBarEdit();
+  const text = useAuiState(messageText);
   return (
     <Box
       component={MessagePrimitive.Root}
@@ -505,57 +528,50 @@ function UserMessage() {
     >
       <AuiUserMessageAttachments />
       <Box sx={{ justifySelf: 'end', '&:empty': { display: 'none' } }}><AuiSelectionContextMessageChip /></Box>
-      <Box sx={{ position: 'relative', gridColumnStart: 2, minWidth: 0, '&:hover [data-slot="aui-user-actions"], &:focus-within [data-slot="aui-user-actions"]': { opacity: 1 } }}>
-        <Typography variant="body1" component="div" sx={{ px: 2, py: 1, borderRadius: 1, bgcolor: 'ai.userBubble', color: 'ai.userBubbleText', overflowWrap: 'anywhere', '&:empty': { display: 'none' } }}>
+      <Box sx={{ gridColumnStart: 2, minWidth: 0, overflowWrap: 'anywhere', '& [data-slot="edit-message"] > *': { maxWidth: 'none' } }}>
+        <EditMessage value={text} editing={false} discardedReplies={0} onStartEdit={disabled ? undefined : edit}>
           <MessagePrimitive.Quote>{(quote) => <AuiQuoteBlock {...quote} />}</MessagePrimitive.Quote>
           <UserParts />
-        </Typography>
-        <Box sx={{ position: 'absolute', left: 0, top: '50%', transform: 'translate(-100%, -50%)', pr: 1 }}>
-          <ActionBarPrimitive.Root hideWhenRunning autohide="not-last" data-slot="aui-user-actions">
-            <ActionBarPrimitive.Edit asChild>
-              <AuiIconButton tooltip="Editar"><Pencil /></AuiIconButton>
-            </ActionBarPrimitive.Edit>
-          </ActionBarPrimitive.Root>
-        </Box>
+        </EditMessage>
       </Box>
-      <BranchPicker sx={{ gridColumn: '1 / -1', justifyContent: 'flex-end', mr: -0.5 }} />
+      <BranchPicker user sx={{ gridColumn: '1 / -1', justifyContent: 'flex-end' }} />
     </Box>
   );
 }
 
-const EditInput = styled(ComposerPrimitive.Input)(({ theme: t }) => ({
-  ...t.typography.body1, width: '100%', minHeight: t.spacing(7), boxSizing: 'border-box', resize: 'none', border: 0, outline: 'none',
-  padding: t.spacing(1.5, 2, 0.5), background: 'transparent', color: t.palette.text.primary,
-}));
-
+/** La edición en su lugar: «Edit message» del kit, con cuántas respuestas descarta. */
 function EditComposer() {
+  const aui = useAui();
+  const value = useAuiState((s) => s.composer.text);
+  const discarded = useAuiState((s) => s.thread.messages.slice(s.message.index + 1).filter((m) => m.role === 'assistant').length);
+  const { send } = useEditComposerSend();
+  const { cancel } = useEditComposerCancel();
   return (
-    <Box component={MessagePrimitive.Root} data-slot="aui-edit-composer" sx={{ display: 'flex', flexDirection: 'column', px: 1 }}>
-      <Box component={ComposerPrimitive.Root} sx={{ ml: 'auto', width: '100%', maxWidth: '85%' }}>
-        <ComposerShell variant="outlined" sx={{ p: 0 }}>
-          <EditInput autoFocus aria-label="Editar mensaje" />
-          <Stack direction="row" spacing={0.75} sx={{ alignSelf: 'flex-end', mx: 1.25, mb: 1.25 }}>
-            <ComposerPrimitive.Cancel asChild><Button color="inherit">Cancelar</Button></ComposerPrimitive.Cancel>
-            <ComposerPrimitive.Send asChild><Button variant="contained">Actualizar</Button></ComposerPrimitive.Send>
-          </Stack>
-        </ComposerShell>
-      </Box>
+    <Box component={MessagePrimitive.Root} data-slot="aui-edit-composer" sx={{ px: 1 }}>
+      <EditMessage value={value} editing discardedReplies={discarded} onValueChange={(v) => aui.composer().setText(v)} onSave={send} onCancel={cancel} />
     </Box>
   );
 }
 
-const BranchRoot = styled(BranchPickerPrimitive.Root)(({ theme: t }) => ({
-  ...t.typography.body3, display: 'inline-flex', alignItems: 'center', marginLeft: t.spacing(-1), marginRight: t.spacing(1), color: t.palette.text.secondary,
-}));
-
-function BranchPicker({ sx }: { sx?: React.ComponentProps<typeof Box>['sx'] }) {
+/** Las versiones del mensaje: el stepper de «Message branches» del kit. */
+function BranchPicker({ user = false, sx }: { user?: boolean; sx?: React.ComponentProps<typeof Box>['sx'] }) {
+  const number = useAuiState((s) => s.message.branchNumber);
+  const count = useAuiState((s) => s.message.branchCount);
+  const previous = useBranchPickerPrevious();
+  const next = useBranchPickerNext();
+  if (count <= 1) return null;
   return (
-    <Box component={BranchRoot} hideWhenSingleBranch sx={sx}>
-      <BranchPickerPrimitive.Previous asChild><AuiIconButton tooltip="Anterior"><ChevronLeft /></AuiIconButton></BranchPickerPrimitive.Previous>
-      <Box component="span" sx={(t) => ({ fontWeight: t.typography.fontWeightMedium, fontVariantNumeric: 'tabular-nums' })}>
-        <BranchPickerPrimitive.Number /> / <BranchPickerPrimitive.Count />
-      </Box>
-      <BranchPickerPrimitive.Next asChild><AuiIconButton tooltip="Siguiente"><ChevronRight /></AuiIconButton></BranchPickerPrimitive.Next>
+    <Box sx={[{ display: 'flex', mr: 1 }, ...(Array.isArray(sx) ? sx : [sx])]}>
+      <MessageBranchesStepper
+        index={number - 1}
+        count={count}
+        onPrevious={previous.previous}
+        onNext={next.next}
+        previousDisabled={previous.disabled}
+        nextDisabled={next.disabled}
+        previousLabel={user ? 'Ver el mensaje anterior' : undefined}
+        nextLabel={user ? 'Ver el mensaje siguiente' : undefined}
+      />
     </Box>
   );
 }

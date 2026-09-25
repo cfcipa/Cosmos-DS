@@ -1,16 +1,19 @@
 // Cosmos DS · Kit IA · AUI connected: Markdown text.
 // Referente: assistant-ui «Markdown text» (elements/markdown-text.tsx), sobre @assistant-ui/react-markdown y remark-gfm.
 // El texto de una parte del mensaje con formato: títulos, listas, citas, tablas, código en línea y bloques de código con
-// su lenguaje y botón de copiar. Mientras la parte corre, un punto late al final del último bloque. El análisis se difiere
-// para no frenar la escritura ni el desplazamiento mientras llega la respuesta.
+// su lenguaje y botón de copiar. Mientras la parte llega se ve como el elemento «Streaming text» del kit: las palabras
+// más nuevas del último bloque entran en azul y se asientan en tinta, y su cursor parpadea al final; si la respuesta se
+// detuvo (por ti o por longitud), el cursor se queda. El análisis se difiere para no frenar la escritura ni el
+// desplazamiento mientras llega la respuesta.
 import * as React from 'react';
 import { MarkdownTextPrimitive, type CodeHeaderProps, unstable_memoizeMarkdownComponents as memoizeMarkdownComponents } from '@assistant-ui/react-markdown';
 import remarkGfm from 'remark-gfm';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import { keyframes, styled } from '@mui/material/styles';
+import { styled } from '@mui/material/styles';
 import { Check, Copy } from 'lucide-react';
-import { REDUCED_MOTION } from '../lib/shimmerText';
+import { useAuiState } from '@assistant-ui/react';
+import { STREAMING_FRESH_WORDS, streamingCaretSx, streamingWordSx } from '../streaming-text';
 import { AuiIconButton } from './AuiIconButton';
 
 /** `leading-relaxed` de assistant-ui para prosa. */
@@ -20,15 +23,44 @@ export const COPIED_MS = 3000;
 /** Código en línea: 0,85em del texto que lo rodea. */
 const INLINE_CODE_SCALE = '0.85em';
 
-const pulse = keyframes`50% { opacity: .5; }`;
+/** Dónde va el cursor (los lugares del punto de styles/dot.css de react-markdown): el último bloque, o el último ítem de
+ * una lista; mientras llega y cuando se detuvo. */
+const CARET = ['&[data-status="running"]', '&[data-stopped="true"]'].flatMap((on) => [
+  `${on}:empty::after`,
+  `${on} > :not(ol):not(ul):not(pre):last-child::after`,
+  `${on} > pre:last-child code::after`,
+  `${on} > :is(ol, ul):last-child > li:last-child:not(:has(* > li))::after`,
+]).join(', ');
 
-/** Selectores del punto de streaming (styles/dot.css de react-markdown): el último bloque, o el último ítem de una lista. */
-const RUNNING_DOT = [
-  '&[data-status="running"]:empty::after',
-  '&[data-status="running"] > :not(ol):not(ul):not(pre):last-child::after',
-  '&[data-status="running"] > pre:last-child code::after',
-  '&[data-status="running"] > :is(ol, ul):last-child > li:last-child:not(:has(* > li))::after',
-].join(', ');
+/** Nodos de hast, lo justo para partir el texto en palabras. */
+type HastText = { type: 'text'; value: string };
+type HastElement = { type: 'element'; tagName: string; properties: Record<string, unknown>; children: HastNode[] };
+type HastNode = HastText | HastElement | { type: string; children?: HastNode[] };
+
+/** Envuelve cada palabra del último bloque en un span (`data-word`), y marca las `fresh` más nuevas. Los bloques de código
+ * quedan como están: su texto es lo que se copia. */
+function rehypeStreamingWords({ fresh }: { fresh: number }) {
+  return (tree: { children: HastNode[] }) => {
+    const last = [...tree.children].reverse().find((n): n is HastElement => n.type === 'element');
+    if (!last || last.tagName === 'pre') return;
+    const words: HastElement[] = [];
+    const split = (node: HastElement) => {
+      if (node.tagName === 'pre' || node.tagName === 'code') return;
+      node.children = node.children.flatMap((child) => {
+        if (child.type === 'element') { split(child as HastElement); return [child]; }
+        if (child.type !== 'text') return [child];
+        return (child as HastText).value.split(/(\s+)/).filter(Boolean).map((token): HastNode => {
+          if (/^\s+$/.test(token)) return { type: 'text', value: token };
+          const word: HastElement = { type: 'element', tagName: 'span', properties: { dataWord: 'settled' }, children: [{ type: 'text', value: token }] };
+          words.push(word);
+          return word;
+        });
+      });
+    };
+    split(last);
+    words.slice(Math.max(0, words.length - fresh)).forEach((w) => { w.properties.dataWord = 'fresh'; });
+  };
+}
 
 const MdRoot = styled('div')(({ theme: t }) => {
   // Márgenes de assistant-ui (my-3; títulos con más aire arriba), sin margen arriba en el primer bloque ni abajo en el
@@ -83,10 +115,9 @@ const MdRoot = styled('div')(({ theme: t }) => {
       backgroundColor: t.palette.action.hover, border: `1px solid ${t.palette.divider}`, borderTop: 0,
       borderRadius: `0 0 ${t.shape.borderRadius}px ${t.shape.borderRadius}px`,
     },
-    [RUNNING_DOT]: {
-      content: '"\\25cf"', marginInline: t.spacing(0.5), animation: `${pulse} 2s cubic-bezier(.4, 0, .6, 1) infinite`,
-      [REDUCED_MOTION]: { animation: 'none' },
-    },
+    '& [data-word]': streamingWordSx(t, false),
+    '& [data-word="fresh"]': { color: t.palette.primary.main },
+    [CARET]: { content: '""', ...streamingCaretSx(t) },
   };
 });
 
@@ -133,7 +164,22 @@ export type AuiMarkdownTextProps = {
 };
 
 /** El texto de la parte del mensaje, con formato. Úsalo como `Text` de `MessagePrimitive.Parts` o dentro de un part. */
+const REMARK_PLUGINS = [remarkGfm];
+
 export const AuiMarkdownText = React.memo(function AuiMarkdownText({ components }: AuiMarkdownTextProps) {
   const merged = React.useMemo(() => (components ? { ...defaultComponents, ...memoizeMarkdownComponents(components) } : defaultComponents), [components]);
-  return <MarkdownTextPrimitive remarkPlugins={[remarkGfm]} containerComponent={MdRoot} className="aui-md" components={merged} defer />;
+  const running = useAuiState((s) => s.part.status.type === 'running');
+  const stopped = useAuiState((s) => s.part.status.type === 'incomplete' && (s.part.status.reason === 'cancelled' || s.part.status.reason === 'length'));
+  const rehypePlugins = React.useMemo(() => [[rehypeStreamingWords, { fresh: running ? STREAMING_FRESH_WORDS : 0 }]] as NonNullable<React.ComponentProps<typeof MarkdownTextPrimitive>['rehypePlugins']>, [running]);
+  return (
+    <MarkdownTextPrimitive
+      remarkPlugins={REMARK_PLUGINS}
+      rehypePlugins={rehypePlugins}
+      containerComponent={MdRoot}
+      containerProps={{ 'data-stopped': stopped } as React.ComponentProps<typeof MarkdownTextPrimitive>['containerProps']}
+      className="aui-md"
+      components={merged}
+      defer
+    />
+  );
 });

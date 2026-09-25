@@ -1,2 +1,2 @@
-export { MessageBranches } from './MessageBranches';
-export type { MessageBranchesProps, MessageBranchesNavigation } from './MessageBranches';
+export { MessageBranches, MessageBranchesStepper } from './MessageBranches';
+export type { MessageBranchesProps, MessageBranchesNavigation, MessageBranchesStepperProps } from './MessageBranches';

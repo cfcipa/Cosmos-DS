@@ -4,6 +4,7 @@
 // previa con desvanecido abajo); si el lector sube, deja de seguirlo. Al terminar vuelve a `defaultOpen`, salvo que el
 // usuario lo haya abierto o cerrado: su elección manda desde entonces. Mientras se pliega, el hilo no salta.
 // `AuiReasoningPanel` es el diseño por pasos: «Pensando» con el tiempo transcurrido y una lista de pasos que crece.
+// Mientras razona, el disparador es el «Thinking indicator» del kit: «Pensando» con el tiempo transcurrido.
 import * as React from 'react';
 import { useAuiState, useScrollLock, type ReasoningGroupComponent, type ReasoningMessagePartComponent } from '@assistant-ui/react';
 import Box, { type BoxProps } from '@mui/material/Box';
@@ -14,8 +15,9 @@ import Typography from '@mui/material/Typography';
 import { keyframes, useTheme, type Theme } from '@mui/material/styles';
 import type { SxProps } from '@mui/system';
 import { Brain, ChevronDown } from 'lucide-react';
-import { COLLAPSE_EASE, REDUCED_MOTION, shimmerTextSx } from '../lib/shimmerText';
+import { COLLAPSE_EASE, REDUCED_MOTION } from '../lib/shimmerText';
 import { riseSx } from '../lib/thread';
+import { ThinkingIndicator, useThinkingElapsed } from '../thinking-indicator';
 import { AuiMarkdownText, PROSE_LINE_HEIGHT } from './MarkdownText';
 
 export type AuiReasoningVariant = 'outline' | 'ghost' | 'muted';
@@ -117,8 +119,11 @@ export const AuiReasoningRoot = React.forwardRef<HTMLDivElement, AuiReasoningRoo
   );
 });
 
+/** Lo que dice el indicador mientras razona. */
+const THINKING_LABEL = 'Pensando';
+
 export interface AuiReasoningTriggerProps {
-  /** Brillo en la etiqueta mientras razona. */
+  /** Mientras razona: el indicador «Pensando» con el tiempo transcurrido. */
   active?: boolean;
   /** Segundos que tomó; se muestra como «Razonamiento (Ns)». */
   duration?: number;
@@ -129,6 +134,7 @@ export interface AuiReasoningTriggerProps {
 
 export function AuiReasoningTrigger({ active, duration, label = 'Razonamiento', sx }: AuiReasoningTriggerProps) {
   const { open, setOpen } = useReasoning();
+  const elapsed = useThinkingElapsed(Boolean(active));
   return (
     <ButtonBase
       data-slot="aui-reasoning-trigger"
@@ -146,10 +152,12 @@ export function AuiReasoningTrigger({ active, duration, label = 'Razonamiento', 
         ...(Array.isArray(sx) ? sx : [sx]),
       ]}
     >
-      <Brain />
-      <Box component="span" sx={(t) => ({ fontVariantNumeric: 'tabular-nums', ...(active ? shimmerTextSx(t) : null) })}>
-        {label}{duration ? ` (${duration}s)` : ''}
-      </Box>
+      {active ? <ThinkingIndicator label={THINKING_LABEL} elapsed={elapsed} /> : (
+        <>
+          <Brain />
+          <Box component="span" sx={{ fontVariantNumeric: 'tabular-nums' }}>{label}{duration ? ` (${duration}s)` : ''}</Box>
+        </>
+      )}
       <Box
         component="span"
         sx={(t) => ({
@@ -308,10 +316,7 @@ export function AuiReasoningPanel({ steps, visibleSteps, streaming, open, onOpen
         })}
       >
         {streaming ? (
-          <>
-            <Box component="span" sx={(t) => shimmerTextSx(t)}>Pensando</Box>
-            {elapsed !== undefined && <Typography component="span" variant="caption" color="text.disabled" sx={(t) => ({ fontFamily: t.aiKit.code.fontFamily, fontVariantNumeric: 'tabular-nums' })}>{elapsed}</Typography>}
-          </>
+          <ThinkingIndicator label={THINKING_LABEL} elapsed={elapsed} />
         ) : (
           <span>{restingLabel}</span>
         )}

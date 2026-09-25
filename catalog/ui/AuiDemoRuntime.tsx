@@ -13,6 +13,7 @@ import {
   useLocalRuntime,
   useRemoteThreadListRuntime,
   type ChatModelAdapter,
+  type FeedbackAdapter,
   type RealtimeVoiceAdapter,
   type RemoteThreadListAdapter,
   type SuggestionAdapter,
@@ -331,6 +332,9 @@ export function AuiDemoRuntime(props: AuiDemoRuntimeProps) {
   return ready ? <DemoRuntime {...props} /> : null;
 }
 
+/** Calificar respuestas en la demo: la calificación queda marcada, no se envía a ninguna parte. */
+const DEMO_FEEDBACK: FeedbackAdapter = { submit: () => undefined };
+
 function DemoRuntime({ children, seed = false, voice = false, reasoning = false, mcp = false, threads, startIn, slowUploads = false, script = 'answer', failTools = false, followups = 'default', answer, model: customModel, suggestions, dictation }: AuiDemoRuntimeProps) {
   const list = React.useMemo(() => makeThreadList([...(seed ? SEED_THREADS : []), ...(threads ?? [])]), [seed, threads]);
   const uploads = React.useMemo(() => (slowUploads ? slowAttachments(DEMO_ATTACHMENTS) : DEMO_ATTACHMENTS), [slowUploads]);
@@ -348,7 +352,7 @@ function DemoRuntime({ children, seed = false, voice = false, reasoning = false,
   }), [list, uploads]);
   const runtime = useRemoteThreadListRuntime({
     runtimeHook: function useDemoThreadRuntime() {
-      return useLocalRuntime(model, { adapters: { suggestion, attachments: uploads, ...(voice ? { voice: voiceAdapter } : {}), ...(dictationAdapter ? { dictation: dictationAdapter } : {}) } });
+      return useLocalRuntime(model, { adapters: { suggestion, attachments: uploads, feedback: DEMO_FEEDBACK, ...(voice ? { voice: voiceAdapter } : {}), ...(dictationAdapter ? { dictation: dictationAdapter } : {}) } });
     },
     adapter,
   });

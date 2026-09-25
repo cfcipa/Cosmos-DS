@@ -87,32 +87,64 @@ export function MessageBranches({
       </Box>
 
       {showStepper ? (
-        <Stack direction="row" alignItems="center" spacing={0.25} sx={{ ml: -0.75 }}>
-          <IconButton
-            aria-label={previousLabel}
-            disabled={!hasNavigation || (!wraps && isFirst)}
-            onClick={goPrevious}
-          >
-            <ChevronLeft size={ICON_SIZE} />
-          </IconButton>
-          <Typography
-            variant="body3"
-            component="span"
-            color="text.secondary"
-            aria-live="polite"
-            sx={(t) => ({ minWidth: `${COUNTER_CH}ch`, textAlign: 'center', fontFamily: t.aiKit.code.fontFamily, fontVariantNumeric: 'tabular-nums' })}
-          >
-            {count === 0 ? '0 / 0' : `${currentIndex + 1} / ${count}`}
-          </Typography>
-          <IconButton
-            aria-label={nextLabel}
-            disabled={!hasNavigation || (!wraps && isLast)}
-            onClick={goNext}
-          >
-            <ChevronRight size={ICON_SIZE} />
-          </IconButton>
-        </Stack>
+        <MessageBranchesStepper
+          index={currentIndex}
+          count={count}
+          onPrevious={goPrevious}
+          onNext={goNext}
+          previousDisabled={!hasNavigation || (!wraps && isFirst)}
+          nextDisabled={!hasNavigation || (!wraps && isLast)}
+          previousLabel={previousLabel}
+          nextLabel={nextLabel}
+        />
       ) : null}
+    </Stack>
+  );
+}
+
+export interface MessageBranchesStepperProps {
+  /** La versión visible (desde 0). */
+  index: number;
+  count: number;
+  onPrevious: () => void;
+  onNext: () => void;
+  previousDisabled?: boolean;
+  nextDisabled?: boolean;
+  /** Default 'Ver la respuesta anterior' / 'Ver la respuesta siguiente'. */
+  previousLabel?: string;
+  nextLabel?: string;
+  className?: string;
+}
+
+/** El stepper «n / m» solo, para ponerlo bajo una respuesta que ya se muestra (el hilo conectado). */
+export function MessageBranchesStepper({
+  index,
+  count,
+  onPrevious,
+  onNext,
+  previousDisabled,
+  nextDisabled,
+  previousLabel = 'Ver la respuesta anterior',
+  nextLabel = 'Ver la respuesta siguiente',
+  className,
+}: MessageBranchesStepperProps) {
+  return (
+    <Stack direction="row" alignItems="center" spacing={0.25} className={className} data-slot="message-branches-stepper" sx={{ ml: -0.75 }}>
+      <IconButton aria-label={previousLabel} disabled={previousDisabled} onClick={onPrevious}>
+        <ChevronLeft size={ICON_SIZE} />
+      </IconButton>
+      <Typography
+        variant="body3"
+        component="span"
+        color="text.secondary"
+        aria-live="polite"
+        sx={(t) => ({ minWidth: `${COUNTER_CH}ch`, textAlign: 'center', fontFamily: t.aiKit.code.fontFamily, fontVariantNumeric: 'tabular-nums' })}
+      >
+        {count === 0 ? '0 / 0' : `${index + 1} / ${count}`}
+      </Typography>
+      <IconButton aria-label={nextLabel} disabled={nextDisabled} onClick={onNext}>
+        <ChevronRight size={ICON_SIZE} />
+      </IconButton>
     </Stack>
   );
 }

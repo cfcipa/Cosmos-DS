@@ -19,7 +19,7 @@ import Typography from '@mui/material/Typography';
 import { Check, Code, Copy, Monitor, Plus, RotateCcw, Smartphone, Tablet, X } from 'lucide-react';
 import { CosmosProvider } from '../../src/CosmosProvider';
 import type { AuiAssistantSurface } from '../../src/ai/aui';
-import { CONTEXT_WINDOW, DEFAULT_PLAYGROUND, playgroundCode, type MapSide, type PlaygroundConfig, type Quotes, type Timing, type Tuck } from './config';
+import { CONTEXT_WINDOW, DEFAULT_PLAYGROUND, playgroundCode, type MapSide, type PlaygroundConfig, type Quotes, type Timing, type Tuck, type Waiting } from './config';
 import { STARTERS } from '../ui/sinco/obligaciones';
 import { SincoAssistant, type SincoAssistantProps, type SincoControls } from '../ui/sinco/SincoAssistant';
 import { DEFAULT_EFFORT, DEFAULT_MODEL, MODELS } from '../elements/AuiModelSelector';
@@ -54,6 +54,7 @@ function templateProps(c: PlaygroundConfig): SincoAssistantProps {
     askAi: c.context.askAi,
     followups: t.followups,
     thread: {
+      waiting: t.waiting,
       quotes: t.quotes === 'off' ? false : t.quotes === 'actions' ? 'actions' : true,
       messageTiming: t.timing === 'off' ? false : t.timing === 'footer' ? { design: 'footer' } : true,
       conversationMap: t.conversationMap === 'off' ? undefined : t.conversationMap,
@@ -124,6 +125,7 @@ function Controls({ config: c, update }: { config: PlaygroundConfig; update: (u:
         <Toggle label="Preguntar a la IA" value={c.context.askAi} onChange={(askAi) => set('context', { askAi })} />
       </Section>
       <Section title="Hilo">
+        <Choice<Waiting> label="Espera" value={c.thread.waiting} onChange={(waiting) => set('thread', { waiting })} options={[['loader', 'Loader'], ['typing', 'Typing']]} />
         <Toggle label="Seguimientos" value={c.thread.followups} onChange={(followups) => set('thread', { followups })} />
         <Choice<Quotes> label="Citar" value={c.thread.quotes} onChange={(quotes) => set('thread', { quotes })} options={[['off', 'No'], ['quote', 'Citar'], ['actions', 'Con acciones']]} />
         <Choice<Timing> label="Tiempo del mensaje" value={c.thread.timing} onChange={(timing) => set('thread', { timing })} options={[['off', 'No'], ['badge', 'Insignia'], ['footer', 'Pie']]} />

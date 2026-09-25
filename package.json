@@ -24,6 +24,7 @@
     "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
+    "@assistant-ui/core": "^0.3.21",
     "@assistant-ui/react": "^0.15.22",
     "@assistant-ui/react-markdown": "^0.14.17",
     "@assistant-ui/react-mcp": "^0.1.20",
@@ -37,6 +38,7 @@
     "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
+    "@assistant-ui/core": "^0.3.21",
     "@assistant-ui/react": "^0.15.22",
     "@assistant-ui/react-markdown": "^0.14.17",
     "@assistant-ui/react-mcp": "^0.1.20",

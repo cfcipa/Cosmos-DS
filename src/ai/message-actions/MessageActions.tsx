@@ -27,6 +27,8 @@ export interface MessageActionsProps {
   onMore: (anchor: HTMLElement) => void;
   /** El menú «Más acciones» está abierto (aria-expanded). */
   moreOpen?: boolean;
+  /** Muestra calificar (útil / no útil). Default true. */
+  reactions?: boolean;
   className?: string;
 }
 
@@ -43,6 +45,7 @@ export function MessageActions({
   onRegenerate,
   onMore,
   moreOpen = false,
+  reactions = true,
   className,
 }: MessageActionsProps) {
   const reactionSx = (value: Exclude<MessageReaction, null>) => (reaction === value ? { color: 'primary.main' } : undefined);
@@ -60,17 +63,21 @@ export function MessageActions({
         </IconButton>
       </Tooltip>
 
-      <Tooltip title="Útil">
-        <IconButton aria-label="Respuesta útil" aria-pressed={reaction === 'up'} onClick={() => toggleReaction('up')} sx={reactionSx('up')}>
-          <ThumbsUp size={ICON_SIZE} />
-        </IconButton>
-      </Tooltip>
+      {reactions ? (
+        <>
+          <Tooltip title="Útil">
+            <IconButton aria-label="Respuesta útil" aria-pressed={reaction === 'up'} onClick={() => toggleReaction('up')} sx={reactionSx('up')}>
+              <ThumbsUp size={ICON_SIZE} />
+            </IconButton>
+          </Tooltip>
 
-      <Tooltip title="No útil">
-        <IconButton aria-label="Respuesta no útil" aria-pressed={reaction === 'down'} onClick={() => toggleReaction('down')} sx={reactionSx('down')}>
-          <ThumbsDown size={ICON_SIZE} />
-        </IconButton>
-      </Tooltip>
+          <Tooltip title="No útil">
+            <IconButton aria-label="Respuesta no útil" aria-pressed={reaction === 'down'} onClick={() => toggleReaction('down')} sx={reactionSx('down')}>
+              <ThumbsDown size={ICON_SIZE} />
+            </IconButton>
+          </Tooltip>
+        </>
+      ) : null}
 
       <Tooltip title="Regenerar">
         <span>

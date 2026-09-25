@@ -21,6 +21,8 @@ export interface EditMessageProps {
   onSave?: () => void;
   onCancel?: () => void;
   onStartEdit?: () => void;
+  /** Lo que muestra la burbuja sin editar (adjuntos, citas, menciones). Default: `value`. */
+  children?: React.ReactNode;
   className?: string;
 }
 
@@ -34,6 +36,7 @@ export function EditMessage({
   onSave,
   onCancel,
   onStartEdit,
+  children,
   className,
 }: EditMessageProps) {
   const canSave = value.trim().length > 0;
@@ -60,7 +63,7 @@ export function EditMessage({
             '&.Mui-focusVisible': { outline: `2px solid ${t.palette.ai.focusRing}`, outlineOffset: 2 },
           })}
         >
-          {value}
+          {children ?? value}
           <Box component="span" data-slot="edit-hint" aria-hidden="true" sx={{ position: 'absolute', top: (t) => t.spacing(1), right: (t) => t.spacing(1), display: 'inline-flex', color: 'primary.main' }}>
             <Pencil size={14} />
           </Box>
@@ -83,7 +86,7 @@ export function EditMessage({
           onFocus={(event) => event.target.select()}
           onKeyDown={(event) => {
             if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); if (canSave) onSave?.(); }
-            if (event.key === 'Escape') onCancel?.();
+            if (event.key === 'Escape') { event.preventDefault(); onCancel?.(); }
           }}
           inputProps={{ 'aria-label': 'Mensaje editado' }}
           InputProps={{ disableUnderline: true }}

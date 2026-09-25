@@ -9,9 +9,9 @@ import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import { keyframes } from '@mui/material/styles';
 import { Check, Copy, RefreshCw } from 'lucide-react';
 import { REDUCED_MOTION } from '../lib/shimmerText';
+import { STREAMING_BLINK, STREAMING_FRESH_WORDS, streamingWordSx } from '../streaming-text/StreamingText';
 
 export type MessagePairVariant = 'bubble' | 'flat';
 
@@ -35,13 +35,8 @@ export interface MessagePairProps {
 const ICON_SIZE = 16;
 /** Cuánto se queda el check después de copiar. */
 const COPIED_MS = 3000;
-const FRESH_WORDS = 2;
-/** Lo que tarda una palabra nueva en pasar de azul a tinta (tablero y referencia). */
-const SETTLE_MS = 700;
 /** Líneas que reserva la respuesta mientras llega (min-h de la referencia). */
 const RESERVED_LINES = 3;
-
-const blink = keyframes`0%, 100% { opacity: 1; } 50% { opacity: 0; }`;
 
 export function MessagePair({
   userMessage,
@@ -98,17 +93,9 @@ export function MessagePair({
           sx={(t) => ({ minHeight: `calc(${t.typography.body1.lineHeight} * ${RESERVED_LINES})` })}
         >
           {words.slice(0, visibleCount).map((word, index) => {
-            const isFresh = streaming && index >= visibleCount - FRESH_WORDS;
+            const isFresh = streaming && index >= visibleCount - STREAMING_FRESH_WORDS;
             return (
-              <Box
-                key={index}
-                component="span"
-                sx={(t) => ({
-                  color: isFresh ? 'primary.main' : 'text.primary',
-                  transition: t.transitions.create('color', { duration: SETTLE_MS, easing: t.transitions.easing.easeOut }),
-                  [REDUCED_MOTION]: { transition: 'none' },
-                })}
-              >
+              <Box key={index} component="span" sx={(t) => streamingWordSx(t, isFresh)}>
                 {`${word} `}
               </Box>
             );
@@ -124,7 +111,7 @@ export function MessagePair({
                 borderRadius: '50%',
                 bgcolor: 'primary.main',
                 verticalAlign: 'middle',
-                animation: `${blink} 1s steps(2) infinite`,
+                animation: STREAMING_BLINK,
                 [REDUCED_MOTION]: { animation: 'none' },
               }}
             />

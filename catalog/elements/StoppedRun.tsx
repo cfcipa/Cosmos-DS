@@ -4,7 +4,7 @@ import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { RotateCcw } from 'lucide-react';
-import { StoppedRun } from '../../src/ai/stopped-run';
+import { StoppedRun, STOPPED_RUN_REASONS } from '../../src/ai/stopped-run';
 import { ElementPage, PropRow, PropToggle } from '../ui/Playground';
 import { DemoBubble } from '../ui/DemoBubble';
 
@@ -13,7 +13,7 @@ const QUESTION = 'Explícame cómo legalizar un anticipo de viaje';
 const FULL_WORDS = 'Para legalizar un anticipo de viaje, entra a Tesorería, abre el anticipo y adjunta los soportes de cada gasto. El sistema cruza el total con el valor entregado: si sobra, genera la devolución; si falta, crea la cuenta por pagar al empleado.'.split(' ');
 const STOPPED_AT = 18;
 const WORD_INTERVAL_MS = 70;
-const REASON_LABELS = { user: 'detenida por ti', length: 'límite de longitud', connection: 'conexión perdida' } as const;
+const REASON_LABELS = STOPPED_RUN_REASONS;
 
 type Reason = keyof typeof REASON_LABELS;
 type Phase = 'stopped' | 'streaming' | 'done' | 'discarded';

@@ -22,8 +22,28 @@ export interface StreamingTextProps {
 }
 
 const blink = keyframes`0%, 100% { opacity: 1; } 50% { opacity: 0; }`;
+/** El parpadeo del cursor (también el punto de Message pair). */
+export const STREAMING_BLINK = `${blink} 1s steps(2) infinite`;
 /** Lo que tarda una palabra nueva en pasar de azul a tinta (tablero y referencia; igual que en Message pair). */
-const SETTLE_MS = 700;
+export const STREAMING_SETTLE_MS = 700;
+/** Cuántas palabras, las más nuevas, llegan en azul. */
+export const STREAMING_FRESH_WORDS = 2;
+/** El cursor del tablero: 18px de alto y 3px bajo la línea en su texto de 15px (1,2em y 0,2em). */
+const CARET_HEIGHT = '1.2em';
+const CARET_DROP = '-0.2em';
+
+/** El color de una palabra: las nuevas en azul, que se asientan en la tinta del texto. */
+export const streamingWordSx = (t: Theme, fresh: boolean) => ({
+  color: fresh ? t.palette.primary.main : 'inherit',
+  transition: t.transitions.create('color', { duration: STREAMING_SETTLE_MS, easing: t.transitions.easing.easeOut }),
+  [REDUCED]: { transition: 'none' },
+});
+
+/** El cursor que parpadea al final del texto que llega (o que quedó a medias). */
+export const streamingCaretSx = (t: Theme) => ({
+  display: 'inline-block', width: t.spacing(0.25), height: CARET_HEIGHT, marginLeft: '1px', verticalAlign: CARET_DROP,
+  backgroundColor: t.palette.primary.main, animation: STREAMING_BLINK, [REDUCED]: { animation: 'none' },
+});
 
 /** Palabras en orden, con la marca mono de su segmento. */
 export function streamingWords(segments: StreamingSegment[]) {
@@ -38,20 +58,17 @@ export function StreamingText({ segments, count, streaming = false, className }:
   return (
     <Box component="p" data-slot="streaming-text" className={className} sx={{ m: 0, fontSize: 15, lineHeight: '24px', color: 'text.primary' }}>
       {words.slice(0, n).map((w, i) => {
-        const fresh = streaming && i >= n - 2;
-        const color = fresh ? 'primary.main' : 'text.primary';
-        const tr = (t: Theme) => ({ transition: t.transitions.create('color', { duration: SETTLE_MS, easing: t.transitions.easing.easeOut }), [REDUCED]: { transition: 'none' } });
+        const fresh = streaming && i >= n - STREAMING_FRESH_WORDS;
         return w.mono ? (
           <span key={i}>
-            <Box component="code" sx={(t) => ({ px: '4px', py: '1px', borderRadius: 1, bgcolor: 'ai.surfaceMuted', ...t.aiKit.code, fontSize: 13, fontWeight: t.typography.fontWeightMedium, color, ...tr(t) })}>{w.word}</Box>{' '}
+            <Box component="code" sx={(t) => ({ px: '4px', py: '1px', borderRadius: 1, bgcolor: 'ai.surfaceMuted', ...t.aiKit.code, fontSize: 13, fontWeight: t.typography.fontWeightMedium, ...streamingWordSx(t, fresh) })}>{w.word}</Box>{' '}
           </span>
         ) : (
-          <Box key={i} component="span" sx={(t) => ({ color, ...tr(t) })}>{w.word + ' '}</Box>
+          <Box key={i} component="span" sx={(t) => streamingWordSx(t, fresh)}>{w.word + ' '}</Box>
         );
       })}
       {streaming && n > 0 ? (
-        <Box component="span" aria-hidden="true" sx={{ display: 'inline-block', width: 2, height: 18, ml: '1px', verticalAlign: '-3px', bgcolor: 'primary.main',
-          animation: `${blink} 1s steps(2) infinite`, [REDUCED]: { animation: 'none' } }} />
+        <Box component="span" aria-hidden="true" sx={streamingCaretSx} />
       ) : null}
     </Box>
   );
