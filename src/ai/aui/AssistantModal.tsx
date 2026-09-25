@@ -60,11 +60,14 @@ const storeSize = (size: Size | null) => {
   } catch { /* sin almacenamiento, el tamaño dura hasta recargar */ }
 };
 
-function useModalSize(contentRef: React.RefObject<HTMLDivElement>) {
+/** Con `position: 'absolute'`, el panel se limita al contenedor posicionado, no a la ventana. */
+const boundsOf = (el: HTMLElement | null, absolute: boolean) => (absolute ? (el?.offsetParent as HTMLElement | null)?.getBoundingClientRect() : undefined);
+
+function useModalSize(contentRef: React.RefObject<HTMLDivElement>, absolute: boolean) {
   const [size, setSize] = React.useState<Size | null>(readSize);
   const drag = React.useRef<{ id: number; x: number; y: number; w: number; h: number; last: Size | null } | null>(null);
   const commit = (next: Size | null) => { setSize(next); storeSize(next); };
-  const fromPointer = (d: NonNullable<typeof drag.current>, e: React.PointerEvent) => clampSize({ width: d.w - (e.clientX - d.x), height: d.h - (e.clientY - d.y) });
+  const fromPointer = (d: NonNullable<typeof drag.current>, e: React.PointerEvent) => clampSize({ width: d.w - (e.clientX - d.x), height: d.h - (e.clientY - d.y) }, boundsOf(contentRef.current, absolute));
   const take = (e: React.PointerEvent) => { const d = drag.current; if (!d || d.id !== e.pointerId) return null; drag.current = null; return d; };
   const reset = () => { drag.current = null; commit(null); };
   return {
@@ -99,7 +102,7 @@ function useModalSize(contentRef: React.RefObject<HTMLDivElement>) {
         if (!change) return;
         e.preventDefault();
         const r = el.getBoundingClientRect();
-        commit(clampSize({ width: r.width + change[0], height: r.height + change[1] }));
+        commit(clampSize({ width: r.width + change[0], height: r.height + change[1] }, boundsOf(el, absolute)));
       },
       onDoubleClick: reset,
     },
@@ -109,14 +112,18 @@ function useModalSize(contentRef: React.RefObject<HTMLDivElement>) {
 export interface AuiAssistantModalProps {
   /** Default 'fixed' (esquina de la ventana). 'absolute' la ancla al contenedor posicionado más cercano. */
   position?: 'fixed' | 'absolute';
+  /** Abierta al montar. Default false. */
+  defaultOpen?: boolean;
 }
 
-export function AuiAssistantModal({ position = 'fixed' }: AuiAssistantModalProps) {
-  const [open, setOpen] = React.useState(false);
+export function AuiAssistantModal({ position = 'fixed', defaultOpen = false }: AuiAssistantModalProps) {
+  const [open, setOpen] = React.useState(defaultOpen);
   const [view, setView] = React.useState<View>('thread');
-  const anchorRef = React.useRef<HTMLButtonElement>(null);
+  const anchorRef = React.useRef<HTMLButtonElement | null>(null);
+  // El ancla en estado: abierta al montar, el Popper espera a que la burbuja exista.
+  const [anchor, setAnchor] = React.useState<HTMLButtonElement | null>(null);
   const contentRef = React.useRef<HTMLDivElement>(null);
-  const { size, handleProps } = useModalSize(contentRef);
+  const { size, handleProps } = useModalSize(contentRef, position === 'absolute');
   const thread = React.useMemo(() => <AuiThread />, []);
 
   useAuiEvent('thread.runStart', () => { setView('thread'); setOpen(true); });
@@ -133,7 +140,7 @@ export function AuiAssistantModal({ position = 'fixed' }: AuiAssistantModalProps
       <Box sx={(t) => ({ position, right: OFFSET, bottom: OFFSET, width: t.spacing(BUBBLE), height: t.spacing(BUBBLE), zIndex: t.zIndex.speedDial })}>
         <Tooltip title={label} placement="left">
           <ButtonBase
-            ref={anchorRef}
+            ref={(node: HTMLButtonElement | null) => { anchorRef.current = node; setAnchor(node); }}
             aria-label={label}
             aria-expanded={open}
             aria-haspopup="dialog"
@@ -155,8 +162,8 @@ export function AuiAssistantModal({ position = 'fixed' }: AuiAssistantModalProps
         </Tooltip>
       </Box>
       <Popper
-        open={open}
-        anchorEl={anchorRef.current}
+        open={open && anchor !== null}
+        anchorEl={anchor}
         placement="top-end"
         disablePortal={position === 'absolute'}
         transition
@@ -173,7 +180,9 @@ export function AuiAssistantModal({ position = 'fixed' }: AuiAssistantModalProps
               elevation={8}
               sx={{
                 position: 'relative', display: 'flex', flexDirection: 'column', overflow: 'clip', overscrollBehavior: 'contain',
-                width: (size ?? DEFAULT_SIZE).width, height: (size ?? DEFAULT_SIZE).height, maxWidth: 'calc(100vw - 32px)',
+                width: (size ?? DEFAULT_SIZE).width, height: (size ?? DEFAULT_SIZE).height,
+                // Nunca más que la ventana (o el contenedor, si es un contenedor de tamaño) menos la burbuja y los márgenes.
+                maxWidth: `calc(${position === 'absolute' ? '100cqw' : '100vw'} - ${VIEWPORT_INSET.width}px)`, maxHeight: `calc(${position === 'absolute' ? '100cqh' : '100vh'} - ${VIEWPORT_INSET.height}px)`,
                 '& [data-slot="aui-thread"]': { bgcolor: 'inherit' },
               }}
             >
