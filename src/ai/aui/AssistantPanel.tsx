@@ -25,7 +25,7 @@ import Typography from '@mui/material/Typography';
 import { alpha, keyframes, type Theme } from '@mui/material/styles';
 import type { SxProps } from '@mui/system';
 import { ChevronDown, Copy, Maximize2, Minimize2, MoreVertical, PanelRight, Search, SquarePen, X } from 'lucide-react';
-import { REDUCED_MOTION } from '../lib/shimmerText';
+import { COLLAPSE_EASE, REDUCED_MOTION } from '../lib/shimmerText';
 import { AuiIconButton } from './AuiIconButton';
 import { AuiThread, type AuiThreadProps } from './Thread';
 
@@ -96,7 +96,6 @@ export const AUI_DOCK_WIDTH = 55;
 const DOCK_CLEARANCE = 14;
 const MENU_WIDTH = 35;
 const ITEM_AVATAR = 3;
-const OPEN_EASE = 'cubic-bezier(.32,.72,0,1)';
 
 const floatIn = keyframes`from { opacity: 0; transform: translateX(-50%) translateY(12px) scale(.98); } to { opacity: 1; transform: translateX(-50%); }`;
 const sideIn = keyframes`from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; }`;
@@ -187,11 +186,11 @@ export function AuiAssistantPanel({
         ...(surface === 'float' && {
           position: 'absolute', left: '50%', bottom: t.spacing(EDGE), width: t.spacing(FLOAT_WIDTH), maxWidth: `calc(100% - ${t.spacing(4)})`,
           height: t.spacing(FLOAT_HEIGHT), maxHeight: `calc(100% - ${t.spacing(FLOAT_INSET)})`, transform: 'translateX(-50%)', transformOrigin: 'bottom center',
-          border: 1, borderColor: 'divider', animation: `${floatIn} ${t.transitions.duration.enteringScreen}ms ${OPEN_EASE} both`,
+          border: 1, borderColor: 'divider', animation: `${floatIn} ${t.transitions.duration.enteringScreen}ms ${COLLAPSE_EASE} both`,
         }),
         ...(surface === 'side' && {
           position: 'relative', flex: `0 0 ${t.spacing(SIDE_WIDTH)}`, borderLeft: 1, borderColor: 'divider',
-          animation: `${sideIn} ${t.transitions.duration.enteringScreen}ms ${OPEN_EASE} both`,
+          animation: `${sideIn} ${t.transitions.duration.enteringScreen}ms ${COLLAPSE_EASE} both`,
         }),
         ...(surface === 'full' && {
           position: 'absolute', inset: 0, animation: `${fadeIn} ${t.transitions.duration.shorter}ms ease-out both`,

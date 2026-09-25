@@ -10,6 +10,7 @@ import { Sun, Moon, ChevronRight, Search } from 'lucide-react';
 import { CosmosProvider } from '../src/CosmosProvider';
 import { SECTIONS, findElement } from './registry';
 import type { ElementEntry, Section } from './registry';
+import { elementIcon } from './elementIcons';
 import { McpAuthorizePage, McpCallbackPage } from './elements/AuiMcpConfig';
 import { DesignPage } from './DesignPage';
 import { PlaygroundPage } from './playground/Playground';
@@ -178,7 +179,7 @@ function PageHead({ overline, title, description, maxWidth = 880, children }: { 
 
 function ElementsIndex() {
   return (
-    <PageHead maxWidth={1040} title="Elements" description="Componentes del asistente, construidos con MUI y el tema Cosmos. Cada tarjeta es una demo en vivo.">
+    <PageHead maxWidth={1040} title="Elements" description="Componentes del asistente, construidos con MUI y el tema Cosmos. Entra a cada uno para ver su demo en vivo.">
       {SECTIONS.map((s) => (
         <Box key={s.id} component="section" sx={{ mb: 6 }}>
           <Typography component="h2" variant="h6" sx={{ mb: 2 }}>{s.title}</Typography>
@@ -191,11 +192,13 @@ function ElementsIndex() {
   );
 }
 
+/** Vista previa estática de la tarjeta: un ícono alusivo, no el elemento en vivo (81 tarjetas a la vez pesan demasiado). */
 function ElementCard({ element: e }: { element: ElementEntry }) {
+  const Icon = elementIcon(e.slug);
   return (
     <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1, overflow: 'hidden', transition: 'border-color .15s', '&:hover': { borderColor: 'text.disabled' } }}>
-      <Box sx={{ height: 260, overflow: 'hidden', position: 'relative', bgcolor: 'background.default', display: 'flex', alignItems: 'center', justifyContent: 'center', p: 3 }}>
-        <Box sx={{ width: '100%', maxWidth: 420, pointerEvents: 'auto' }}><e.Card /></Box>
+      <Box sx={(t) => ({ height: t.spacing(12), display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'background.default', color: 'text.secondary' })}>
+        <Icon size={22} />
       </Box>
       <ButtonBase onClick={() => go('/elements/' + e.slug)} sx={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', textAlign: 'left', gap: 2, px: 2, py: 1.5, borderTop: 1, borderColor: 'divider', '&:hover .cds-go': { transform: 'translateX(2px)' } }}>
         <Box sx={{ minWidth: 0 }}>
